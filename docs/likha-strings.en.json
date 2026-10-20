@@ -1,0 +1,356 @@
+{
+  "onb": {
+    "landing": {
+      "headline": "Swipe less. Jo likha hai, woh milega.",
+      "sub": "Real people, matched by your kundli. Dating is free. Kundli milao, dil milao.",
+      "gender_label": "I am a",
+      "woman": "Woman",
+      "man": "Man",
+      "theme_note": "Your pick sets the app's colours: rose for women, blue for men.",
+      "invite": "I have an invite code",
+      "footer": "18+ only · Terms · Privacy · Grievance Officer"
+    },
+    "phone": {
+      "title": "What's your number?",
+      "sub": "We'll send a 6-digit code. Your number is never shown to anyone.",
+      "uae": "+971 numbers work too, for Dubai.",
+      "whatsapp": "Get the code on WhatsApp",
+      "verify": "Verify",
+      "lock": "5 wrong tries locks sign-in for 1 hour."
+    },
+    "consent": {
+      "title": "Before we begin",
+      "sub": "A few promises, both ways.",
+      "age": "I'm 18 or older",
+      "birth": "Use my birth details to build my kundli and matches. Never shown on my profile.",
+      "selfie": "Use my photos and selfie to keep Likha real. The selfie is deleted after the check.",
+      "offers": "Send me offers on WhatsApp and email",
+      "cta": "Agree and continue"
+    },
+    "credits": {
+      "progress": "{earned} of {total} credits earned",
+      "next": "Finish this step: +{n} credits",
+      "last": "Last step. All {total} credits unlock after it."
+    },
+    "basics": {
+      "title": "Tell us about you",
+      "location": "Use my current location"
+    },
+    "lifestyle": {
+      "title": "How you live",
+      "caste": "We never ask about caste."
+    },
+    "birth": {
+      "title": "When did the universe drop you on Earth?",
+      "sub": "Your exact birth details build your kundli. We never show them on your profile.",
+      "required": "Birth time is a must. No time, no kundli. Check your birth certificate or ask Mummy, then come back.",
+      "cta": "Build my kundli"
+    },
+    "photos": {
+      "title": "Add your photos",
+      "sub": "2 to 6 photos. Your first photo needs your face, clearly.",
+      "group_error": "Group photo. We can't tell which one is you."
+    },
+    "selfie": {
+      "title": "Prove you're real",
+      "sub": "Catfish not allowed in this ocean. A 10-second check keeps Likha real.",
+      "privacy": "Compared with your first photo, then deleted. Never shown on your profile.",
+      "fail": "3 tries. If it still fails, a person reviews it within 24 hours."
+    },
+    "prompts": {
+      "title": "Show your vibe",
+      "sub": "Two quick ones. Keep it real, keep it you.",
+      "q1": "About you",
+      "q2": "What are you fond of?",
+      "voice": "Record a voice intro · up to 30 seconds"
+    },
+    "goal": {
+      "title": "What are you looking for?",
+      "dating": "Dating · Meet people, go on dates, see where the stars take it",
+      "matchmaking": "Matchmaking · Marriage-minded. Kundli first, then coffee."
+    },
+    "prefs": {
+      "title": "Who should we show you?",
+      "distance": "Same city · Any city",
+      "manglik": "Manglik status shows on profiles. It's never used as a filter."
+    },
+    "waitlist": {
+      "title": "{city}, your stars are aligning",
+      "sub": "We open a city once 1,000 Founding Members join, so your feed is full from day one.",
+      "jump": "Invite 3 friends, jump 150 places",
+      "notify": "We'll tell you the moment {city} unlocks."
+    },
+    "kundli": {
+      "kicker": "YOUR KUNDLI IS READY",
+      "title": "Meet your cosmic self, {name}"
+    },
+    "install": {
+      "title": "Keep your stars close",
+      "sub": "Add Likha to your home screen. On iPhone, notifications only work after this.",
+      "cta": "Turn on notifications"
+    },
+    "bonus": {
+      "title": "Two steps to your cosmic credits",
+      "rules": "One bonus per person. Women get 150 credits, men get 70. Bonus credits expire 90 days after they land and are used before purchased ones.",
+      "cta": "Finish my profile"
+    }
+  },
+  "tour": {
+    "1": {
+      "title": "Your kundli finds your people",
+      "body": "Every profile shows your Jodi Score, worked out from both birth charts. Tap any ⓘ to learn what a number means."
+    },
+    "2": {
+      "title": "Your day, decoded",
+      "body": "Your Daily Kick: vibe, date score, lucky window and one small fix. Golden Hours tell you the best time to text each match."
+    },
+    "3": {
+      "title": "Got a crush? Check together",
+      "body": "Send a crush link to anyone, even outside the app. If they join and agree, you both see your score.",
+      "cta": "Start exploring"
+    }
+  },
+  "home": {
+    "greeting": "Hey {name}",
+    "weather": {
+      "kicker": "TODAY'S LOVE WEATHER",
+      "example": "Venus is flirting with your 7th house"
+    },
+    "newfeature": {
+      "kicker": "DAY {n} · NEW FOR YOU"
+    },
+    "day": {
+      "title": "Your day in the stars",
+      "rahu": "Rahu Kaal, skip big moves"
+    },
+    "aligned": {
+      "title": "Stars aligned for you today"
+    },
+    "likes": {
+      "tile": "{n} people like you · See them, it's free"
+    },
+    "crush": {
+      "title": "Got a crush outside the app?",
+      "sub": "Check your Jodi Score with anyone · 29 cr"
+    }
+  },
+  "kick": {
+    "title": "Your Daily Kick",
+    "fix": "Today's fix",
+    "firstdate": "Good day for a first date? {answer}",
+    "share": "Share today's card",
+    "unlock": "Reveal my day · 10 credits",
+    "streak_nudge": "Kal miss mat karna. The universe notices."
+  },
+  "disc": {
+    "live": "Live in Jaipur: two people just matched at {score}% · {time}",
+    "coach": "New here? The big number is your Jodi Score. Tap any ⓘ to learn what it means.",
+    "score_label": "written in the stars",
+    "pass": "Not my nakshatra",
+    "like": "Shoot your shot",
+    "report_link": "Full compatibility report · 29 credits"
+  },
+  "prof": {
+    "cosmic_like": "Cosmic Like · 9"
+  },
+  "filters": {
+    "cta": "Show {n} people"
+  },
+  "report": {
+    "verdict_note": "Guidance, not a verdict. Every couple writes their own story.",
+    "title": "Report {name}",
+    "anon": "{name} won't know you reported them."
+  },
+  "likes": {
+    "title": "Likes you",
+    "free": "Always free. See everyone who liked you. Like back to match."
+  },
+  "empty": {
+    "feed": {
+      "title": "You've seen every star in Jaipur tonight",
+      "sub": "New ones rise tomorrow. Or widen your sky now:"
+    },
+    "matches": "No matches yet. Your stars are warming up."
+  },
+  "match": {
+    "title": "The planets approve. Ab baat karo!",
+    "cta": "Say hi to {name}",
+    "cupid": "Cupid opener · 15 credits"
+  },
+  "matches": {
+    "stale": "Say hi before the stars move on"
+  },
+  "chat": {
+    "golden": "Golden Hour now until {time}. The stars said now.",
+    "placeholder": "Message"
+  },
+  "golden": {
+    "title": "Golden Hours",
+    "rahu": "Avoid big talks during Rahu Kaal today, {time}.",
+    "cta": "Text {name} in tonight's window"
+  },
+  "saathi": {
+    "subtitle": "Saathi · here till you find your person",
+    "disclosure": "{companion} is virtual, not a real person, and will always say so. 30 free messages a day · {n} left",
+    "setup": {
+      "title": "Meet your Saathi",
+      "sub": "Someone to talk to while you look for your person. They'll help you get there, then step back."
+    },
+    "paused": {
+      "quote": "You and {match} have talked every day this week. That's the whole point. I'm stepping back so you can focus on them."
+    }
+  },
+  "guru": {
+    "input": "Ask Guru Ji",
+    "footer": "Guidance, not a verdict. {match} sees this chat too."
+  },
+  "uni": {
+    "consent_note": "Anything that uses {match}'s chart or photo asks them first. If they say no, you're not charged."
+  },
+  "consent": {
+    "title": "{name} wants to read Our Stars with you",
+    "decline_note": "If you decline, {name} isn't charged and won't be told why."
+  },
+  "couple": {
+    "cta": "Start Couple Mode · ₹149/month",
+    "note": "Both of you confirm. One pays, both get it."
+  },
+  "story": {
+    "title": "Our Story",
+    "sub": "Only you two can see this",
+    "share": "Share your love story? Inspire Jaipur with first names only. Goes live only if you both say yes. Remove it anytime."
+  },
+  "checkin90": {
+    "title": "Are you two still together?",
+    "note": "Your answer stays private. {match} never sees it. It teaches Jodi Score which matches last."
+  },
+  "imagine": {
+    "label": "Imagined, not a real photo"
+  },
+  "store": {
+    "title": "Astro Store",
+    "check": {
+      "title": "Check With Anyone",
+      "sub": "Your crush, your ex, your boss, your co-founder. See how your stars get along."
+    },
+    "why": "Why It Didn't Work · Your past relationship, read by the stars · 79 cr",
+    "gift": "Gift a Reading · A birthday surprise they open in the app · 99 cr",
+    "suits": "Who Suits Me · The partner your chart is looking for · 49 cr",
+    "maasi": "Rishta Maasi · \"Beta, she's a Pisces Moon.\" Your weekly curated 3 · ₹299/mo",
+    "kickpass": "Kick Pass · Your full Daily Kick, every day · ₹199/mo",
+    "name": "Likha: Kundli Dating",
+    "subtitle": "Match by kundli. Date for real.",
+    "short": "Kundli-first dating. Free Guna Milan with every match. Made in Jaipur."
+  },
+  "whynot": {
+    "sub": "Close the chapter with a kind, honest reading. Then find someone who fits better.",
+    "privacy": "Only you see this. Their details are used once, then deleted, and never matched."
+  },
+  "wallet": {
+    "title": "Cosmic wallet",
+    "rate": "1 credit = ₹1"
+  },
+  "checkout": {
+    "gst": "Price includes GST",
+    "secure": "Secure payment via Razorpay. Purchased credits never expire."
+  },
+  "pay": {
+    "pending": {
+      "title": "Paisa raste mein hai",
+      "sub": "Your bank is confirming ₹{amount}. We'll add {credits} credits the moment it lands. No need to pay again."
+    },
+    "failed": "Payment didn't go through. No money taken. 2 tries left, then we connect you to support.",
+    "refund_rule": "If a reading fails after payment, credits come back automatically."
+  },
+  "tiers": {
+    "rule": "A real conversation is 5+ messages from each of you. Likes alone don't count."
+  },
+  "me": {
+    "waiting": "Profile {pct}% complete · {n} credits waiting"
+  },
+  "edit": {
+    "birth_locked": "Locked to keep matches honest. 1 free correction via support."
+  },
+  "settings": {
+    "pause": "Pause my profile · Hidden from Discover. Chats stay."
+  },
+  "privacy": {
+    "ifirst": "I message first · Matches can't open the chat first.",
+    "note": "We never show your exact location or birth details."
+  },
+  "delete": {
+    "title": "Leaving the stars?",
+    "found": "Congratulations! Try Couple Mode instead?"
+  },
+  "sharedate": {
+    "sub": "Someone you trust knows where you are. We check in after."
+  },
+  "sos": {
+    "title": "Are you safe?",
+    "sub": "If you're in danger, call for help first. We'll do the rest.",
+    "call": "Call 112 · India emergency number"
+  },
+  "block": {
+    "title": "Unmatch or block {name}?"
+  },
+  "checkin": {
+    "title": "Hey {name}, all good?",
+    "ok": "I'm okay",
+    "help": "I need help"
+  },
+  "grievance": {
+    "sla": "We acknowledge within 24 hours and resolve within 15 days."
+  },
+  "offline": {
+    "title": "Lost signal with the cosmos",
+    "sub": "Check your internet and try again. Messages you send will go out when you're back online."
+  },
+  "state": {
+    "review": "A person is checking your selfie",
+    "paused": "Account paused for 7 days",
+    "removed": "Account removed"
+  },
+  "err": {
+    "generic": "Kuch gadbad ho gayi. Try again in a moment.",
+    "lowcredits": "Thode credits kam pad gaye. Top up from ₹99?",
+    "upload": "That photo didn't upload. Try a smaller one.",
+    "session": "You've been signed out. Log in again with your number."
+  },
+  "ok": {
+    "saved": "Saved",
+    "copied": "Link copied"
+  },
+  "push": {
+    "kick": "Good morning ☀️ Your stars have chai to spill. Today's Kick is ready.",
+    "like": "Someone with {score}% compatibility just liked you. See who, free.",
+    "match": "It's a match with {name}! The planets approve. Ab baat karo.",
+    "message": "{name}: {preview}",
+    "golden": "Your Golden Hour with {name} starts at {time}. Text first?",
+    "stale": "{name} is waiting. Say hi before the stars move on.",
+    "streak": "Your {n}-day Kick streak ends at midnight. Kal miss mat karna.",
+    "crush": "{name} joined and agreed. Your full crush reading is ready.",
+    "gift": "{name} opened your gift.",
+    "city": "{city} is live! Your Founding Member profile is waiting.",
+    "tier": "You're now {tier}. {pct}% off every credit."
+  },
+  "wa": {
+    "otp": "{code} is your Likha code. Never share it with anyone.",
+    "checkin_alert": "{name} hasn't checked in after their date at {place}. Please call them. This is an automatic alert from Likha."
+  },
+  "web": {
+    "title": "Likha · Kundli-first dating in Jaipur",
+    "headline": "Swipe less. Jo likha hai, woh milega.",
+    "sub": "Kundli-first dating, made in Jaipur. Real people, matched by your kundli. Free to date. Each city opens when 1,000 Founding Members join.",
+    "cta": "Join as a Founding Member"
+  },
+  "crush": {
+    "title": "{name}, someone checked their kundli match with you",
+    "cta": "See who it is"
+  },
+  "gift": {
+    "title": "{sender} sent you your birthday year ahead"
+  },
+  "social": {
+    "bio": "Likha · kundli-first dating 💫 Jo likha hai, woh milega. Jaipur first. Join the waitlist ↓"
+  }
+}

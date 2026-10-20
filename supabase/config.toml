@@ -1,0 +1,15 @@
+# Only the settings Likha needs; merge into the project's config.toml.
+[functions.ai-gateway]
+verify_jwt = false        # checks the member token itself, and also accepts the internal secret
+
+[functions.kundli-worker]
+verify_jwt = false        # internal secret only
+
+[functions.kick-batch]
+verify_jwt = false        # internal secret only
+
+[functions.cupid-redirect]
+verify_jwt = false        # public link: likha.in/c/<code>
+
+[functions.payout-worker]
+verify_jwt = false        # RazorpayX webhook (signature checked) + internal secret
