@@ -11,9 +11,9 @@ import type { ClaudeRequest } from "../_shared/anthropic.ts";
 import { callLLM } from "../_shared/llm.ts";
 import {
   allowedFrom, CAP_MESSAGES, cleanName, CRISIS_REPLY, estimateTokens, guruSystem, isCrisis, numberCheck, openerPrompt,
-  pairFacts, parseJson, personFacts, readableText, readingPrompt, saathiSystem, styleCheck,
+  pairFacts, parseJson, personFacts, readableText, readingPrompt, saathiSystem, styleCheck, NAKSHATRAS, SIGNS
 } from "../_shared/core.ts";
-import { admin, asUser, isInternal, json, rpc } from "../_shared/db.ts";
+import { admin, asUser, isInternal, json, rpc, preflight } from "../_shared/db.ts";
 
 type Hold = { ok: boolean; call_id?: number; model?: string; provider?: string; max_output_tokens?: number; temperature?: number;
   number_check?: boolean; reason?: string; alert?: boolean; spent_today_paise?: number; daily_cap_paise?: number };
@@ -74,6 +74,15 @@ async function reading(readingId: string) {
       b: ctx.partner ? personFacts(ctx.partner.first_name, ctx.partner) : null,
       pair: pairFacts(ctx.compatibility),
     };
+  }
+  if (kind === "who_suits_me") {
+    // computed from the Guna table (best-scoring partner nakshatras and Moon signs); the writer explains, never picks
+    const sf = await rpc<{ nakshatras: number[]; moon_signs: number[]; best_score: number }>("svc_suits_facts", { p_user: ctx.reading.user_id });
+    facts.suits = { nakshatras: (sf?.nakshatras ?? []).map((i) => NAKSHATRAS[i]), moon_signs: (sf?.moon_signs ?? []).map((i) => SIGNS[i]) };
+  }
+  if (kind === "why_not") {
+    facts.together_for = subject.duration ?? null;
+    if (subject.time_known === false) facts.note = "Their birth time is not known; their Moon nakshatra may be off by one. Say so gently.";
   }
   const allowed = allowedFrom(facts);
   const check = (text: string) => {
@@ -200,6 +209,7 @@ async function opener(userId: string, client: any, matchId: string) {
 
 // ---------------------------------------------------------------- router
 Deno.serve(async (req) => {
+  const pre = preflight(req); if (pre) return pre;
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }

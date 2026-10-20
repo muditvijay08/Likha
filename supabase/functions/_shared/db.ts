@@ -29,5 +29,13 @@ export async function rpc<T = any>(fn: string, args: Record<string, unknown>): P
   return data as T;
 }
 
+/** Browsers call member-facing functions from the app's own site (LIKHA_SITE, e.g. https://likha.in). */
+export const CORS = {
+  "access-control-allow-origin": Deno.env.get("LIKHA_SITE") ?? "*",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+  "access-control-allow-methods": "POST, OPTIONS",
+};
+export const preflight = (req: Request) => req.method === "OPTIONS" ? new Response("ok", { headers: CORS }) : null;
+
 export const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...CORS } });

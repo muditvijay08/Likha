@@ -132,3 +132,17 @@ export const ago = (iso: string) => {
   if (m < 1440) return `${Math.floor(m / 60)}h`;
   return `${Math.floor(m / 1440)}d`;
 };
+
+/** ₹499, ₹1,299 (prices are stored in paise and include GST). */
+export const rupees = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+export function Progress({ label, value, max, color = "#7E5BEF" }: { label: string; value: number; max: number; color?: string }) {
+  const pct = max <= 0 ? 100 : Math.min(100, (value / max) * 100);
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <div className="row" style={{ justifyContent: "space-between", fontSize: 12, color: "#3D3560" }}><span>{label}</span><span>{Math.min(value, max)} / {max}{label.includes("streak") ? " days" : ""}</span></div>
+      <div style={{ height: 6, borderRadius: 999, background: "#E7E1F5" }} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(value, max)}>
+        <div style={{ width: `${pct}%`, height: 6, borderRadius: 999, background: color }} /></div>
+    </div>
+  );
+}

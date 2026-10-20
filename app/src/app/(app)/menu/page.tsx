@@ -5,7 +5,7 @@ import { Avatar, Chevron, TIER_LABEL, useApp } from "@/components/app";
 import { api } from "@/lib/api";
 
 const TILES: [string, string, string, string][] = [
-  ["/kick", "Daily Kick", "Your day, decoded", "#FFF3D6"], ["/kundli/me", "My Kundli", "Chart and dasha", "#EDE6FF"], ["/store", "Astro Store", "Readings and more", "#FFF0F4"],
+  ["/kick", "Daily Kick", "Your day, decoded", "#FFF3D6"], ["/my-kundli", "My Kundli", "Chart and dasha", "#EDE6FF"], ["/store", "Astro Store", "Readings and more", "#FFF0F4"],
   ["/saathi", "Saathi", "Chat till you match", "#E4F4EE"], ["/universe", "Our Universe", "For you two", "#FFF0F4"], ["/maasi", "Rishta Maasi", "Sunday picks", "#FFF3D6"],
   ["/gift", "Gift a Reading", "For someone special", "#EDE6FF"], ["/travel", "Travel Mode", "Match in a new city", "#E4F4EE"], ["/boost", "Boost", "Be seen first", "#FFF3D6"],
   ["/story", "Our Story", "Your timeline", "#FFF0F4"], ["/couple", "Couple Mode", "For matched pairs", "#EDE6FF"], ["/matches", "Golden Hours", "Best times to talk", "#FFF3D6"],

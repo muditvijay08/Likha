@@ -7,8 +7,8 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 | Folder | What | Run / test |
 |---|---|---|
 | `app/` | Member PWA, Next.js 16 + React 19 + TypeScript. Onboarding O1–O15, tour T1–T3, and the bottom-nav app (H1, H2, D1–D6, M1–M5, E1, E11, E12, E14, A1, N1) in `src/app/(app)/`. | `npm run dev` · `npm run build` · `npm run test:e2e` · `npm run check:db` |
-| `supabase/schema/` | Postgres schema in 10 parts, concatenated into `likha_schema.sql`. | `supabase/test/*.sql` (359 checks) |
-| `supabase/functions/` | Edge Functions: ai-gateway, kundli-worker, kick-batch, cupid-redirect, payout-worker. | `deno test tests/` · `deno check` |
+| `supabase/schema/` | Postgres schema in 11 parts, concatenated into `likha_schema.sql`. | `supabase/test/*.sql` (403 checks) |
+| `supabase/functions/` | Edge Functions: ai-gateway, kundli-worker, kick-batch, cupid-redirect, payout-worker, create-order, razorpay-webhook. | `deno test tests/` · `deno check` |
 | `kundli/` | Python FastAPI kundli service (NASA JPL DE421 via Skyfield, Lahiri, Ashtakoota rules `ak-2.0`). | `pytest tests` |
 
 ## How the pieces talk
@@ -33,6 +33,7 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 - Any new database call: add it to `supabase.ts` and `demo.ts`, then run `npm run check:db` and add a step to `supabase/test/40_app_onboarding.sql` / `50_app_screens.sql` (or a new file).
 - App screens (bottom nav) live in `src/app/(app)/`; shared pieces in `src/components/app.tsx` (`useApp()` gives Home data, the member's prices and a toast). Never hard-code prices: use `price(prices, key, fallback)`.
 - Demo mode uses `src/lib/api/samples.ts`: sample profiles, always shown with a SAMPLE PROFILE tag and a demo banner. Never ship samples to the real backend.
+- Money: credits only move through `spend_on` / `add_credits`; real money only through `create-order` and `razorpay-webhook` (price always read from our tables, never from the app).
 - Times of day (sunrise, Rahu Kaal, horas, Golden Hours) come from `src/lib/panchang.ts`; the same file is copied to `supabase/functions/_shared/panchang.ts`. Change both together.
 - Schema changes: new numbered part file in `supabase/schema/parts/`, rebuild `likha_schema.sql`, run all four test files on a fresh database.
 - Hinglish, playful copy; sentence case; short.
@@ -44,6 +45,6 @@ cat supabase/schema/parts/*.sql > supabase/schema/likha_schema.sql
 psql -f supabase/test/00_supabase_stub.sql -f supabase/schema/likha_schema.sql -f supabase/schema/guna_lookup.sql -f supabase/test/50_app_screens.sql
 # app
 cd app && cp .env.example .env.local && npm i && npm run dev
-NEXT_PUBLIC_DEMO=1 npm run build && npm start & npm run test:e2e   # onboarding (23) + member app (34) + chat and companions (25)
+NEXT_PUBLIC_DEMO=1 npm run build && npm start & npm run test:e2e   # onboarding (23) + member app (34) + chat and companions (25) + wallet and store (32)
 node --experimental-strip-types --test tests/unit/*.test.ts         # panchang maths
 ```

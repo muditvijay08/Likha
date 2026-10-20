@@ -72,6 +72,7 @@ export interface MyChart {
              current_dasha: string | null; borderline: boolean };
   planets: ChartPlanet[];
   dasha: { maha: string; antar: string; antar_end: string } | null;
+  mahadashas?: { lord: string; start: string; end: string }[];
 }
 
 export interface CityQueue {
@@ -126,7 +127,7 @@ export interface Filters {
 }
 export interface LikeResult { matched: boolean; match_id?: string; already_liked?: boolean }
 export interface Reading {
-  id: string; status: "generating" | "ready" | "failed" | "refunded";
+  id: string; status: "pending_consent" | "generating" | "ready" | "failed" | "refunded" | "declined";
   content: { title: string; summary: string; sections: { heading: string; body: string }[]; try_this: string } | null;
 }
 export type Prices = Record<string, number>;
@@ -146,6 +147,25 @@ export interface SaathiState {
   paused: boolean; pause_match: { match_id: string; first_name: string } | null; top_today: number;
   history: { role: "user" | "assistant"; body: string; created_at?: string }[];
 }
+// ---------------------------------------------------------------- wallet, payments, store
+export interface TierRule { key: Tier; label: string; discount: number; min_conversations: number; min_streak_days: number }
+export interface TierInfo { tier: Tier; label: string; discount: number; paused_until: string | null; conversations: number; streak: number;
+  qualifies_for: Tier; next: TierRule | null; tiers: TierRule[] }
+export interface Pack { id: string; label: string; price_paise: number; credits: number; bonus_pct: number }
+export interface Plan { key: string; label: string; price_paise: number; interval: "month" | "year"; trial_note: string | null; active_until: string | null }
+export interface Wallet { balance: number; expiring: { credits: number; on: string } | null; packs: Pack[]; plans: Plan[]; tier: TierInfo;
+  activity: { delta: number; kind: string; reason: string; at: string }[] }
+export type UpiApp = "gpay" | "phonepe" | "paytm" | "other";
+export interface PaymentStatus { status: "created" | "authorized" | "captured" | "failed" | "refunded" | "partially_refunded"; credited: boolean;
+  item_type: "pack" | "subscription"; item_key: string; amount_paise: number; payment_ref: string | null; invoice_no: string | null; credits: number | null; balance: number }
+export interface ReadingFull extends Reading { kind: string; created_at: string; credits_charged: number; helpful: boolean | null; name: string | null;
+  suits: { nakshatras: number[]; moon_signs: number[]; best_score: number } | null }
+export interface ReadingItem { id: string; kind: string; status: Reading["status"]; created_at: string; name: string | null }
+export interface CrushCheck { id: string; name: string; relation: string; token: string; joined: boolean; expires_at: string; reading_id: string; status: string }
+export interface GiftItem { id: string; name: string; kind: string; note: string | null; token: string; deliver_on: string; opened: boolean; expires_at: string }
+export interface MaasiPick extends Card { pick_id: string; note: string; response: "interested" | "not_for_me" | null; week_of: string }
+export interface MaasiState { until: string | null; price_paise: number; picks: MaasiPick[] }
+
 export interface SaathiReply { reply: string | null; left?: number; topup?: boolean; crisis?: boolean; message?: string }
 
 export interface Api {
@@ -210,4 +230,20 @@ export interface Api {
   saathiSetup(c: SaathiChar, styles: string[]): Promise<void>;
   saathiSend(c: SaathiChar, text: string): Promise<SaathiReply>;
   saathiTopup(): Promise<number>;
+
+  wallet(): Promise<Wallet>;
+  /** Opens payment (Razorpay Checkout, UPI first) and resolves with the order id once the member has paid or left. */
+  pay(type: "pack" | "subscription", key: string, upi: UpiApp, email?: string): Promise<{ order_id: string; paid: boolean }>;
+  paymentStatus(orderId: string): Promise<PaymentStatus | null>;
+  startReading(kind: "who_suits_me" | "why_not", subject?: Record<string, unknown>): Promise<string>;
+  readingView(id: string): Promise<ReadingFull | null>;
+  myReadings(): Promise<ReadingItem[]>;
+  setSuitsSort(on: boolean): Promise<void>;
+  buyCheckPack(): Promise<number>;
+  createCrushCheck(name: string, phone: string, relation: string, dob: string | null): Promise<{ token: string; reading_id: string; prepaid: boolean }>;
+  myCrushChecks(): Promise<{ prepaid: number; checks: CrushCheck[] }>;
+  sendGift(name: string, phone: string, kind: string, note: string, deliverOn: string): Promise<string>;
+  myGifts(): Promise<GiftItem[]>;
+  maasi(): Promise<MaasiState>;
+  answerMaasi(pickId: string, interested: boolean): Promise<LikeResult>;
 }

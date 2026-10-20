@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
+  CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
@@ -13,6 +14,9 @@ const FRIENDLY: [string, string][] = [
   ["kick_not_ready", "Today's Kick is still being written. Check back in a little while."],
   ["account not active", "Finish your profile to start liking people."],
   ["chat_closed", "This chat has ended."],
+  ["daily_limit", "That's the most for today. Try again tomorrow."],
+  ["kundli_not_ready", "Your kundli is still being made. Try again in a minute."],
+  ["delivery date is in the past", "Pick today or a later date."],
   ["guru_busy", "Guru Ji is still answering the last question."],
   ["guru_no_questions", "No questions left for you two. Get 20 more to keep asking."],
 ];
@@ -367,4 +371,67 @@ export class SupabaseApi implements Api {
     return data as SaathiReply;
   }
   async saathiTopup() { return this.rpc<number>("saathi_topup", {}, "Top-up"); }
+
+  // ---------------------------------------------------------------- wallet and payments
+  async wallet() { return this.rpc<Wallet>("wallet", {}, "Wallet"); }
+  async pay(type: "pack" | "subscription", key: string, upi: UpiApp, email?: string) {
+    const o = await this.gateway2<{ order_id: string; amount_paise: number; key_id: string; label: string }>("create-order", { item_type: type, item_key: key });
+    await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    const { data } = await this.sb.auth.getSession();
+    const phone = data.session?.user.phone;
+    return await new Promise<{ order_id: string; paid: boolean }>((resolve) => {
+      const Rzp = (window as unknown as { Razorpay: new (o: Record<string, unknown>) => { open(): void } }).Razorpay;
+      const flow = upi === "other" ? undefined : { upi: { flows: ["intent", "collect"], apps: [upi === "gpay" ? "google_pay" : upi] } };
+      new Rzp({
+        key: o.key_id, order_id: o.order_id, amount: o.amount_paise, currency: "INR", name: "Likha", description: o.label,
+        prefill: { contact: phone ? `+${phone.replace(/^\+/, "")}` : undefined, email: email || undefined },
+        config: { display: { preferences: { show_default_blocks: true }, ...(flow ? { blocks: { upi: { name: "UPI", instruments: [{ method: "upi", ...flow.upi }] } }, sequence: ["block.upi"] } : {}) } },
+        theme: { color: "#FFB020" },
+        handler: () => resolve({ order_id: o.order_id, paid: true }),            // the webhook credits; the status page waits for it
+        modal: { ondismiss: () => resolve({ order_id: o.order_id, paid: false }) },
+      }).open();
+    });
+  }
+  private async gateway2<T>(fn: string, body: Record<string, unknown>): Promise<T> {
+    const { data, error } = await this.sb.functions.invoke(fn, { body });
+    if (error) {
+      let msg = "Something went wrong. Please try again.";
+      try { const j = await (error as { context?: Response }).context?.json(); if (j?.error) msg = j.error; } catch { /* keep default */ }
+      throw new Error(msg);
+    }
+    return data as T;
+  }
+  async paymentStatus(orderId: string) { return (await this.rpc<PaymentStatus | null>("payment_status", { p_order_id: orderId })) ?? null; }
+
+  // ---------------------------------------------------------------- store readings
+  async startReading(kind: "who_suits_me" | "why_not", subject?: Record<string, unknown>) {
+    const id = await this.rpc<string>("start_reading", { p_kind: kind, p_subject: subject ?? null }, "Reading");
+    this.gateway({ action: "reading", reading_id: id }).catch(() => {});        // writes it, or refunds; the page polls
+    return id;
+  }
+  async readingView(id: string) { return (await this.rpc<ReadingFull | null>("reading_view", { p_id: id })) ?? null; }
+  async myReadings() { return this.rpc<ReadingItem[]>("my_readings"); }
+  async setSuitsSort(on: boolean) { await this.rpc("set_suits_sort", { p_on: on }, "Discover"); }
+  async buyCheckPack() { return this.rpc<number>("buy_check_pack", {}, "5-pack"); }
+  async createCrushCheck(name: string, phone: string, relation: string, dob: string | null) {
+    return this.rpc<{ token: string; reading_id: string; prepaid: boolean }>("create_crush_check",
+      { p_name: name, p_phone: phone, p_relation: relation, p_dob: dob }, "Check With Anyone");
+  }
+  async myCrushChecks() { return this.rpc<{ prepaid: number; checks: CrushCheck[] }>("my_crush_checks"); }
+  async sendGift(name: string, phone: string, kind: string, note: string, deliverOn: string) {
+    return this.rpc<string>("send_gift", { p_name: name, p_phone: phone, p_kind: kind, p_note: note || null, p_deliver_on: deliverOn }, "Gift");
+  }
+  async myGifts() { return this.rpc<GiftItem[]>("my_gifts"); }
+  async maasi() { const m = await this.rpc<MaasiState>("maasi_state"); return { ...m, picks: await this.sign(m.picks) }; }
+  async answerMaasi(pickId: string, interested: boolean) {
+    return this.rpc<LikeResult>("answer_maasi_pick", { p_pick: pickId, p_interested: interested }, "Rishta Maasi");
+  }
+}
+
+function loadScript(src: string): Promise<void> {
+  return new Promise((ok, bad) => {
+    if (document.querySelector(`script[src="${src}"]`)) return ok();
+    const s = document.createElement("script"); s.src = src; s.onload = () => ok(); s.onerror = () => bad(new Error("Payments couldn't load. Check your connection."));
+    document.head.appendChild(s);
+  });
 }

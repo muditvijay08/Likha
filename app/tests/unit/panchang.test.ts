@@ -40,3 +40,12 @@ test("clock times are shown in the city's time zone", () => {
   assert.equal(clockRange(a, b, "Asia/Kolkata").replace(/\s/g, " "), "7:40–9:10 PM");
   assert.equal(clock(a, "Asia/Dubai").replace(/\s/g, " "), "6:10 PM");
 });
+
+test("approximate Moon sign matches the kundli engine (NASA JPL) to within half a degree", async () => {
+  const { moonLongitude, moonSignsOn } = await import("../../src/lib/moon.ts");
+  // values from kundli/likha_kundli/astro.py sidereal_positions (Skyfield + DE421, Lahiri)
+  const ref: [string, number][] = [["1999-03-14T01:12:00Z", 281.38], ["2000-01-01T00:00:00Z", 193.44], ["1997-11-09T06:30:00Z", 310.85], ["2010-06-15T12:00:00Z", 100.88]];
+  for (const [t, lon] of ref) assert.ok(Math.abs(moonLongitude(new Date(t)) - lon) < 0.5, `${t}: ${moonLongitude(new Date(t))} vs ${lon}`);
+  assert.deepEqual(moonSignsOn("1999-03-14"), [9]);          // Capricorn all day
+  assert.ok(moonSignsOn("1999-03-15").length >= 1);
+});

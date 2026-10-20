@@ -4,16 +4,18 @@
 | Area | Status |
 |---|---|
 | Design canvas (105 app + 25 admin screens) | Done |
-| Database (10 parts, 359 checks passing) | Done |
+| Database (11 parts, 403 checks passing) | Done |
 | Kundli engine (NASA JPL, final rules ak-2.0) | Done |
 | AI gateway, spend caps, Claude/Gemini/GPT switch | Done |
 | Be a Cupid (referrals, payouts, TDS) | Done |
 | **Member app: onboarding O1–O15 + tour** | **Done, tested end to end in demo mode (23 checks)** |
 | **Member app batch 1: Home, Daily Kick, Discover, Profile, Filters, Compatibility report, Likes, Match + Golden Hours, Menu, Chats list** | **Done, 34 end-to-end checks in demo mode** |
 | **Member app batch 2: Chats list, live chat with voice notes and Cupid openers, Golden Hours, Guru Ji, Saathi (setup, chat, stepping back)** | **Done, 25 end-to-end checks** |
-| Member app batch 3: wallet, checkout, tiers, Store, readings, Check With Anyone | Next |
+| **Member app batch 3: wallet, Razorpay checkout and payment status, tiers, Astro Store, Check With Anyone, Why It Didn't Work, Gift a Reading, My Kundli + Who Suits Me, Rishta Maasi, readings** | **Done, 32 end-to-end checks** |
+| Member app batch 4: profile, settings, privacy, safety (report, block, SOS, share date), inbox, help | Next |
 | Admin web app | Not started |
-| Selfie liveness (AWS), Razorpay payments, OneSignal | Not started |
+| Razorpay payments (create-order + signed webhook) | Built and tested; needs live keys |
+| Selfie liveness (AWS), OneSignal push | Not started |
 
 ## First-time setup (half a day)
 1. Create a Supabase project in **Mumbai (ap-south-1)**. Enable phone auth, using MSG91 or Twilio for SMS and WhatsApp OTP.

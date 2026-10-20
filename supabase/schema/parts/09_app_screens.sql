@@ -4,6 +4,9 @@
 -- Photo paths are returned; the app turns them into short-lived signed URLs.
 -- =====================================================================
 
+-- Who Suits Me: "show these people first" sorts Discover by these nakshatras (everyone else still shows).
+alter table public.preferences add column if not exists prefer_nakshatras int[] not null default '{}';
+
 create or replace function public.has_kick_pass() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.subscriptions where user_id = auth.uid() and plan_key = 'kick_pass'
@@ -31,7 +34,7 @@ returns table (id uuid, first_name text, age int, city_id uuid, profession text,
                gunas numeric, jodi_score int, summary text, moon_sign text, nakshatra text, manglik boolean, last_active_at timestamptz)
 language sql stable security definer set search_path = public as $$
   with me as (select p.*, pf.age_min, pf.age_max, pf.distance, pf.goals, pf.diets, pf.languages as pf_languages,
-                     pf.height_min_cm, pf.height_max_cm, pf.active_this_week, pf.has_voice_intro
+                     pf.height_min_cm, pf.height_max_cm, pf.active_this_week, pf.has_voice_intro, pf.prefer_nakshatras
               from public.profiles p left join public.preferences pf on pf.user_id = p.id where p.id = auth.uid())
   select c.id, c.first_name, c.age, c.city_id, c.profession, c.goal, c.tier,
          cmp.gunas, cmp.jodi_score, cmp.summary, ks.moon_sign, ks.nakshatra, ks.manglik, c.last_active_at
@@ -59,6 +62,7 @@ language sql stable security definer set search_path = public as $$
                     and ps.created_at > now() - make_interval(days => coalesce(public.setting_int('reshow_passed_days'), 30)))
     and not public.is_blocked_between(me.id, c.id)
   order by (exists (select 1 from public.boosts b where b.user_id = c.id and now() between b.starts_at and b.ends_at)) desc,
+           (cardinality(coalesce(me.prefer_nakshatras, '{}')) > 0 and ks.nakshatra_index = any(me.prefer_nakshatras)) desc,
            cmp.jodi_score desc nulls last, c.last_active_at desc
   limit least(p_limit, case when current_setting('likha.counting', true) = 'on' then 500 else 50 end) offset p_offset
 $$;
