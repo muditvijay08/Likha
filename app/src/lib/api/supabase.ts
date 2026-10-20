@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
+  ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
 } from "./types";
@@ -11,6 +12,9 @@ const FRIENDLY: [string, string][] = [
   ["profile not available", "This profile isn't available any more."],
   ["kick_not_ready", "Today's Kick is still being written. Check back in a little while."],
   ["account not active", "Finish your profile to start liking people."],
+  ["chat_closed", "This chat has ended."],
+  ["guru_busy", "Guru Ji is still answering the last question."],
+  ["guru_no_questions", "No questions left for you two. Get 20 more to keep asking."],
 ];
 
 function fail(error: { message: string } | null, what: string): void {
@@ -288,4 +292,79 @@ export class SupabaseApi implements Api {
   }
   async goldenUnlocked(matchId: string) { return this.rpc<boolean>("golden_unlocked", { p_match: matchId }); }
   async unlockGolden(matchId: string) { await this.rpc("unlock_golden_hours", { p_match: matchId }, "Golden Hours"); }
+
+  // ---------------------------------------------------------------- chat
+  private async msgs(rows: (Omit<Msg, "media_url"> & { media_path: string | null })[]): Promise<Msg[]> {
+    const paths = rows.map((r) => r.media_path).filter(Boolean) as string[];
+    const url = new Map<string, string>();
+    if (paths.length) {
+      const { data } = await this.sb.storage.from("chat").createSignedUrls(paths, 3600);
+      for (const d of data ?? []) if (d.path && d.signedUrl) url.set(d.path, d.signedUrl);
+    }
+    return rows.map(({ media_path, ...r }) => ({ ...r, media_url: media_path ? url.get(media_path) ?? null : null }));
+  }
+  async chat(matchId: string): Promise<ChatData> {
+    const c = await this.rpc<ChatData & { messages: never[]; other: ChatData["other"] }>("chat_open", { p_match: matchId }, "Chat");
+    const [o] = await this.sign([{ ...c.other, photos: c.other.photo ? [c.other.photo] : [] }]);
+    return { ...c, other: { ...c.other, photo: o.photos[0] ?? null }, messages: await this.msgs(c.messages) };
+  }
+  private async send(matchId: string, body: string | null, kind: "text" | "voice", media: string | null): Promise<Msg> {
+    const r = await this.rpc<{ id: string; held: boolean; created_at: string }>("send_message",
+      { p_match: matchId, p_body: body, p_kind: kind, p_media: media }, "Sending");
+    const [m] = await this.msgs([{ id: r.id, mine: true, kind, body, media_path: media, held: r.held, read_at: null, created_at: r.created_at }]);
+    return m;
+  }
+  async sendMessage(matchId: string, body: string) { return this.send(matchId, body, "text", null); }
+  async sendVoice(matchId: string, audio: Blob) {
+    const id = await this.uid();
+    const path = `${id}/${matchId}/${crypto.randomUUID()}.webm`;
+    const up = await this.sb.storage.from("chat").upload(path, audio, { contentType: audio.type || "audio/webm" });
+    fail(up.error, "Uploading voice note");
+    return this.send(matchId, null, "voice", path);
+  }
+  async markRead(matchId: string) { await this.rpc("mark_read", { p_match: matchId }); }
+  onMessages(matchId: string, cb: (m: Msg) => void) {
+    let me = "";
+    this.uid().then((u) => { me = u; }).catch(() => {});
+    const ch = this.sb.channel(`chat:${matchId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `match_id=eq.${matchId}` }, async (p) => {
+        const r = p.new as { id: string; sender_id: string; kind: Msg["kind"]; body: string | null; media_path: string | null; held: boolean; read_at: string | null; created_at: string };
+        if (r.sender_id === me) return;                                    // own messages are already on screen
+        const [m] = await this.msgs([{ id: r.id, mine: false, kind: r.kind, body: r.body, media_path: r.media_path, held: r.held, read_at: r.read_at, created_at: r.created_at }]);
+        cb(m);
+      }).subscribe();
+    return () => { this.sb.removeChannel(ch); };
+  }
+  private async gateway<T>(body: Record<string, unknown>): Promise<T> {
+    const { data, error } = await this.sb.functions.invoke("ai-gateway", { body });
+    if (error) {
+      let msg = "Something went wrong. Please try again.";
+      try { const j = await (error as { context?: Response }).context?.json(); if (j?.message || j?.error) msg = j.message ?? j.error; } catch { /* keep default */ }
+      throw new Error(msg);
+    }
+    return data as T;
+  }
+  async openers(matchId: string) { return (await this.gateway<{ openers: string[] }>({ action: "opener", match_id: matchId })).openers; }
+
+  // ---------------------------------------------------------------- Guru Ji
+  async guru(matchId: string) { return this.rpc<GuruState>("guru_state", { p_match: matchId }, "Guru Ji"); }
+  async askGuru(matchId: string, question: string) {
+    await this.rpc("ask_guru", { p_match: matchId, p_question: question }, "Guru Ji");
+    await this.gateway({ action: "guru", match_id: matchId }).catch(() => {});      // a failed answer gives the question back
+    return this.guru(matchId);
+  }
+  async buyGuru(matchId: string) { await this.rpc("buy_guru_pack", { p_match: matchId }, "Guru Ji"); return this.guru(matchId); }
+
+  // ---------------------------------------------------------------- Saathi
+  async saathi() { return this.rpc<SaathiState>("saathi_state", { p_history: 50 }, "Saathi"); }
+  async saathiSetup(c: SaathiChar, styles: string[]) { await this.rpc("saathi_setup", { p_char: c, p_styles: styles }, "Saathi"); }
+  async saathiSend(c: SaathiChar, text: string): Promise<SaathiReply> {
+    const { data, error } = await this.sb.functions.invoke("ai-gateway", { body: { action: "saathi", character: c, message: text } });
+    if (error) {
+      try { const j = await (error as { context?: Response }).context?.json(); if (j) return j as SaathiReply; } catch { /* fall through */ }
+      return { reply: null, message: "Saathi is offline for a moment." };
+    }
+    return data as SaathiReply;
+  }
+  async saathiTopup() { return this.rpc<number>("saathi_topup", {}, "Top-up"); }
 }

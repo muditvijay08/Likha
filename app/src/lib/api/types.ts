@@ -131,6 +131,23 @@ export interface Reading {
 }
 export type Prices = Record<string, number>;
 
+// ---------------------------------------------------------------- chat, Guru Ji, Saathi
+export interface Msg { id: string; mine: boolean; kind: "text" | "voice" | "image" | "system"; body: string | null; media_url: string | null;
+  held: boolean; read_at: string | null; created_at: string }
+export interface ChatData {
+  match_id: string; open: boolean; jodi_score: number | null; gunas: number | null;
+  other: { id: string; first_name: string; age: number | null; photo: string | null; is_sample?: boolean }; messages: Msg[];
+}
+export interface GuruState { allowed: number; used: number; left: number; pack_questions: number; other_name: string; waiting: boolean;
+  messages: { id: number; from: "me" | "them" | "guru"; body: string; created_at: string }[] }
+export type SaathiChar = "chandni" | "dhruv";
+export interface SaathiState {
+  available: boolean; setup: boolean; character: SaathiChar; styles: string[]; left: number; free_per_day: number; topup_messages: number;
+  paused: boolean; pause_match: { match_id: string; first_name: string } | null; top_today: number;
+  history: { role: "user" | "assistant"; body: string; created_at?: string }[];
+}
+export interface SaathiReply { reply: string | null; left?: number; topup?: boolean; crisis?: boolean; message?: string }
+
 export interface Api {
   readonly demo: boolean;
   sendOtp(phoneE164: string, channel: "sms" | "whatsapp"): Promise<void>;
@@ -178,4 +195,19 @@ export interface Api {
   reading(kind: string, otherId?: string): Promise<Reading | null>;
   goldenUnlocked(matchId: string): Promise<boolean>;
   unlockGolden(matchId: string): Promise<void>;
+
+  chat(matchId: string): Promise<ChatData>;
+  sendMessage(matchId: string, body: string): Promise<Msg>;
+  sendVoice(matchId: string, audio: Blob): Promise<Msg>;
+  markRead(matchId: string): Promise<void>;
+  /** Live updates for one chat. Returns a function that stops listening. */
+  onMessages(matchId: string, cb: (m: Msg) => void): () => void;
+  openers(matchId: string): Promise<string[]>;
+  guru(matchId: string): Promise<GuruState>;
+  askGuru(matchId: string, question: string): Promise<GuruState>;
+  buyGuru(matchId: string): Promise<GuruState>;
+  saathi(): Promise<SaathiState>;
+  saathiSetup(c: SaathiChar, styles: string[]): Promise<void>;
+  saathiSend(c: SaathiChar, text: string): Promise<SaathiReply>;
+  saathiTopup(): Promise<number>;
 }

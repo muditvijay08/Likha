@@ -1,6 +1,7 @@
 // Demo backend: everything lives in this browser. Used for design reviews and automated tests.
 // OTP code is always 123456. Selfie always passes. The kundli is a fixed sample chart.
 import type {
+  ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
 } from "./types";
@@ -26,8 +27,13 @@ interface Db {
   // member app
   spent?: number; likes?: string[]; passes?: string[]; matches?: { id: string; other: string; at: number }[];
   seenLikes?: boolean; kickOpen?: string; reports?: string[]; golden?: string[]; filters?: Filters;
+  chats?: Record<string, Msg[]>; guru?: Record<string, { packs: number; msgs: GuruState["messages"] }>;
+  saathi?: { character: SaathiChar; styles: string[] }; saathiMsgs?: SaathiState["history"]; saathiUsed?: { day: string; n: number; extra: number };
 }
-const PRICES: Prices = { cosmic_like: 9, full_report: 29, golden_hours: 19, daily_kick: 10, cupid_opener: 15, check_anyone: 29, boost: 29, travel_mode: 29, top_matches_india: 49 };
+const CRISIS = /suicide|kill myself|end my life|self.?harm|marna chahta|marna chahti|jeena nahi/i;
+const CRISIS_REPLY = "I'm really glad you told me. You deserve support from a real person right now. Please call Tele-MANAS on 14416 " +
+  "(free, 24x7, many languages) or 1-800-891-4416. If you are in danger right now, call 112. I'm here to keep talking too.";
+const PRICES: Prices = { cosmic_like: 9, full_report: 29, golden_hours: 19, daily_kick: 10, cupid_opener: 15, check_anyone: 29, guru_20: 29, saathi_50: 25, boost: 29, travel_mode: 29, top_matches_india: 49 };
 const today = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
 
 const fresh = (): Db => ({ signedIn: false, consents: [], photos: [], prompts: [], interests: [], pushTokens: [] });
@@ -270,5 +276,102 @@ export class DemoApi implements Api {
   async unlockGolden(matchId: string) {
     if ((this.load().golden ?? []).includes(matchId)) return;
     this.spend("golden_hours"); this.edit((d) => { d.golden = [...(d.golden ?? []), matchId]; });
+  }
+
+  // ---------------------------------------------------------------- chat (demo: sample people send one sample reply)
+  private other(matchId: string) { const id = (this.load().matches ?? []).find((m) => m.id === matchId)?.other; return id ? sampleProfile(id) : null; }
+  async chat(matchId: string): Promise<ChatData> {
+    await wait(120);
+    const o = this.other(matchId);
+    if (!o) throw new Error("This chat has ended.");
+    return { match_id: matchId, open: true, jodi_score: o.jodi_score, gunas: o.gunas,
+             other: { id: o.id, first_name: o.first_name, age: o.age, photo: null, is_sample: true }, messages: this.load().chats?.[matchId] ?? [] };
+  }
+  private push(matchId: string, m: Msg) { this.edit((d) => { d.chats = { ...(d.chats ?? {}), [matchId]: [...(d.chats?.[matchId] ?? []), m] }; }); }
+  private listeners = new Map<string, (m: Msg) => void>();
+  private replyLater(matchId: string) {
+    const mine = (this.load().chats?.[matchId] ?? []).filter((m) => m.mine).length;
+    if (mine !== 1) return;                                                  // one sample reply per chat, then it's quiet
+    setTimeout(() => {
+      const m: Msg = { id: crypto.randomUUID(), mine: false, kind: "text", body: "Ha, nice one! (sample reply in demo mode)", media_url: null, held: false, read_at: null, created_at: new Date().toISOString() };
+      this.push(matchId, m); this.listeners.get(matchId)?.(m);
+    }, 1200);
+  }
+  async sendMessage(matchId: string, body: string): Promise<Msg> {
+    if (!body.trim()) throw new Error("Type a message first.");
+    const held = /(https?:\/\/|www\.|\b[6-9]\d{9}\b)/i.test(body) && (this.load().chats?.[matchId] ?? []).filter((m) => m.mine).length < 10;
+    const m: Msg = { id: crypto.randomUUID(), mine: true, kind: "text", body: body.trim(), media_url: null, held, read_at: null, created_at: new Date().toISOString() };
+    this.push(matchId, m); if (!held) this.replyLater(matchId);
+    return m;
+  }
+  async sendVoice(matchId: string, audio: Blob): Promise<Msg> {
+    const url = await new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.readAsDataURL(audio); });
+    const m: Msg = { id: crypto.randomUUID(), mine: true, kind: "voice", body: null, media_url: url, held: false, read_at: null, created_at: new Date().toISOString() };
+    this.push(matchId, m); this.replyLater(matchId);
+    return m;
+  }
+  async markRead() { /* nothing to do in demo */ }
+  onMessages(matchId: string, cb: (m: Msg) => void) { this.listeners.set(matchId, cb); return () => { this.listeners.delete(matchId); }; }
+  async openers(matchId: string) {
+    this.spend("cupid_opener"); await wait(600);
+    const o = this.other(matchId);
+    return [`Okay ${o?.first_name ?? "you"}, window seat on a train or a plane? This is a compatibility question.`,
+            "Your Sunday plan sounds perfect. Kachori first or the walk first?", "Two steady Moons, apparently. Want to test that over chai?"];
+  }
+
+  // ---------------------------------------------------------------- Guru Ji (demo: sample answers)
+  private guruOf(db: Db, matchId: string) { return db.guru?.[matchId] ?? { packs: 0, msgs: [] }; }
+  async guru(matchId: string): Promise<GuruState> {
+    const g = this.guruOf(this.load(), matchId);
+    const used = g.msgs.filter((m) => m.from !== "guru").length, allowed = 3 + g.packs * 20;
+    return { allowed, used, left: Math.max(0, allowed - used), pack_questions: 20, other_name: this.other(matchId)?.first_name ?? "", waiting: false, messages: g.msgs };
+  }
+  async askGuru(matchId: string, question: string) {
+    if (!question.trim()) throw new Error("Type a question first.");
+    if ((await this.guru(matchId)).left <= 0) throw new Error("No questions left for you two. Get 20 more to keep asking.");
+    const now = () => new Date().toISOString();
+    this.edit((d) => {
+      const g = this.guruOf(d, matchId);
+      g.msgs = [...g.msgs, { id: Date.now(), from: "me", body: question.trim(), created_at: now() },
+        { id: Date.now() + 1, from: "guru", body: "Your Moons get along well, so plans made together tend to stick. Pick a calm weekend and keep it simple. (Sample answer in demo mode.)", created_at: now() }];
+      d.guru = { ...(d.guru ?? {}), [matchId]: g };
+    });
+    await wait(700);
+    return this.guru(matchId);
+  }
+  async buyGuru(matchId: string) {
+    this.spend("guru_20");
+    this.edit((d) => { const g = this.guruOf(d, matchId); g.packs++; d.guru = { ...(d.guru ?? {}), [matchId]: g }; });
+    return this.guru(matchId);
+  }
+
+  // ---------------------------------------------------------------- Saathi (demo: sample replies)
+  private saathiLeft(db: Db) { const u = db.saathiUsed?.day === today() ? db.saathiUsed : { day: today(), n: 0, extra: 0 }; return 30 + u.extra - u.n; }
+  async saathi(): Promise<SaathiState> {
+    const db = this.load();
+    const m = (db.matches ?? []).find((x) => (db.chats?.[x.id] ?? []).length >= 6);
+    return { available: true, setup: !!db.saathi, character: db.saathi?.character ?? "chandni", styles: db.saathi?.styles ?? ["friendly", "hinglish"],
+             left: this.saathiLeft(db), free_per_day: 30, topup_messages: 50, paused: !!m,
+             pause_match: m ? { match_id: m.id, first_name: sampleProfile(m.other)?.first_name ?? "" } : null,
+             top_today: this.visible(db).filter((c) => (c.jodi_score ?? 0) >= 90).length, history: db.saathiMsgs ?? [] };
+  }
+  async saathiSetup(character: SaathiChar, styles: string[]) { this.edit((d) => { d.saathi = { character, styles }; }); }
+  async saathiSend(_c: SaathiChar, text: string): Promise<SaathiReply> {
+    const db = this.load();
+    if (this.saathiLeft(db) <= 0) return { reply: null, topup: true, message: "That's today's free chats. Top up for 50 more." };
+    const crisis = CRISIS.test(text);
+    const reply = crisis ? CRISIS_REPLY : "I hear you. Swiping can be tiring. Want to practise a reply to your newest match together? (Sample reply in demo mode.)";
+    this.edit((d) => {
+      const u = d.saathiUsed?.day === today() ? d.saathiUsed : { day: today(), n: 0, extra: 0 };
+      d.saathiUsed = { ...u, n: u.n + 1 };
+      d.saathiMsgs = [...(d.saathiMsgs ?? []), { role: "user", body: text }, { role: "assistant", body: reply }];
+    });
+    await wait(600);
+    return { reply, crisis, left: this.saathiLeft(this.load()) };
+  }
+  async saathiTopup() {
+    this.spend("saathi_50");
+    this.edit((d) => { const u = d.saathiUsed?.day === today() ? d.saathiUsed : { day: today(), n: 0, extra: 0 }; d.saathiUsed = { ...u, extra: u.extra + 50 }; });
+    return this.saathiLeft(this.load());
   }
 }

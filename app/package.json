@@ -8,7 +8,7 @@
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
     "check:db": "node scripts/check-db-calls.mjs",
-    "test:e2e": "node tests/onboarding.e2e.mjs && node tests/app.e2e.mjs"
+    "test:e2e": "node tests/onboarding.e2e.mjs && node tests/app.e2e.mjs && node tests/chat.e2e.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

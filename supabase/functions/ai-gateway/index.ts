@@ -125,7 +125,7 @@ async function saathi(userId: string, client: any, character: "chandni" | "dhruv
     nakshatra: ctx.summary.nakshatra, dasha_now: ctx.summary.current_dasha } : { first_name: cleanName(ctx.first_name) };
   const history = (ctx.history as any[]).map((h) => ({ role: h.role, content: h.role === "user" ? `<user_text>${h.body}</user_text>` : h.body }));
   try {
-    const { text } = await run(userId, "saathi", { system: saathiSystem(character, facts), messages: history, cacheSystem: true },
+    const { text } = await run(userId, "saathi", { system: saathiSystem(character, facts, ctx.styles ?? []), messages: history, cacheSystem: true },
       { check: (t) => styleCheck(t) });
     const s = styleCheck(text);
     const reply = s.ok ? text.trim() : "Hmm, let me put that better. Tell me a bit more about what's on your mind?";
@@ -138,9 +138,12 @@ async function saathi(userId: string, client: any, character: "chandni" | "dhruv
 }
 
 // ---------------------------------------------------------------- guru ji
-async function guru(userId: string, client: any, matchId: string, question: string) {
+async function guru(userId: string, client: any, matchId: string) {
   const member = (await client.rpc("is_match_member", { p_match: matchId })).data;
   if (!member) return json({ error: "not your match" }, 403);
+  // the member asked through ask_guru (counts the couple's questions); we answer the oldest waiting one
+  const q = await rpc<{ id: number; author_id: string; body: string } | null>("svc_guru_pending", { p_match: matchId });
+  if (!q) return json({ error: "no question waiting" }, 400);
   const { data: m } = await admin.from("matches").select("user_a,user_b").eq("id", matchId).single();
   if (!m) return json({ error: "no match" }, 404);
   const [a, b] = [m.user_a, m.user_b].sort();
@@ -153,16 +156,18 @@ async function guru(userId: string, client: any, matchId: string, question: stri
   };
   const allowed = allowedFrom(facts);
   const check = (t: string) => { const x = numberCheck(t, allowed), y = styleCheck(t); return { ok: x.ok && y.ok, problems: [...x.problems, ...y.problems] }; };
+  const ask = String(q.body).slice(0, 600);
   try {
-    let { text, verdict } = await run(userId, "guru", { system: guruSystem(facts), messages: [{ role: "user", content: `<user_text>${String(question).slice(0, 600)}</user_text>` }] }, { check });
+    let { text, verdict } = await run(q.author_id, "guru", { system: guruSystem(facts), messages: [{ role: "user", content: `<user_text>${ask}</user_text>` }] }, { check });
     if (!verdict.ok) {
-      ({ text, verdict } = await run(userId, "guru", { system: guruSystem(facts), messages: [{ role: "user",
-        content: `<user_text>${String(question).slice(0, 600)}</user_text>\nUse only scores and names from the facts.` }] }, { check, attempt: 2 }));
+      ({ text, verdict } = await run(q.author_id, "guru", { system: guruSystem(facts), messages: [{ role: "user",
+        content: `<user_text>${ask}</user_text>\nUse only scores and names from the facts.` }] }, { check, attempt: 2 }));
     }
     const body = verdict.ok ? text.trim() : "Good question! I'd rather not guess. Ask me about your Gunas or Moon signs.";
-    await rpc("svc_guru_save", { p_match: matchId, p_body: body });
+    await rpc("svc_guru_answer", { p_match: matchId, p_question: q.id, p_body: body });
     return json({ reply: body });
   } catch (e) {
+    await rpc("svc_guru_failed", { p_match: matchId, p_question: q.id }).catch(() => {});   // the question is given back
     const reason = (e as any).capped as string | undefined;
     return json({ reply: null, message: CAP_MESSAGES[reason ?? ""] ?? "Guru Ji is meditating. Try again soon." }, reason ? 429 : 503);
   }
@@ -215,7 +220,7 @@ Deno.serve(async (req) => {
       if (!["chandni", "dhruv"].includes(body.character)) return json({ error: "unknown character" }, 400);
       return await saathi(u.userId, u.client, body.character, body.message);
     }
-    if (body.action === "guru") return await guru(u.userId, u.client, body.match_id, body.question);
+    if (body.action === "guru") return await guru(u.userId, u.client, body.match_id);
     if (body.action === "opener") return await opener(u.userId, u.client, body.match_id);
     return json({ error: "unknown action" }, 400);
   } catch (e) {
