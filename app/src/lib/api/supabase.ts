@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
+  BoostState, ConsentReq, CoupleState, CrushLanding, CupidState, DueCheckin, GiftLanding, Invites, SevenState, Story, TravelCity, TravelState, Universe,
   AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
@@ -24,6 +25,22 @@ const FRIENDLY: [string, string][] = [
   ["delivery date is in the past", "Pick today or a later date."],
   ["guru_busy", "Guru Ji is still answering the last question."],
   ["guru_no_questions", "No questions left for you two. Get 20 more to keep asking."],
+  ["both main photos must be approved first", "Both of your main photos need to be approved first."],
+  ["boost_active", "You already have a Boost running or booked."],
+  ["schedule within the next 24 hours", "Pick a time within the next 24 hours."],
+  ["give the moment a title", "Give the moment a title."],
+  ["kyc_needed", "Add your PAN and UPI details first. We check them within 2 working days."],
+  ["below_minimum", "You can withdraw once you have ₹500 approved."],
+  ["cash_payouts_india_only", "Cash payouts are for people living in India."],
+  ["link_limit", "That's the most links you can have."],
+  ["code not allowed", "Pick a different link name."],
+  ["cupid_off", "Be a Cupid isn't open right now."],
+  ["this link was sent to a different number", "This link was sent to a different number. Sign in with the number it was sent to."],
+  ["this gift was sent to a different number", "This gift was sent to a different number. Sign in with the number it was sent to."],
+  ["link expired or already used", "This link has expired or was already used."],
+  ["gift expired or already opened", "This gift has expired or was already opened."],
+  ["not yet: opens on", "This gift opens on the date they picked. Come back then."],
+  ["invalid invite code", "That invite code didn't work."],
 ];
 
 function fail(error: { message: string } | null, what: string): void {
@@ -414,7 +431,14 @@ export class SupabaseApi implements Api {
     this.gateway({ action: "reading", reading_id: id }).catch(() => {});        // writes it, or refunds; the page polls
     return id;
   }
-  async readingView(id: string) { return (await this.rpc<ReadingFull | null>("reading_view", { p_id: id })) ?? null; }
+  async readingView(id: string) {
+    const r = (await this.rpc<ReadingFull | null>("reading_view", { p_id: id })) ?? null;
+    if (r?.content?.images?.length) {                                   // Imagine Us pictures live in the couple's private folder
+      const { data } = await this.sb.storage.from("stories").createSignedUrls(r.content.images, 3600);
+      r.content.images = (data ?? []).map((d) => d.signedUrl).filter(Boolean) as string[];
+    }
+    return r;
+  }
   async myReadings() { return this.rpc<ReadingItem[]>("my_readings"); }
   async setSuitsSort(on: boolean) { await this.rpc("set_suits_sort", { p_on: on }, "Discover"); }
   async buyCheckPack() { return this.rpc<number>("buy_check_pack", {}, "5-pack"); }
@@ -536,6 +560,80 @@ export class SupabaseApi implements Api {
   async appeal(actionId: string, text: string) { await this.rpc("file_appeal", { p_action: actionId, p_text: text }, "Appeal"); }
   async toolkit() { return this.rpc<Toolkit>("my_toolkit"); }
   async tried(feature: string) { return this.rpc<boolean>("mark_feature_tried", { p_feature: feature }); }
+
+  // ---------------------------------------------------------------- couples and growth
+  async universe(m: string) { return this.rpc<Universe>("universe", { p_match: m }, "Our Universe"); }
+  async startCoupleReading(m: string, kind: "our_stars" | "our_alignment" | "imagine_us", scene?: string) {
+    const r = await this.rpc<{ id: string; status: Reading["status"] }>("start_couple_reading", { p_match: m, p_kind: kind, p_scene: scene ?? null }, "Reading");
+    if (r.status === "generating") this.gateway({ action: "reading", reading_id: r.id }).catch(() => {});   // the worker retries if this call is lost
+    return r;
+  }
+  async consentRequests() { return this.rpc<ConsentReq[]>("consent_requests"); }
+  async decideConsent(id: string, allow: boolean, always: boolean) {
+    await this.rpc("decide_consent", { p_consent: id, p_allow: allow, p_scope: always ? "always" : "once" }, "Consent");
+  }
+  async seven(m: string) { return this.rpc<SevenState>("seven_state", { p_match: m }, "Seven Questions"); }
+  async startSeven(m: string) { return this.rpc<string>("start_seven", { p_match: m }, "Seven Questions"); }
+  async answerSeven(m: string, q: number, a: string) { return this.rpc<number>("answer_seven", { p_match: m, p_q: q, p_answer: a }, "Seven Questions"); }
+  async couple(m: string) { return this.rpc<CoupleState>("couple_state", { p_match: m }, "Couple Mode"); }
+  async confirmCouple(m: string) { return this.rpc<boolean>("confirm_couple_mode", { p_match: m }, "Couple Mode"); }
+  async endCouple(m: string) { await this.rpc("end_couple_mode", { p_match: m }, "Couple Mode"); }
+  async story(m: string) {
+    const s = await this.rpc<Story>("our_story", { p_match: m }, "Our Story");
+    const paths = s.events.map((e) => e.photo_path).filter(Boolean) as string[];
+    if (paths.length) {
+      const { data } = await this.sb.storage.from("stories").createSignedUrls(paths, 3600);
+      const url = new Map((data ?? []).map((d) => [d.path, d.signedUrl]));
+      s.events = s.events.map((e) => ({ ...e, photo: e.photo_path ? url.get(e.photo_path) ?? null : null }));
+    }
+    return s;
+  }
+  async addMoment(m: string, title: string, body: string, at: Date, photo?: Blob | null) {
+    let path: string | null = null;
+    if (photo) {
+      path = `${await this.uid()}/${m}/moment-${crypto.randomUUID()}.${photo.type === "image/png" ? "png" : "jpg"}`;
+      const up = await this.sb.storage.from("stories").upload(path, photo, { contentType: photo.type || "image/jpeg" });
+      fail(up.error, "Uploading photo");
+    }
+    await this.rpc("add_moment", { p_match: m, p_title: title, p_body: body || null, p_at: at.toISOString(), p_photo: path }, "Our Story");
+  }
+  async dueCheckins() { return this.rpc<DueCheckin[]>("due_checkins"); }
+  async answerCheckin(m: string, day: number, answer: string) { await this.rpc("answer_checkin", { p_match: m, p_day: day, p_answer: answer }, "Check-in"); }
+  async boost() { return this.rpc<BoostState>("boost_state"); }
+  async activateBoost(minutes: number, start: Date | null) {
+    return this.rpc<BoostState>("activate_boost", { p_minutes: minutes, p_start: start?.toISOString() ?? null }, "Boost");
+  }
+  async noteView(userId: string) { await this.rpc("note_view", { p_user: userId }).catch(() => {}); }
+  async travelCity(p: Place, tz: string) {
+    return this.rpc<TravelCity>("travel_city", { p_name: p.name, p_state: p.state ?? null, p_country: p.country, p_lat: p.lat, p_lng: p.lng, p_tz: tz }, "Travel Mode");
+  }
+  async travel() { return this.rpc<TravelState>("my_travel"); }
+  async startTravel(cityId: string, from: string, to: string) { await this.rpc("start_travel_mode", { p_city: cityId, p_from: from, p_to: to }, "Travel Mode"); }
+  async endTravel(id: string) { await this.rpc("end_travel", { p_id: id }, "Travel Mode"); }
+  async invites() { return this.rpc<Invites>("my_invites"); }
+  async redeemInvite(code: string) { return this.rpc<boolean>("redeem_invite", { p_code: code }, "Invite"); }
+  async attachCupid(code: string, clickId: number | null) { return this.rpc<boolean>("attach_cupid", { p_code: code, p_click_id: clickId }, "Cupid"); }
+  async cupid() { return this.rpc<CupidState>("my_cupid", {}, "Be a Cupid"); }
+  async becomeCupid() { return this.rpc<CupidState>("become_cupid", { p_terms_version: "1.0" }, "Be a Cupid"); }
+  async createCupidLink(code: string, label: string, target: string) {
+    await this.rpc("create_cupid_link", { p_code: code, p_label: label, p_target_path: target }, "Cupid link");
+  }
+  async submitCupidKyc(name: string, pan: string, upi: string, resident: boolean) {
+    await this.rpc("submit_cupid_kyc", { p_legal_name: name, p_pan: pan, p_upi: upi, p_resident_india: resident }, "Payout details");
+  }
+  async requestPayout() { await this.rpc("request_cupid_payout", {}, "Withdraw"); }
+  async crushLanding(token: string) { return (await this.rpc<CrushLanding | null>("crush_landing", { p_token: token })) ?? null; }
+  async giftLanding(token: string) { return (await this.rpc<GiftLanding | null>("gift_landing", { p_token: token })) ?? null; }
+  async claimCrush(token: string) {
+    const id = await this.rpc<string>("claim_crush_check", { p_token: token }, "Check With Anyone");
+    this.gateway({ action: "reading", reading_id: id }).catch(() => {});
+    return id;
+  }
+  async openGift(token: string) {
+    const id = await this.rpc<string>("open_gift", { p_token: token }, "Gift");
+    this.gateway({ action: "reading", reading_id: id }).catch(() => {});
+    return id;
+  }
 }
 
 function loadScript(src: string): Promise<void> {

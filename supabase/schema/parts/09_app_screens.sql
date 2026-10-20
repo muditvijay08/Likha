@@ -33,7 +33,7 @@ create or replace function public.discover(p_limit int default 20, p_offset int 
 returns table (id uuid, first_name text, age int, city_id uuid, profession text, goal public.goal_t, tier public.tier_t,
                gunas numeric, jodi_score int, summary text, moon_sign text, nakshatra text, manglik boolean, last_active_at timestamptz)
 language sql stable security definer set search_path = public as $$
-  with me as (select p.*, pf.age_min, pf.age_max, pf.distance, pf.goals, pf.diets, pf.languages as pf_languages,
+  with me as (select p.id, p.gender, p.show_me, p.status, p.is_demo, private.current_city(p.id) as city_id, pf.age_min, pf.age_max, pf.distance, pf.goals, pf.diets, pf.languages as pf_languages,
                      pf.height_min_cm, pf.height_max_cm, pf.active_this_week, pf.has_voice_intro, pf.prefer_nakshatras
               from public.profiles p left join public.preferences pf on pf.user_id = p.id where p.id = auth.uid())
   select c.id, c.first_name, c.age, c.city_id, c.profession, c.goal, c.tier,
@@ -191,7 +191,8 @@ create or replace function public.app_home() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
     'first_name', p.first_name, 'gender', p.gender, 'tier', p.tier, 'status', p.status, 'pct', p.profile_complete_pct,
-    'city', (select jsonb_build_object('name', c.name, 'lat', c.lat, 'lng', c.lng, 'timezone', c.timezone, 'status', c.status) from public.cities c where c.id = p.city_id),
+    'city', (select jsonb_build_object('name', c.name, 'lat', c.lat, 'lng', c.lng, 'timezone', c.timezone, 'status', c.status,
+                                       'travelling', c.id is distinct from p.city_id) from public.cities c where c.id = private.current_city(p.id)),
     'balance', private.balance_of(p.id),
     'kick', public.get_kick(),
     'kick_pass', public.has_kick_pass(),

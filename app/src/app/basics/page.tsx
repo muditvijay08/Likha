@@ -9,6 +9,7 @@ import { useFlow } from "@/lib/flow";
 import { useGuard } from "@/lib/guard";
 import { usePersisted } from "@/lib/persist";
 import { placeFromGps, timezoneFor } from "@/lib/places";
+import { attachReferrer } from "@/lib/referral";
 
 const HEIGHTS = Array.from({ length: 31 }, (_, i) => 54 + i).map((inch) => ({ cm: Math.round(inch * 2.54), label: `${Math.floor(inch / 12)}′ ${inch % 12}″` }));
 const TONGUES = ["Hindi", "Marwari", "Rajasthani", "Gujarati", "Punjabi", "Sindhi", "Marathi", "Bengali", "Odia", "Assamese", "Tamil", "Telugu",
@@ -50,6 +51,7 @@ export default function Basics() {
       const consents = draft.consents ?? [];
       if (!consents.includes("terms_privacy")) { router.replace("/consent"); return; }
       await api().createProfile(name, g, consents);
+      await attachReferrer(draft.inviteCode);
     }
     const showMe: Gender[] = f.show === "everyone" ? ["woman", "man"] : f.show === "men" ? ["man"] : ["woman"];
     await api().saveBasics({ first_name: name, show_me: showMe, height_cm: Number(f.height_cm), mother_tongue: f.mother_tongue,

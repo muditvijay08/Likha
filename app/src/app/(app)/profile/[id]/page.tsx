@@ -21,7 +21,7 @@ export default function Profile() {
   const audio = useRef<HTMLAudioElement | null>(null);
   const { busy, error, run } = useAction();
 
-  useEffect(() => { api().profile(id).then(setP).catch((e) => setGone(e instanceof Error ? e.message : "This profile isn't available.")); }, [id]);
+  useEffect(() => { api().profile(id).then((v) => { setP(v); api().noteView(id).catch(() => {}); }).catch((e) => setGone(e instanceof Error ? e.message : "This profile isn't available.")); }, [id]);
 
   const like = (kind: "like" | "cosmic_like") => run(async () => {
     const r = await api().like(id, kind);

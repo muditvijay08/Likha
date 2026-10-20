@@ -135,7 +135,9 @@ await page.waitForURL("**/matches");
 ok(await seen(page.getByText("Meera")) && await seen(page.getByText("Sanya")), "Chats lists both matches");
 await shot("13-chats");
 await page.goto(`${BASE}/universe`);
-ok(await seen(page.getByText("This part is on its way")), "Screens from later builds show a friendly page");
+ok(await seen(page.getByRole("link", { name: /Meera/ })) && await seen(page.getByRole("link", { name: /Sanya/ })), "Our Universe asks which match");
+await page.goto(`${BASE}/no-such-screen`);
+ok(await seen(page.getByText("This part is on its way")), "Unknown screens show a friendly page");
 
 ok(errors.length === 0, `no page errors ${errors.join(" | ")}`);
 await browser.close();

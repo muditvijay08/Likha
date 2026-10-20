@@ -11,9 +11,10 @@ import type { ClaudeRequest } from "../_shared/anthropic.ts";
 import { callLLM } from "../_shared/llm.ts";
 import {
   allowedFrom, CAP_MESSAGES, cleanName, CRISIS_REPLY, estimateTokens, guruSystem, isCrisis, numberCheck, openerPrompt,
-  pairFacts, parseJson, personFacts, readableText, readingPrompt, saathiSystem, styleCheck, NAKSHATRAS, SIGNS
+  pairFacts, parseJson, personFacts, readableText, readingPrompt, saathiSystem, sevenText, styleCheck, NAKSHATRAS, SIGNS
 } from "../_shared/core.ts";
 import { admin, asUser, isInternal, json, rpc, preflight } from "../_shared/db.ts";
+import { geminiImage, imaginePrompt, stampImagined } from "../_shared/image.ts";
 
 type Hold = { ok: boolean; call_id?: number; model?: string; provider?: string; max_output_tokens?: number; temperature?: number;
   number_check?: boolean; reason?: string; alert?: boolean; spent_today_paise?: number; daily_cap_paise?: number };
@@ -50,8 +51,11 @@ async function run(userId: string | null, feature: string, req: Omit<ClaudeReque
 
 // ---------------------------------------------------------------- readings
 async function reading(readingId: string) {
+  // one writer at a time: the app's call right after purchase and the reading worker never both write it
+  if (!(await rpc<boolean>("svc_reading_lease", { p_reading: readingId, p_minutes: 3 }))) return { ok: false, busy: true };
   const ctx = await rpc<any>("svc_reading_context", { p_reading: readingId });
   const kind: string = ctx.reading.kind;
+  if (kind === "imagine_us") return await imagine(readingId, ctx);
   const subject = ctx.reading.subject ?? {};
   let facts: Record<string, unknown>;
 
@@ -93,7 +97,16 @@ async function reading(readingId: string) {
     return { ok: a.ok && b.ok, problems: [...a.problems, ...b.problems] };
   };
 
-  const p = readingPrompt(kind, facts, subject.answers ? JSON.stringify(subject.answers) : undefined);
+  let userText: string | undefined;
+  if (kind === "seven_questions" && subject.answers) {
+    // answers are stored by match side (a = user_a); put the right first name on each
+    const { data: rm } = await admin.from("readings").select("match_id").eq("id", readingId).single();
+    const { data: m } = await admin.from("matches").select("user_a").eq("id", rm!.match_id).single();
+    const ownerIsA = m!.user_a === ctx.reading.user_id;
+    const me = cleanName(ctx.me?.first_name ?? "A"), them = cleanName(ctx.partner?.first_name ?? "B");
+    userText = sevenText(subject.answers, ownerIsA ? me : them, ownerIsA ? them : me);
+  }
+  const p = readingPrompt(kind, facts, userText);
   const maxTries = 1 + Number(Deno.env.get("AI_MAX_REGENERATIONS") ?? 1);
   let lastProblems: string[] = [];
   for (let attempt = 1; attempt <= maxTries; attempt++) {
@@ -114,6 +127,48 @@ async function reading(readingId: string) {
   }
   await rpc("svc_reading_failed", { p_reading: readingId, p_reason: lastProblems.join("; ").slice(0, 120) });
   return { ok: false, refunded: true };
+}
+
+// ---------------------------------------------------------------- imagine us (2 images, both agreed)
+async function imagine(readingId: string, ctx: any) {
+  const userId: string = ctx.reading.user_id;
+  const { data: r } = await admin.from("readings").select("partner_user_id,match_id").eq("id", readingId).single();
+  const scene: string = ctx.reading.subject?.scene ?? "travel";
+  const refs: { mime: string; data: Uint8Array }[] = [];
+  for (const uid of [userId, r!.partner_user_id]) {
+    const { data: ph } = await admin.from("photos").select("storage_path").eq("user_id", uid).eq("position", 1).eq("moderation_status", "approved").maybeSingle();
+    if (!ph) break;
+    const { data: file } = await admin.storage.from("photos").download(ph.storage_path);
+    if (file) refs.push({ mime: file.type || "image/jpeg", data: new Uint8Array(await file.arrayBuffer()) });
+  }
+  if (refs.length < 2) { await rpc("svc_reading_failed", { p_reading: readingId, p_reason: "main photos not available" }); return { ok: false, refunded: true }; }
+  const paths: string[] = [];
+  try {
+    for (let i = 0; i < 2; i++) {
+      const hold = await rpc<Hold>("svc_ai_reserve", { p_user: userId, p_feature: "imagine", p_est_input_tokens: 600, p_reading: readingId, p_attempt: i + 1 });
+      if (!hold.ok) throw Object.assign(new Error(hold.reason), { capped: hold.reason });
+      const t0 = Date.now();
+      try {
+        const img = await geminiImage(hold.model!, imaginePrompt(scene, i), refs);
+        const jpg = await stampImagined(img.bytes);
+        const path = `${userId}/${r!.match_id}/imagine-${readingId}-${i + 1}.jpg`;
+        const up = await admin.storage.from("stories").upload(path, jpg, { contentType: "image/jpeg", upsert: true });
+        if (up.error) throw new Error(up.error.message);
+        paths.push(path);
+        await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: img.inputTokens, p_out: img.outputTokens, p_cache: 0, p_status: "ok", p_latency_ms: Date.now() - t0 });
+      } catch (e) {
+        await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: 0, p_out: 0, p_cache: 0, p_status: "failed", p_error: String((e as Error).message) }).catch(() => {});
+        throw e;
+      }
+    }
+    const label = ({ travel: "Travel", wedding: "Wedding", old_age: "At 70" } as Record<string, string>)[scene] ?? scene;
+    await rpc("svc_reading_done", { p_reading: readingId, p_content: { title: `Imagined: ${label}`, scene, images: paths, imagined: true, sections: [] } });
+    return { ok: true };
+  } catch (e) {
+    if (paths.length) await admin.storage.from("stories").remove(paths).catch(() => {});
+    await rpc("svc_reading_failed", { p_reading: readingId, p_reason: String((e as Error).message).slice(0, 120) });
+    return { ok: false, refunded: true };
+  }
 }
 
 // ---------------------------------------------------------------- saathi

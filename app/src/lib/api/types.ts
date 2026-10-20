@@ -130,7 +130,8 @@ export interface Filters {
 export interface LikeResult { matched: boolean; match_id?: string; already_liked?: boolean }
 export interface Reading {
   id: string; status: "pending_consent" | "generating" | "ready" | "failed" | "refunded" | "declined";
-  content: { title: string; summary: string; sections: { heading: string; body: string }[]; try_this: string } | null;
+  content: { title: string; summary: string; sections: { heading: string; body: string }[]; try_this: string;
+             images?: string[]; imagined?: boolean; scene?: string } | null;
 }
 export type Prices = Record<string, number>;
 
@@ -161,7 +162,7 @@ export type UpiApp = "gpay" | "phonepe" | "paytm" | "other";
 export interface PaymentStatus { status: "created" | "authorized" | "captured" | "failed" | "refunded" | "partially_refunded"; credited: boolean;
   item_type: "pack" | "subscription"; item_key: string; amount_paise: number; payment_ref: string | null; invoice_no: string | null; credits: number | null; balance: number }
 export interface ReadingFull extends Reading { kind: string; created_at: string; credits_charged: number; helpful: boolean | null; name: string | null;
-  suits: { nakshatras: number[]; moon_signs: number[]; best_score: number } | null }
+  suits: { nakshatras: number[]; moon_signs: number[]; best_score: number } | null; mine?: boolean; match_id?: string | null }
 export interface ReadingItem { id: string; kind: string; status: Reading["status"]; created_at: string; name: string | null }
 export interface CrushCheck { id: string; name: string; relation: string; token: string; joined: boolean; expires_at: string; reading_id: string; status: string }
 export interface GiftItem { id: string; name: string; kind: string; note: string | null; token: string; deliver_on: string; opened: boolean; expires_at: string }
@@ -202,6 +203,32 @@ export interface AccountState { status: string; selfie_status: string; paused: b
 export interface Toolkit { reward: number; items: { key: string; title: string; body: string; link: string; tried: boolean }[] }
 
 export interface SaathiReply { reply: string | null; left?: number; topup?: boolean; crisis?: boolean; message?: string }
+
+// ---------------------------------------------------------------- batch 5: couples and growth
+export type CoupleKind = "our_stars" | "our_alignment" | "imagine_us" | "seven_questions";
+export interface Universe { match_id: string; other_id: string; other_name: string; tier: string | null; couple_plus: boolean; always_allowed: boolean;
+  prices: Record<CoupleKind | "guru_20", number>; readings: Partial<Record<CoupleKind, { id: string; status: Reading["status"]; mine: boolean }>> }
+export interface ConsentReq { id: string; kind: CoupleKind; from_id: string; from_name: string; scene: string | null; created_at: string }
+export interface SevenState { other_name: string; mine: Record<string, string>; theirs_count: number; theirs: Record<string, string>;
+  reading: { id: string; status: Reading["status"] } | null; price: number }
+export interface CoupleState { match_id: string; matched_at: string; other_name: string; me_name: string; confirmed_me: boolean; confirmed_other: boolean;
+  started_at: string | null; plus: boolean; plus_until: string | null; plus_price_paise: number; year_price_paise: number; jodi_score: number | null; gunas: number | null }
+export interface StoryEvent { id: string; kind: string; title: string; body: string | null; photo_path: string | null; photo?: string | null; at: string; mine: boolean }
+export interface Story { days: number; dates: number; jodi_score: number | null; matched_at: string; events: StoryEvent[] }
+export interface DueCheckin { match_id: string; day_mark: 30 | 90 | 180; other_name: string; matched_at: string; jodi_score: number | null }
+export interface BoostState { price: number; list_price: number; boost: { id: string; starts_at: string; ends_at: string; live: boolean; views: number } | null }
+export interface TravelCity { id: string; name: string; status: string; people: number; top_score: number | null }
+export interface TravelState { price: number; trip: { id: string; city: string; from: string; to: string } | null }
+export interface Invites { code: string | null; reward: number; friend_reward: number; max_per_month: number; earned: number;
+  invites: { first_name: string | null; status: string; selfie: string | null; at: string }[] }
+export interface CupidLink { id: string; code: string; label: string; target: string; url: string; active: boolean; clicks: number; joined: number }
+export interface CupidState { is_cupid: boolean; enabled?: boolean; signup_paise?: number; first_paid_paise?: number; status?: string;
+  rates?: { signup_paise: number; first_paid_paise: number; hold_days: number; min_payout_paise: number }; links?: CupidLink[];
+  people?: { joined: number; verified: number; paid: number }; recent?: { initial: string; status: string; at: string }[];
+  money?: { on_hold_paise: number; withdrawable_paise: number; paid_paise: number; tds_this_fy_paise: number }; kyc?: string | null;
+  payouts?: { id: string; gross: number; tds: number; net: number; status: string; requested_at: string; paid_at: string | null }[] }
+export interface CrushLanding { name: string; open: boolean }
+export interface GiftLanding { name: string; from: string; note: string | null; kind: string; deliver_on: string; open: boolean }
 
 export interface Api {
   readonly demo: boolean;
@@ -316,4 +343,38 @@ export interface Api {
   appeal(actionId: string, text: string): Promise<void>;
   toolkit(): Promise<Toolkit>;
   tried(feature: string): Promise<boolean>;
+  // couples and growth
+  universe(matchId: string): Promise<Universe>;
+  startCoupleReading(matchId: string, kind: "our_stars" | "our_alignment" | "imagine_us", scene?: string): Promise<{ id: string; status: Reading["status"] }>;
+  consentRequests(): Promise<ConsentReq[]>;
+  decideConsent(id: string, allow: boolean, always: boolean): Promise<void>;
+  seven(matchId: string): Promise<SevenState>;
+  startSeven(matchId: string): Promise<string>;
+  answerSeven(matchId: string, q: number, answer: string): Promise<number>;
+  couple(matchId: string): Promise<CoupleState>;
+  confirmCouple(matchId: string): Promise<boolean>;
+  endCouple(matchId: string): Promise<void>;
+  story(matchId: string): Promise<Story>;
+  addMoment(matchId: string, title: string, body: string, at: Date, photo?: Blob | null): Promise<void>;
+  dueCheckins(): Promise<DueCheckin[]>;
+  answerCheckin(matchId: string, day: number, answer: string): Promise<void>;
+  boost(): Promise<BoostState>;
+  activateBoost(minutes: number, start: Date | null): Promise<BoostState>;
+  noteView(userId: string): Promise<void>;
+  travelCity(p: Place, tz: string): Promise<TravelCity>;
+  travel(): Promise<TravelState>;
+  startTravel(cityId: string, from: string, to: string): Promise<void>;
+  endTravel(id: string): Promise<void>;
+  invites(): Promise<Invites>;
+  redeemInvite(code: string): Promise<boolean>;
+  attachCupid(code: string, clickId: number | null): Promise<boolean>;
+  cupid(): Promise<CupidState>;
+  becomeCupid(): Promise<CupidState>;
+  createCupidLink(code: string, label: string, target: string): Promise<void>;
+  submitCupidKyc(legalName: string, pan: string, upi: string, resident: boolean): Promise<void>;
+  requestPayout(): Promise<void>;
+  crushLanding(token: string): Promise<CrushLanding | null>;
+  giftLanding(token: string): Promise<GiftLanding | null>;
+  claimCrush(token: string): Promise<string>;
+  openGift(token: string): Promise<string>;
 }

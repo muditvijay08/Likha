@@ -63,6 +63,7 @@ Everything here was run and tested on 20 Oct 2026.
 | `cupid-redirect` | public `likha.in/c/*` | Log click, set cookie, redirect |
 | `payout-worker` | cron hourly + RazorpayX webhook | UPI payouts |
 | `create-order` | app (member token) | Razorpay order for a credit pack or one prepaid month of a plan; price from our tables |
+| `reading-worker` | cron every minute | Writes paid readings still waiting (app closed, gift opened, crush joined, both finished Seven Questions, partner said yes). A 3-minute lease stops double writing; refunds after 5 tries |
 | `safety-worker` | cron every 5 min | Share my date: reminds at check-in time, then SMS-alerts trusted contacts after 15 min (MSG91 DLT template) |
 | `razorpay-webhook` | Razorpay (deploy with `--no-verify-jwt`) | Checks the signature, records the payment, credits the wallet once (`svc_record_payment`) |
 
@@ -82,7 +83,7 @@ Everything here was run and tested on 20 Oct 2026.
 - Saathi crisis messages (English and Hinglish) never reach the model. The member gets Tele-MANAS 14416 and Safety is flagged.
 
 **Secrets:**
-`ANTHROPIC_API_KEY`, `GEMINI_API_KEY` and `OPENAI_API_KEY` (only needed if you switch to them), `KUNDLI_URL`, `KUNDLI_KEY`, `LIKHA_INTERNAL_SECRET`, `LIKHA_HASH_SALT`, `LIKHA_ALERT_WEBHOOK`, `LIKHA_SITE`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `MSG91_AUTH_KEY`, `MSG91_SAFETY_TEMPLATE_ID` (DLT-approved safety alert), `RAZORPAYX_KEY_ID`, `RAZORPAYX_KEY_SECRET`, `RAZORPAYX_ACCOUNT_NUMBER`, `RAZORPAYX_WEBHOOK_SECRET`. `LIKHA_SITE` (e.g. `https://likha.in`) is also the allowed browser origin (CORS) for member-facing functions.
+`ANTHROPIC_API_KEY`, `GEMINI_API_KEY` (also needed for Imagine Us pictures; model `gemini-2.5-flash-image`, set in Admin under ai_features `imagine`, confirm the current id before launch), `OPENAI_API_KEY` (only if you switch to it), `KUNDLI_URL`, `KUNDLI_KEY`, `LIKHA_INTERNAL_SECRET`, `LIKHA_HASH_SALT`, `LIKHA_ALERT_WEBHOOK`, `LIKHA_SITE`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `MSG91_AUTH_KEY`, `MSG91_SAFETY_TEMPLATE_ID` (DLT-approved safety alert), `RAZORPAYX_KEY_ID`, `RAZORPAYX_KEY_SECRET`, `RAZORPAYX_ACCOUNT_NUMBER`, `RAZORPAYX_WEBHOOK_SECRET`. `LIKHA_SITE` (e.g. `https://likha.in`) is also the allowed browser origin (CORS) for member-facing functions.
 
 **Cron** (put the internal secret in Supabase Vault as `likha_internal`):
 ```sql
@@ -94,6 +95,7 @@ select cron.schedule('kick-submit',  '0 19 * * *',     $$ select net.http_post(u
 select cron.schedule('kick-collect', '*/15 19-23 * * *', $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/kick-batch', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{"step":"collect"}'::jsonb) $$);
 select cron.schedule('payouts',      '0 * * * *',      $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/payout-worker', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{}'::jsonb) $$);
 select cron.schedule('tiers',        '0 0 1 * *',      $$ select private.recompute_tiers() $$);          -- 1st of the month, 05:30 IST
+select cron.schedule('readings',     '* * * * *',      $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/reading-worker', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{}'::jsonb) $$);
 select cron.schedule('safety',       '*/5 * * * *',    $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/safety-worker', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{}'::jsonb) $$);
 select cron.schedule('lift-suspensions', '*/30 * * * *', $$ select private.lift_suspensions() $$);
 select cron.schedule('crush-expiry', '0 21 * * *',     $$ select private.expire_crush_checks() $$);      -- 02:30 IST: unclaimed Check With Anyone links refunded

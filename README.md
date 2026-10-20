@@ -13,8 +13,8 @@
 | **Member app batch 2: Chats list, live chat with voice notes and Cupid openers, Golden Hours, Guru Ji, Saathi (setup, chat, stepping back)** | **Done, 25 end-to-end checks** |
 | **Member app batch 3: wallet, Razorpay checkout and payment status, tiers, Astro Store, Check With Anyone, Why It Didn't Work, Gift a Reading, My Kundli + Who Suits Me, Rishta Maasi, readings** | **Done, 32 end-to-end checks** |
 | **Member app batch 4: Me and edit profile, settings, privacy, trusted contacts, Share my date + check-in, SOS + live location, unmatch/block/report, inbox, plans and invoices, help (tickets, grievances), account status and appeals, toolkit, delete with OTP** | **Done, 37 end-to-end checks** |
-| Member app batch 5: Our Universe, Couple Mode, Our Story, Imagine Us, Seven Questions, Boost, Travel Mode, Invite, Be a Cupid screens, crush and gift landing pages | Next |
-| Admin web app (I1–I25) and the team gaps (Maasi picks, lookups, reading rewrite/refund, payment re-check, tier override) | After batch 5 |
+| **Member app batch 5: Our Universe (partner says yes first), partner consent, Seven Questions, Imagine Us (labelled pictures), Couple Mode + Plus, Our Story, 30/90/180-day check-ins, Boost, Travel Mode, Invite, Be a Cupid + payouts, /k /g /i landing pages, reading worker, invite and Cupid attached at sign-up** | **Done, 61 end-to-end checks** |
+| Admin web app (I1–I25) and the team gaps (Maasi picks, lookups, reading rewrite/refund, payment re-check, tier override) | Next |
 | Admin web app | Not started |
 | Razorpay payments (create-order + signed webhook) | Built and tested; needs live keys |
 | Selfie liveness (AWS), OneSignal push | Not started |

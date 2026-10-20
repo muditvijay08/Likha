@@ -2,10 +2,23 @@
 // Shell for every screen with the bottom navigation. Only active members get here; everyone else goes back to onboarding.
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { AppProvider, BottomNav } from "@/components/app";
+import { AppProvider, BottomNav, useApp } from "@/components/app";
 import { api } from "@/lib/api";
 import { resumePath } from "@/lib/flow";
 import { useGuard } from "@/lib/guard";
+import { takeClaim } from "@/lib/referral";
+
+/** A Check With Anyone or gift link opened before signing up: claim it now and open the reading. */
+function PendingClaim() {
+  const router = useRouter();
+  const { toast } = useApp();
+  useEffect(() => {
+    const c = takeClaim(); if (!c) return;
+    (c.type === "crush" ? api().claimCrush(c.token) : api().openGift(c.token))
+      .then((id) => router.push(`/readings/${id}`)).catch((e: Error) => toast(e.message));
+  }, [router, toast]);
+  return null;
+}
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const s = useGuard();
@@ -20,6 +33,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   if (!ready) return <main className="app" aria-busy="true"><div className="app-body"><div className="skel" style={{ height: 120 }} /></div></main>;
   return (
     <AppProvider>
+      <PendingClaim />
       <div className="app">
         {api().demo && <div className="demo-bar" role="note">Demo mode · sample profiles, not real people</div>}
         {children}

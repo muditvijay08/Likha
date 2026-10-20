@@ -109,7 +109,7 @@ function Chat() {
 
       <div style={{ position: "sticky", bottom: "calc(76px + env(safe-area-inset-bottom))", background: "var(--bg)", zIndex: 4 }}>
         <div className="row" style={{ gap: 8, padding: "0 16px 10px", overflowX: "auto", scrollbarWidth: "none" }}>
-          {[[`/guru/${c.match_id}`, "Ask Guru Ji", "#E4F4EE", "#1F5E49"], ["/universe", "Our Universe", "#EDE6FF", "#3D3560"], ["/story", "Our Story", "#FFF0F4", "#A3164C"],
+          {[[`/guru/${c.match_id}`, "Ask Guru Ji", "#E4F4EE", "#1F5E49"], [`/universe/${c.match_id}`, "Our Universe", "#EDE6FF", "#3D3560"], [`/story/${c.match_id}`, "Our Story", "#FFF0F4", "#A3164C"],
             [`/golden/${c.match_id}`, "Golden Hours", "#FFF3D6", "#8A4300"], [`/share-date?match=${c.match_id}`, "Share my date", "#fff", "var(--ink)"]].map(([href, label, bg, fg]) => (
             <Link key={label} href={href} style={{ flex: "none", padding: "8px 12px", borderRadius: 999, background: bg, border: bg === "#fff" ? "1px solid var(--line)" : 0, color: fg, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>{label}</Link>
           ))}

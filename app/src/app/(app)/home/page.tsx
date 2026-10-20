@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Avatar, Chevron, Coin, Info, price, useApp } from "@/components/app";
-import { api, type MatchRow } from "@/lib/api";
+import { api, type ConsentReq, type DueCheckin, type MatchRow } from "@/lib/api";
+import { KIND_TITLE } from "@/components/couple";
 import { clock, dayPlan, fmt, goldenHours, localParts, range } from "@/lib/panchang";
 
 const pos = (m: number) => Math.max(0, Math.min(100, ((m - 360) / 1080) * 100));        // 6 AM .. midnight
@@ -12,6 +13,9 @@ export default function Home() {
   const { home, prices } = useApp();
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [now, setNow] = useState(() => new Date());
+  const [asks, setAsks] = useState<ConsentReq[]>([]);
+  const [due, setDue] = useState<DueCheckin[]>([]);
+  useEffect(() => { api().consentRequests().then(setAsks).catch(() => {}); api().dueCheckins().then(setDue).catch(() => {}); }, []);
   useEffect(() => { api().matches().then(setMatches).catch(() => {}); const t = setInterval(() => setNow(new Date()), 60000); return () => clearInterval(t); }, []);
 
   const city = home?.city;
@@ -40,6 +44,14 @@ export default function Home() {
         </div>
       </header>
 
+      {asks.map((q) => (
+        <Link key={q.id} href={`/ask/${q.id}`} className="rowlink" style={{ background: "#EDE6FF" }}>
+          <span className="t"><strong>{q.from_name} wants to read {KIND_TITLE[q.kind] ?? "a reading"} with you</strong><span>Your say. They&apos;re only charged if you agree.</span></span><Chevron /></Link>
+      ))}
+      {due.slice(0, 1).map((d) => (
+        <Link key={d.match_id} href={`/together/${d.match_id}?day=${d.day_mark}&name=${encodeURIComponent(d.other_name)}`} className="rowlink" style={{ background: "var(--rose-soft)" }}>
+          <span className="t"><strong>{d.day_mark} days with {d.other_name}</strong><span>How&apos;s it going? Just for you, they never see it.</span></span><Chevron /></Link>
+      ))}
       <Link href="/kick" aria-label="Today's love weather" style={{ display: "flex", gap: 16, alignItems: "center", padding: 18, borderRadius: 26,
         background: "linear-gradient(135deg, #FFE7B8 0%, #FFD3E0 55%, #E3D8FF 100%)", color: "var(--ink)", textDecoration: "none" }}>
         <svg width="112" height="112" viewBox="0 0 112 112" aria-hidden="true" style={{ flex: "none" }}>

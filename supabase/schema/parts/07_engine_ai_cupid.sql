@@ -71,6 +71,14 @@ end $$;
 
 -- Upsert compatibility of p_user with everyone they could meet (active, real, kundli ready).
 -- Man + woman: classical boy -> girl tables. Same gender: the lower of both directions.
+-- Where a member is today: their Travel Mode city while a trip is on, otherwise their home city.
+create or replace function private.current_city(p_user uuid) returns uuid
+language sql stable security definer set search_path = public as $$
+  select coalesce((select t.city_id from public.travel_modes t where t.user_id = p_user and t.active
+                   and (now() at time zone 'Asia/Kolkata')::date between t.from_date and t.to_date order by t.created_at desc limit 1),
+                  (select city_id from public.profiles where id = p_user))
+$$;
+
 create or replace function private.compute_compat_for(p_user uuid, p_limit int default 20000) returns int
 language plpgsql security definer set search_path = public as $$
 declare n int;
@@ -411,7 +419,7 @@ begin
   perform private.require_service();
   return query
   select p.id, p.first_name, p.gender, to_jsonb(k) - 'user_id', c.dashas -> 'current',
-         (select jsonb_build_object('name', ct.name, 'lat', ct.lat, 'lng', ct.lng, 'timezone', ct.timezone) from public.cities ct where ct.id = p.city_id)
+         (select jsonb_build_object('name', ct.name, 'lat', ct.lat, 'lng', ct.lng, 'timezone', ct.timezone) from public.cities ct where ct.id = private.current_city(p.id))
   from public.profiles p join public.kundli_summary k on k.user_id = p.id join private.kundli_charts c on c.user_id = p.id
   where p.status = 'active' and not p.is_demo and p.last_active_at > now() - interval '14 days'
     and not exists (select 1 from public.daily_kicks d where d.user_id = p.id and d.kick_date = p_date)

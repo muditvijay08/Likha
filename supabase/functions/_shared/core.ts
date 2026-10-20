@@ -169,6 +169,15 @@ export const FEATURE_PROMPTS: Record<string, string> = {
   golden_hours: "Explain the Golden Hours windows given in the facts, in 2 short sections.",
 };
 
+/** Same list as app/src/lib/seven.ts. */
+export const SEVEN_QUESTIONS = ["A perfect Sunday together looks like…", "When we disagree, I usually…", "With money, I'm more of a…", "In five years I'd like to live…", "Family time each week, ideally…", "I feel loved most through…", "Big decision ahead. I…"];
+
+/** {"1": {a, b}} by match side → [{question, <name A>: answer, <name B>: answer}] for the writer. */
+export function sevenText(answers: Record<string, { a: string; b: string }>, nameA: string, nameB: string) {
+  return JSON.stringify(Object.entries(answers).sort(([x], [y]) => +x - +y)
+    .map(([q, v]) => ({ question: SEVEN_QUESTIONS[+q - 1] ?? `Question ${q}`, [nameA]: v.a, [nameB]: v.b })));
+}
+
 export function readingPrompt(kind: string, facts: unknown, userText?: string) {
   const task = FEATURE_PROMPTS[kind] ?? FEATURE_PROMPTS.our_stars;
   return {

@@ -85,3 +85,10 @@ Deno.test("compat report and daily kick prompts", async () => {
   const k = kickPrompt(["Keep it light"], { vibe: "8/10" }, "2026-10-20");
   assert(k.user.includes("Keep it light") && k.user.includes('"fix"') && !k.user.includes("lucky_window"));
 });
+
+import { SEVEN_QUESTIONS, sevenText } from "../functions/_shared/core.ts";
+Deno.test("Seven Questions: question text and both names go to the writer", () => {
+  const t = JSON.parse(sevenText({ "2": { a: "Need a little space first", b: "Want to talk it out right away" }, "1": { a: "Saver", b: "Saver" } }, "Riya", "Kabir"));
+  if (SEVEN_QUESTIONS.length !== 7) throw new Error("seven");
+  if (t[0].question !== SEVEN_QUESTIONS[0] || t[1].Kabir !== "Want to talk it out right away" || t[1].Riya !== "Need a little space first") throw new Error(JSON.stringify(t));
+});
