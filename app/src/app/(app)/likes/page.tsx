@@ -37,10 +37,10 @@ export default function Likes() {
                   {l.jodi_score != null && <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(255,255,255,0.92)", borderRadius: 999, padding: "3px 8px", font: "700 12px var(--sans)", color: "var(--ink)" }}>{l.jodi_score}%</span>}
                   <span style={{ position: "absolute", top: 8, right: 8, font: "600 11px var(--sans)", color: "#3D3560" }}>{l.new ? "New" : ago(l.liked_at)}</span>
                   {l.kind === "cosmic_like" && <span style={{ position: "absolute", bottom: 8, left: 8, background: "var(--rose)", color: "#fff", borderRadius: 999, padding: "2px 8px", font: "700 10px var(--sans)" }}>Cosmic Like</span>}
-                  <span style={{ position: "absolute", bottom: 8, right: 8 }}><SampleTag on={l.is_sample} /></span>
                 </div>
                 <div style={{ padding: "8px 10px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
                   <strong style={{ fontSize: 14 }}>{l.first_name}{l.age ? `, ${l.age}` : ""}</strong>
+                  {l.is_sample && <span><SampleTag on /></span>}
                   <span style={{ fontSize: 12, color: "var(--muted)" }}>{[l.profession, l.gunas != null ? `${l.gunas} Gunas` : null].filter(Boolean).join(" · ")}</span>
                   {l.note && <span style={{ fontSize: 12, color: "var(--rose-ink)", fontStyle: "italic" }}>“{l.note}”</span>}
                 </div>
