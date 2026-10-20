@@ -2,7 +2,7 @@
 // S4 Gift a Reading: they open it in the app on the day you choose and add their own birth details there.
 import { useEffect, useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
-import { price, useApp } from "@/components/app";
+import { price, useApp, useTried } from "@/components/app";
 import { api, type GiftItem } from "@/lib/api";
 
 const KINDS: [string, string][] = [["gift", "Birthday year ahead"], ["who_suits_me", "Who suits you"], ["next_12_months", "Love forecast"]];
@@ -18,8 +18,9 @@ export default function Gift() {
   const [sent, setSent] = useState<{ token: string } | null>(null);
   const [mine, setMine] = useState<GiftItem[]>([]);
   const { busy, error, run } = useAction();
+  const tried = useTried();
   useEffect(() => { api().myGifts().then(setMine).catch(() => {}); }, []);
-  const send = () => run(async () => { setSent({ token: await api().sendGift(name.trim(), phone, kind, note.trim(), when) }); await reload(); setMine(await api().myGifts()); });
+  const send = () => run(async () => { setSent({ token: await api().sendGift(name.trim(), phone, kind, note.trim(), when) }); await reload(); setMine(await api().myGifts()); tried("gift", "Gift a Reading"); });
   const label = KINDS.find((k) => k[0] === kind)![1];
   const link = sent ? `${location.origin}/g/${encodeURIComponent(sent.token)}` : "";
   const day = new Date(`${when}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });

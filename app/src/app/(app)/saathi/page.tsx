@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
-import { price, useApp } from "@/components/app";
+import { price, useApp, useTried } from "@/components/app";
 import { api, type SaathiChar, type SaathiState } from "@/lib/api";
 
 const CHARS: { v: SaathiChar; name: string; line: string }[] = [
@@ -27,6 +27,7 @@ export default function Saathi() {
   const [typing, setTyping] = useState(false);
   const end = useRef<HTMLDivElement | null>(null);
   const { busy, error, run, setError } = useAction();
+  const tried = useTried();
 
   useEffect(() => {
     api().saathi().then((x) => { setS(x); setChar(x.character); setStyles(x.styles); setView(!x.setup ? "setup" : x.paused ? "paused" : "chat"); }).catch(() => setView("chat"));
@@ -44,7 +45,7 @@ export default function Saathi() {
     setS({ ...s, history: [...s.history, { role: "user", body: msg.trim() }] });
     try {
       const r = await api().saathiSend(s.character, msg.trim());
-      if (r.reply) setS((x) => x && { ...x, left: r.left ?? x.left, history: [...x.history, { role: "assistant", body: r.reply! }] });
+      if (r.reply) { setS((x) => x && { ...x, left: r.left ?? x.left, history: [...x.history, { role: "assistant", body: r.reply! }] }); tried("saathi", "Saathi"); }
       else { setS((x) => x && { ...x, left: r.topup ? 0 : x.left }); setError(r.message ?? "Saathi is offline for a moment."); }
     } finally { setTyping(false); }
   });

@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
-import { price, useApp } from "@/components/app";
+import { price, useApp, useTried } from "@/components/app";
 import { api, type CrushCheck } from "@/lib/api";
 import { SIGNS, moonSignsOn, previewLine } from "@/lib/moon";
 
@@ -21,6 +21,7 @@ export default function CheckAnyone() {
   const [state, setState] = useState<{ prepaid: number; checks: CrushCheck[] } | null>(null);
   const [sent, setSent] = useState<{ token: string; name: string; phone: string } | null>(null);
   const { busy, error, run } = useAction();
+  const tried = useTried();
   useEffect(() => {
     api().myChart().then((c) => { if (c) { setMineName(c.summary.moon_sign); setMine(SIGNS.indexOf(c.summary.moon_sign)); } }).catch(() => {});
     api().myCrushChecks().then(setState).catch(() => {});
@@ -32,7 +33,7 @@ export default function CheckAnyone() {
 
   const check = () => run(async () => {
     const r = await api().createCrushCheck(name.trim(), phone, rel.toLowerCase(), dob || null);
-    setSent({ token: r.token, name: name.trim(), phone }); await reload(); setState(await api().myCrushChecks());
+    setSent({ token: r.token, name: name.trim(), phone }); await reload(); tried("check_anyone", "Check With Anyone"); setState(await api().myCrushChecks());
   });
   const buyPack = () => run(async () => { await api().buyCheckPack(); await reload(); setState(await api().myCrushChecks()); });
   const link = sent ? `${location.origin}/k/${encodeURIComponent(sent.token)}` : "";

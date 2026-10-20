@@ -51,6 +51,7 @@ ok(await seen(btn("Unlock today · 10 credits")), "Kick: paid part locked, price
 await shot("02-kick-locked");
 await btn("Unlock today · 10 credits").click();
 ok(await seen(page.getByText("Wear something yellow today.")), "Kick unlocked: today's fix visible");
+ok(await seen(page.getByText("+5 credits for trying the Daily Kick")), "Toolkit reward for the first Daily Kick (+5)");
 ok(await seen(page.getByText("Avoid big money moves (Rahu Kaal)")), "Kick: best times listed");
 await shot("03-kick");
 
@@ -60,7 +61,7 @@ await page.waitForURL("**/discover");
 ok(await seen(page.getByRole("heading", { name: "Ishita, 27" })), "Discover: best Jodi Score first");
 ok(await seen(page.getByText("SAMPLE PROFILE")), "Sample profiles are labelled");
 ok(await seen(page.getByText("Live in Jaipur:")), "Live city strip shown");
-ok(await credits() === 60, "Kick charged 10 credits once (70 → 60)");
+ok(await credits() === 65, "Kick charged 10 credits once, +5 first-try reward (70 → 65)");
 await btn("Got it").click();
 await shot("04-discover");
 await btn("Not my nakshatra").click();
@@ -119,7 +120,7 @@ ok(await seen(page.getByText("You've seen every star in Jaipur tonight")), "Empt
 await shot("11-empty");
 
 // Not enough credits
-ok(await credits() === 3, "Spends add up: 70 − 10 − 19 − 9 − 29 = 3");
+ok(await credits() === 8, "Spends add up: 70 − 10 + 5 − 19 − 9 − 29 = 8");
 await page.goto(`${BASE}/profile/s-tanvi`);
 await btn("Cosmic Like · 9").click();
 ok(await seen(page.getByText("Not enough credits. Top up your wallet to continue.")), "Not enough credits is explained, nothing charged");
@@ -127,7 +128,7 @@ ok(await seen(page.getByText("Not enough credits. Top up your wallet to continue
 // N1 Menu and Chats
 await page.getByRole("link", { name: "Menu" }).click();
 await page.waitForURL("**/menu");
-ok(await seen(page.getByText("3 credits")) && await seen(page.getByRole("link", { name: /Be a Cupid/ })), "Menu: wallet and every link");
+ok(await seen(page.getByText("8 credits")) && await seen(page.getByRole("link", { name: /Be a Cupid/ })), "Menu: wallet and every link");
 await shot("12-menu");
 await page.getByRole("link", { name: /^Chats/ }).click();
 await page.waitForURL("**/matches");

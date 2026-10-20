@@ -11,7 +11,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const s = useGuard();
   const router = useRouter();
   const ready = s?.status === "active";
-  useEffect(() => { if (s && !ready) router.replace(resumePath(s) === "/home" ? "/bonus" : resumePath(s)); }, [s, ready, router]);
+  useEffect(() => {
+    if (!s || ready) return;
+    if (s.status && ["suspended", "banned", "under_review"].includes(s.status)) router.replace("/account-status");
+    else if (s.status === "deleted") api().signOut().then(() => router.replace("/start"));
+    else router.replace(resumePath(s) === "/home" ? "/bonus" : resumePath(s));
+  }, [s, ready, router]);
   if (!ready) return <main className="app" aria-busy="true"><div className="app-body"><div className="skel" style={{ height: 120 }} /></div></main>;
   return (
     <AppProvider>

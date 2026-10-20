@@ -4,7 +4,7 @@
 | Area | Status |
 |---|---|
 | Design canvas (105 app + 25 admin screens) | Done |
-| Database (11 parts, 403 checks passing) | Done |
+| Database (12 parts, 456 checks passing) | Done |
 | Kundli engine (NASA JPL, final rules ak-2.0) | Done |
 | AI gateway, spend caps, Claude/Gemini/GPT switch | Done |
 | Be a Cupid (referrals, payouts, TDS) | Done |
@@ -12,7 +12,9 @@
 | **Member app batch 1: Home, Daily Kick, Discover, Profile, Filters, Compatibility report, Likes, Match + Golden Hours, Menu, Chats list** | **Done, 34 end-to-end checks in demo mode** |
 | **Member app batch 2: Chats list, live chat with voice notes and Cupid openers, Golden Hours, Guru Ji, Saathi (setup, chat, stepping back)** | **Done, 25 end-to-end checks** |
 | **Member app batch 3: wallet, Razorpay checkout and payment status, tiers, Astro Store, Check With Anyone, Why It Didn't Work, Gift a Reading, My Kundli + Who Suits Me, Rishta Maasi, readings** | **Done, 32 end-to-end checks** |
-| Member app batch 4: profile, settings, privacy, safety (report, block, SOS, share date), inbox, help | Next |
+| **Member app batch 4: Me and edit profile, settings, privacy, trusted contacts, Share my date + check-in, SOS + live location, unmatch/block/report, inbox, plans and invoices, help (tickets, grievances), account status and appeals, toolkit, delete with OTP** | **Done, 37 end-to-end checks** |
+| Member app batch 5: Our Universe, Couple Mode, Our Story, Imagine Us, Seven Questions, Boost, Travel Mode, Invite, Be a Cupid screens, crush and gift landing pages | Next |
+| Admin web app (I1–I25) and the team gaps (Maasi picks, lookups, reading rewrite/refund, payment re-check, tier override) | After batch 5 |
 | Admin web app | Not started |
 | Razorpay payments (create-order + signed webhook) | Built and tested; needs live keys |
 | Selfie liveness (AWS), OneSignal push | Not started |

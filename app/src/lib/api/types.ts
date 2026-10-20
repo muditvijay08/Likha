@@ -25,6 +25,8 @@ export interface OnboardingState {
 export interface PublicSettings {
   onboarding_step_credits: Record<Gender, number[]>;
   welcome_bonus: { woman: number; man: number; expiry_days: number };
+  grievance_officer?: { name: string; email: string; phone: string; ack_hours: number; resolve_days: number };
+  company?: { legal_name: string; gstin: string; cin: string; address: string };
 }
 
 export interface Place {
@@ -166,6 +168,39 @@ export interface GiftItem { id: string; name: string; kind: string; note: string
 export interface MaasiPick extends Card { pick_id: string; note: string; response: "interested" | "not_for_me" | null; week_of: string }
 export interface MaasiState { until: string | null; price_paise: number; picks: MaasiPick[] }
 
+// ---------------------------------------------------------------- account, settings, safety, inbox, help
+export interface MyProfile {
+  id: string; first_name: string; gender: Gender; age: number | null; city: string | null; height_cm: number | null; mother_tongue: string | null;
+  languages: string[]; education: string | null; profession: string | null; company: string | null; college: string | null; hometown: string | null;
+  diet: string | null; drinking: string | null; smoking: string | null; workout: string | null; kids: string | null; relocate: string | null;
+  religion: string | null; show_religion: boolean; goal: Goal | null; bio: string | null; voice_intro_path: string | null;
+  status: string; selfie_status: string; profile_complete_pct: number; tier: Tier;
+  incognito: boolean; i_message_first: boolean; hide_company: boolean; read_receipts: boolean; show_online: boolean; paused: boolean;
+  language_pref: "en" | "hinglish" | "hi";
+  photos: Photo[]; prompts: { key: string; label: string; answer: string }[]; interests: number[];
+  birth: { date: string; time: string; place: string } | null; balance: number; streak: number; matches: number; bonus_waiting: number | null;
+}
+export type ProfilePatch = Partial<Pick<MyProfile, "first_name" | "height_cm" | "mother_tongue" | "languages" | "education" | "profession" | "company" | "college" |
+  "hometown" | "diet" | "drinking" | "smoking" | "workout" | "kids" | "relocate" | "religion" | "show_religion" | "goal" | "bio" | "incognito" |
+  "i_message_first" | "hide_company" | "read_receipts" | "show_online" | "paused" | "language_pref">>;
+export interface NotifPrefs { kick_time: string; new_likes: boolean; matches: boolean; golden_hours: boolean; offers: boolean; quiet_start: string; quiet_end: string }
+export interface TrustedContact { id: string; name: string; phone: string; relation: string | null }
+export type ReportReason = "fake_profile" | "harassment" | "inappropriate_photos" | "scam" | "under_18" | "unsafe_meeting" | "other";
+export interface DateShare { id: string; place: string; starts_at: string; checkin_at: string; status: string; match_id: string | null; with: string | null;
+  contacts: TrustedContact[]; alert_after_minutes: number }
+export interface Notice { id: number; type: string; title: string; body: string; data: { link?: string; discount?: number }; read: boolean; created_at: string; group: "likes" | "readings" | "account" }
+export interface History {
+  plans: { id: string; key: string; label: string; price_paise: number; interval: string; status: string; until: string }[];
+  ledger: { at: string; reason: string; delta: number; kind: string; balance: number }[];
+  invoices: { id: string; invoice_no: string; amount_paise: number; gst_paise: number; item: string; at: string }[];
+}
+export interface Invoice { invoice_no: string; date: string; amount_paise: number; gst_paise: number; taxable_paise: number; method: string | null; payment_ref: string | null;
+  item: string; sac: string | null; company: { legal_name: string; gstin: string; cin: string; address: string }; customer: { name: string; phone: string | null } }
+export interface Ticket { id: string; subject: string; status: string; created_at: string; messages: { from: "me" | "team"; body: string; at: string }[] }
+export interface AccountState { status: string; selfie_status: string; paused: boolean; tier_paused_until: string | null;
+  action: { id: string; action: string; reason: string; until: string | null; at: string; appealed: boolean; appeal_status: string | null; can_appeal: boolean } | null }
+export interface Toolkit { reward: number; items: { key: string; title: string; body: string; link: string; tried: boolean }[] }
+
 export interface SaathiReply { reply: string | null; left?: number; topup?: boolean; crisis?: boolean; message?: string }
 
 export interface Api {
@@ -246,4 +281,39 @@ export interface Api {
   myGifts(): Promise<GiftItem[]>;
   maasi(): Promise<MaasiState>;
   answerMaasi(pickId: string, interested: boolean): Promise<LikeResult>;
+
+  myProfile(): Promise<MyProfile>;
+  saveProfile(p: ProfilePatch): Promise<void>;
+  notifPrefs(): Promise<NotifPrefs>;
+  saveNotifPrefs(p: NotifPrefs): Promise<void>;
+  trustedContacts(): Promise<TrustedContact[]>;
+  addTrustedContact(name: string, phone: string, relation: string): Promise<TrustedContact>;
+  removeTrustedContact(id: string): Promise<void>;
+  blocks(): Promise<{ id: string; first_name: string; since: string }[]>;
+  unblock(id: string): Promise<void>;
+  block(userId: string): Promise<void>;
+  unmatch(matchId: string): Promise<void>;
+  report(userId: string, reason: ReportReason, details: string, alsoBlock: boolean): Promise<void>;
+  /** Deleting needs a fresh OTP: first send it, then confirm with the code. */
+  sendDeleteOtp(): Promise<void>;
+  deleteAccount(code: string, reason: string): Promise<{ credits_lost: number }>;
+  shareDate(matchId: string | null, place: string, startsAt: Date, checkinAt: Date, contactIds: string[]): Promise<string>;
+  dateShare(id: string): Promise<DateShare | null>;
+  checkin(id: string, answer: "ok" | "later" | "help"): Promise<DateShare>;
+  sosStart(matchId: string | null, lat: number | null, lng: number | null, flag: boolean): Promise<{ id: string; token: string; share_until: string }>;
+  sosUpdate(id: string, lat: number, lng: number): Promise<void>;
+  sosStop(id: string): Promise<void>;
+  sosView(token: string): Promise<{ first_name: string; lat: number | null; lng: number | null; updated_at: string; share_until: string } | null>;
+  notices(): Promise<Notice[]>;
+  markAllRead(): Promise<void>;
+  history(): Promise<History>;
+  invoice(paymentId: string): Promise<Invoice | null>;
+  openTicket(subject: string, body: string): Promise<string>;
+  tickets(): Promise<Ticket[]>;
+  replyTicket(id: string, body: string): Promise<void>;
+  fileGrievance(category: string, description: string, file?: Blob | null): Promise<{ ticket_no: string; resolve_due_at: string }>;
+  accountState(): Promise<AccountState>;
+  appeal(actionId: string, text: string): Promise<void>;
+  toolkit(): Promise<Toolkit>;
+  tried(feature: string): Promise<boolean>;
 }

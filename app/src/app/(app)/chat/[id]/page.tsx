@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ErrorNote, useAction } from "@/components/ui";
-import { Avatar, SampleTag, price, useApp } from "@/components/app";
+import { Avatar, SampleTag, price, useApp, useTried } from "@/components/app";
 import { api, type ChatData, type Msg } from "@/lib/api";
 import { clock, goldenHours } from "@/lib/panchang";
 
@@ -28,6 +28,7 @@ function Chat() {
   const [rec, setRec] = useState<MediaRecorder | null>(null);
   const end = useRef<HTMLDivElement | null>(null);
   const { busy, error, run, setError } = useAction();
+  const tried = useTried();
 
   useEffect(() => {
     api().chat(id).then((x) => { setC(x); api().markRead(id).then(reload).catch(() => {}); }).catch((e) => setGone(e instanceof Error ? e.message : "Chat not available."));
@@ -44,7 +45,7 @@ function Chat() {
     const body = text.trim(); if (!body) return;
     const m = await api().sendMessage(id, body); setText(""); add(m);
   });
-  const getOpeners = () => run(async () => { setOpeners(await api().openers(id)); await reload(); });
+  const getOpeners = () => run(async () => { setOpeners(await api().openers(id)); await reload(); tried("cupid_opener", "Cupid openers"); });
   const record = async () => {
     if (rec) { rec.stop(); return; }
     try {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { BackButton, ErrorNote, useAction } from "@/components/ui";
-import { Info, LockIcon, price, useApp } from "@/components/app";
+import { Info, LockIcon, price, useApp, useTried } from "@/components/app";
 import { api, type MatchRow } from "@/lib/api";
 import { BEST_FOR_LABEL, clockRange, dayPlan, goldenHours, range } from "@/lib/panchang";
 
@@ -15,6 +15,8 @@ export default function Golden() {
   const [m, setM] = useState<MatchRow | null>(null);
   const [open, setOpen] = useState(false);
   const { busy, error, run } = useAction();
+  const tried = useTried();
+  useEffect(() => { tried("golden_hours", "Golden Hours"); }, [tried]);
   useEffect(() => {
     api().matches().then((all) => setM(all.find((x) => x.match_id === id) ?? null)).catch(() => {});
     api().goldenUnlocked(id).then(setOpen).catch(() => {});

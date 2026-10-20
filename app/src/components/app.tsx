@@ -28,6 +28,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** First try of a toolkit feature: a few credits once, with a thank-you toast. Never blocks the feature. */
+export function useTried() {
+  const { reload, toast } = useApp();
+  return useCallback((key: string, label: string) => {
+    api().tried(key).then((first) => { if (first) { toast(`+5 credits for trying ${label}`); reload().catch(() => {}); } }).catch(() => {});
+  }, [reload, toast]);
+}
+
 /** Price label from the member's own price list (after tier discount). */
 export const price = (p: Prices, key: string, fallback: number) => p[key] ?? fallback;
 
@@ -144,5 +152,15 @@ export function Progress({ label, value, max, color = "#7E5BEF" }: { label: stri
       <div style={{ height: 6, borderRadius: 999, background: "#E7E1F5" }} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(value, max)}>
         <div style={{ width: `${pct}%`, height: 6, borderRadius: 999, background: color }} /></div>
     </div>
+  );
+}
+
+/** A labelled switch row (checkbox underneath, so it works with keyboards and screen readers). */
+export function Toggle({ id, label, hint, checked, onChange, disabled }: { id: string; label: string; hint?: string; checked: boolean; onChange(v: boolean): void; disabled?: boolean }) {
+  return (
+    <label htmlFor={id} className="row" style={{ justifyContent: "space-between", gap: 12, padding: "12px 16px", fontSize: 14, cursor: "pointer" }}>
+      <span className="stack" style={{ gap: 2 }}><span>{label}</span>{hint && <span style={{ fontSize: 12, color: "var(--muted)" }}>{hint}</span>}</span>
+      <input id={id} type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} style={{ width: 22, height: 22, margin: 0, flex: "none", accentColor: "var(--link)" }} />
+    </label>
   );
 }

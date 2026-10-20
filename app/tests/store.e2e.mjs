@@ -73,7 +73,8 @@ ok(await seen(page.getByText("You're all set"), 8000), "Kick Pass active");
 await page.waitForURL("**/kick", { timeout: 8000 });
 ok(await seen(page.getByText("Kick Pass").first()) && await seen(btn("Open with Kick Pass")), "Daily Kick opens free with Kick Pass");
 await btn("Open with Kick Pass").click();
-ok(await seen(page.getByText("Today's fix")) && await balance() === 670, "…and nothing was charged");
+ok(await seen(page.getByText("Today's fix")) && await seen(page.getByText("+5 credits for trying the Daily Kick")), "…and nothing was charged (only the +5 first-try reward)");
+ok(await balance() === 675, "Balance 670 + 5 reward");
 
 // S2 Check With Anyone
 await page.goto(`${BASE}/check`);
@@ -139,7 +140,7 @@ await page.waitForURL("**/match/**", { timeout: 6000 }).catch(() => {});
 ok(page.url().includes("/match/"), "Ishita already liked Aarav: interested on both sides is a match");
 
 // money adds up: 70 + 600 − 29 − 119 − 79 − 49 − 99 = 295
-ok(await balance() === 295, "Balance adds up: 70 + 600 − 29 − 119 − 79 − 49 − 99 = 295");
+ok(await balance() === 320, "Balance adds up: 70 + 600 − 29 − 119 − 79 − 49 − 99 + 25 first-try rewards = 320");
 await page.goto(`${BASE}/readings`);
 ok(await seen(page.getByText(/Why It Didn't Work · K/)) && await seen(page.getByText("Who Suits Me")), "My readings lists them");
 

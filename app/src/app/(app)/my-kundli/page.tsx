@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
 import { KundliChart, signIndex } from "@/components/KundliChart";
-import { price, useApp } from "@/components/app";
+import { price, useApp, useTried } from "@/components/app";
 import { api, type MyChart, type ReadingFull } from "@/lib/api";
 import { NAKSHATRAS, SIGNS } from "@/lib/moon";
 
@@ -19,6 +19,8 @@ function Kundli() {
   const [c, setC] = useState<MyChart | null | undefined>(undefined);
   const [r, setR] = useState<ReadingFull | null | undefined>(undefined);
   const { busy, error, run } = useAction();
+  const tried = useTried();
+  useEffect(() => { tried("my_kundli", "My Kundli"); }, [tried]);
 
   useEffect(() => { api().myChart().then(setC).catch(() => setC(null)); }, []);
   useEffect(() => {
@@ -33,7 +35,7 @@ function Kundli() {
     return () => { stop = true; };
   }, [busy]);
 
-  const buy = () => run(async () => { await api().startReading("who_suits_me"); await reload(); });
+  const buy = () => run(async () => { await api().startReading("who_suits_me"); await reload(); tried("who_suits_me", "Who Suits Me"); });
   const sortFirst = () => run(async () => { await api().setSuitsSort(true); router.push("/discover"); });
   const pl = (name: string) => c?.planets.find((p) => p.planet === name);
   const sname = (p?: { sign: number; sign_name: string }) => p ? (p.sign_name || SIGNS[p.sign]) : "–";

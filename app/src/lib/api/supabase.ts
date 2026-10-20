@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
+  AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
@@ -14,6 +15,10 @@ const FRIENDLY: [string, string][] = [
   ["kick_not_ready", "Today's Kick is still being written. Check back in a little while."],
   ["account not active", "Finish your profile to start liking people."],
   ["chat_closed", "This chat has ended."],
+  ["verify_first", "Your selfie is being checked. Likes unlock once you're verified."],
+  ["otp_needed", "Please confirm with the code we just sent."],
+  ["pick a trusted contact", "Add someone you trust first."],
+  ["appeal window closed", "The 30 days to appeal this decision have passed."],
   ["daily_limit", "That's the most for today. Try again tomorrow."],
   ["kundli_not_ready", "Your kundli is still being made. Try again in a minute."],
   ["delivery date is in the past", "Pick today or a later date."],
@@ -426,6 +431,111 @@ export class SupabaseApi implements Api {
   async answerMaasi(pickId: string, interested: boolean) {
     return this.rpc<LikeResult>("answer_maasi_pick", { p_pick: pickId, p_interested: interested }, "Rishta Maasi");
   }
+
+  // ---------------------------------------------------------------- me, settings, privacy
+  async myProfile(): Promise<MyProfile> {
+    type Raw = Omit<MyProfile, "photos"> & { photos: { id: string; position: number; path: string; status: Photo["status"] }[] };
+    const p = await this.rpc<Raw>("my_profile", {}, "Profile");
+    const paths = p.photos.map((x) => x.path);
+    const { data } = paths.length ? await this.sb.storage.from("photos").createSignedUrls(paths, 3600) : { data: [] };
+    return { ...p, photos: p.photos.map((x, i) => ({ id: x.id, position: x.position, status: x.status, url: data?.[i]?.signedUrl ?? "" })) };
+  }
+  async saveProfile(patch: ProfilePatch) {
+    const id = await this.uid();
+    const { error } = await this.sb.from("profiles").update(patch).eq("id", id);
+    fail(error, "Saving");
+  }
+  async notifPrefs() {
+    const id = await this.uid();
+    const { data, error } = await this.sb.from("notification_prefs").select("kick_time,new_likes,matches,golden_hours,offers,quiet_start,quiet_end").eq("user_id", id).single();
+    fail(error, "Notifications");
+    const t = (x: string) => x.slice(0, 5);
+    const d = data as NotifPrefs;
+    return { ...d, kick_time: t(d.kick_time), quiet_start: t(d.quiet_start), quiet_end: t(d.quiet_end) };
+  }
+  async saveNotifPrefs(p: NotifPrefs) {
+    const id = await this.uid();
+    const { error } = await this.sb.from("notification_prefs").update(p).eq("user_id", id);
+    fail(error, "Notifications");
+  }
+  async trustedContacts() {
+    const { data, error } = await this.sb.from("trusted_contacts").select("id,name,phone,relation").order("created_at");
+    fail(error, "Trusted contacts");
+    return (data ?? []) as TrustedContact[];
+  }
+  async addTrustedContact(name: string, phone: string, relation: string) {
+    if (!/^(\+?91)?0?[6-9]\d{9}$/.test(phone.replace(/[\s-]/g, ""))) throw new Error("Enter a valid Indian mobile number.");
+    const id = await this.uid();
+    const { data, error } = await this.sb.from("trusted_contacts").insert({ user_id: id, name: name.trim(), phone: phone.trim(), relation: relation || null })
+      .select("id,name,phone,relation").single();
+    fail(error, "Trusted contacts");
+    return data as TrustedContact;
+  }
+  async removeTrustedContact(cid: string) { const { error } = await this.sb.from("trusted_contacts").delete().eq("id", cid); fail(error, "Trusted contacts"); }
+  async blocks() { return this.rpc<{ id: string; first_name: string; since: string }[]>("my_blocks"); }
+  async unblock(uid: string) {
+    const me = await this.uid();
+    const { error } = await this.sb.from("blocks").delete().eq("blocker", me).eq("blocked", uid);
+    fail(error, "Unblock");
+  }
+  async block(uid: string) { await this.rpc("block_user", { p_target: uid }, "Block"); }
+  async unmatch(matchId: string) { await this.rpc("unmatch", { p_match: matchId }, "Unmatch"); }
+  async report(uid: string, reason: ReportReason, details: string, alsoBlock: boolean) {
+    if (alsoBlock) await this.rpc("block_user", { p_target: uid, p_report_reason: reason, p_details: details || null }, "Report");
+    else await this.rpc("report_user", { p_target: uid, p_reason: reason, p_details: details || null }, "Report");
+  }
+  async sendDeleteOtp() {
+    const { data } = await this.sb.auth.getSession();
+    const phone = data.session?.user.phone;
+    if (!phone) throw new Error("Please sign in again.");
+    await this.sendOtp(`+${phone.replace(/^\+/, "")}`, "sms");
+  }
+  async deleteAccount(code: string, reason: string) {
+    const { data } = await this.sb.auth.getSession();
+    const phone = data.session?.user.phone;
+    if (!phone) throw new Error("Please sign in again.");
+    await this.verifyOtp(`+${phone.replace(/^\+/, "")}`, code);                 // fresh sign-in: the database checks it was in the last 10 minutes
+    const r = await this.rpc<{ credits_lost: number }>("delete_my_account", { p_reason: reason }, "Delete");
+    await this.sb.auth.signOut();
+    return r;
+  }
+
+  // ---------------------------------------------------------------- safety
+  async shareDate(matchId: string | null, place: string, startsAt: Date, checkinAt: Date, contactIds: string[]) {
+    return this.rpc<string>("share_date", { p_match: matchId, p_place: place, p_starts_at: startsAt.toISOString(), p_checkin_at: checkinAt.toISOString(), p_contacts: contactIds }, "Share my date");
+  }
+  async dateShare(sid: string) { return (await this.rpc<DateShare | null>("date_share_view", { p_id: sid })) ?? null; }
+  async checkin(sid: string, answer: "ok" | "later" | "help") { return this.rpc<DateShare>("date_checkin", { p_id: sid, p_answer: answer }, "Check-in"); }
+  async sosStart(matchId: string | null, lat: number | null, lng: number | null, flag: boolean) {
+    return this.rpc<{ id: string; token: string; share_until: string }>("sos_start", { p_match: matchId, p_lat: lat, p_lng: lng, p_flag: flag }, "SOS");
+  }
+  async sosUpdate(sid: string, lat: number, lng: number) { await this.rpc("sos_update", { p_id: sid, p_lat: lat, p_lng: lng }); }
+  async sosStop(sid: string) { await this.rpc("sos_stop", { p_id: sid }); }
+  async sosView(token: string) { return (await this.rpc<Awaited<ReturnType<Api["sosView"]>>>("sos_view", { p_token: token })) ?? null; }
+
+  // ---------------------------------------------------------------- inbox, history, help, account
+  async notices() { return this.rpc<Notice[]>("my_notifications", { p_limit: 80 }); }
+  async markAllRead() { await this.rpc("mark_notifications_read"); }
+  async history() { return this.rpc<History>("my_history", { p_limit: 60 }); }
+  async invoice(pid: string) { return (await this.rpc<Invoice | null>("my_invoice", { p_payment: pid })) ?? null; }
+  async openTicket(subject: string, body: string) { return this.rpc<string>("open_ticket", { p_subject: subject, p_body: body }, "Help"); }
+  async tickets() { return this.rpc<Ticket[]>("my_tickets"); }
+  async replyTicket(tid: string, body: string) { await this.rpc("reply_ticket", { p_ticket: tid, p_body: body }, "Help"); }
+  async fileGrievance(category: string, description: string, file?: Blob | null) {
+    const files: string[] = [];
+    if (file) {
+      const id = await this.uid();
+      const path = `${id}/grievance-${crypto.randomUUID()}.${file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg"}`;
+      const up = await this.sb.storage.from("support").upload(path, file, { contentType: file.type || "image/jpeg" });
+      fail(up.error, "Uploading screenshot");
+      files.push(path);
+    }
+    return this.rpc<{ ticket_no: string; resolve_due_at: string }>("file_grievance", { p_category: category, p_description: description, p_attachments: files }, "Grievance");
+  }
+  async accountState() { return this.rpc<AccountState>("account_state"); }
+  async appeal(actionId: string, text: string) { await this.rpc("file_appeal", { p_action: actionId, p_text: text }, "Appeal"); }
+  async toolkit() { return this.rpc<Toolkit>("my_toolkit"); }
+  async tried(feature: string) { return this.rpc<boolean>("mark_feature_tried", { p_feature: feature }); }
 }
 
 function loadScript(src: string): Promise<void> {

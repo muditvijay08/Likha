@@ -110,11 +110,17 @@ insert into public.kick_templates (key, label, used_for, tone, template) values
   ('time_windows', 'Office and travel', 'Kick: time windows', 'Plain', 'Best windows for office, travel and date/chat, plus Rahu Kaal to avoid. Times in the user''s city.');
 
 insert into public.feature_schedule (sort, trigger, feature_key, title, body, link, reward_credits) values
-  (1, 'day:1', 'daily_kick',   'Daily Kick',        'Your day, decoded every morning.',            'H2-DailyKick', 5),
-  (2, 'day:2', 'golden_hours', 'Golden Hours',      'The best time to text each match.',           'M5-GoldenHours', 5),
-  (3, 'day:3', 'check_anyone', 'Check With Anyone', 'Your crush doesn''t need the app yet.',       'S2-CheckAnyone', 5),
-  (4, 'day:5', 'saathi',       'Saathi',            'Someone to talk to till you find your person.','E11-CompanionSetup', 5),
-  (5, 'first_match', 'our_universe', 'Our Universe', 'Readings made for the two of you.',          'C1-OurUniverse', 5);
+  (1, 'day:1', 'daily_kick',   'Daily Kick',        'Your day, decoded every morning.',            '/kick', 5),
+  (2, 'day:2', 'golden_hours', 'Golden Hours',      'The best time to text each match.',           '/matches', 5),
+  (3, 'day:3', 'check_anyone', 'Check With Anyone', 'Your crush doesn''t need the app yet.',       '/check', 5),
+  (4, 'day:5', 'saathi',       'Saathi',            'Someone to talk to till you find your person.','/saathi', 5),
+  (5, 'first_match', 'our_universe', 'Our Universe', 'Readings made for the two of you.',          '/universe', 5),
+  -- toolkit only (never a Home card)
+  (6, 'toolkit', 'cupid_opener', 'Cupid opener',    'First line, sorted.',                          '/matches', 5),
+  (7, 'toolkit', 'gift',         'Gift a Reading',  'A birthday surprise.',                         '/gift', 5),
+  (8, 'toolkit', 'who_suits_me', 'Who Suits Me',    'What your chart wants.',                       '/my-kundli?tab=suits', 5),
+  (9, 'toolkit', 'my_kundli',    'My Kundli',       'Chart and dasha.',                             '/my-kundli', 5),
+  (10, 'toolkit', 'travel_mode', 'Travel Mode',     'Match in a new city.',                         '/travel', 5);
 
 insert into public.agent_rules (agent_key, label, can_do, needs_approval, never, acting, limits) values
   ('ceo',        'AI CEO',          '{"Daily briefing","Set priorities"}', '{}', '{"Spend money","Hire","Change prices"}', false, '{}'),

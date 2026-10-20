@@ -1,6 +1,7 @@
 // Demo backend: everything lives in this browser. Used for design reviews and automated tests.
 // OTP code is always 123456. Selfie always passes. The kundli is a fixed sample chart.
 import type {
+  AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
@@ -32,7 +33,11 @@ interface Db {
   saathi?: { character: SaathiChar; styles: string[] };
   purchased?: number; orders?: Record<string, { type: "pack" | "subscription"; key: string; amount: number; at: number; done?: boolean }>;
   subs?: Record<string, number>; readings?: (ReadingFull & { readyAt: number })[]; prepaid?: number; crush?: CrushCheck[]; gifts?: GiftItem[];
-  suitsSort?: boolean; ledger?: { delta: number; kind: string; reason: string; at: string }[]; saathiMsgs?: SaathiState["history"]; saathiUsed?: { day: string; n: number; extra: number };
+  suitsSort?: boolean;
+  nprefs?: NotifPrefs; contacts?: TrustedContact[]; blocked?: { id: string; first_name: string; since: string }[]; shares?: DateShare[];
+  sos?: { id: string; token: string; share_until: string; lat: number | null; lng: number | null; updated_at: string }[]; reads?: number;
+  tickets?: Ticket[]; grievances?: number; tried?: string[]; deleted?: boolean; otpSent?: boolean; reportsMade?: number;
+  ledger?: { delta: number; kind: string; reason: string; at: string }[]; saathiMsgs?: SaathiState["history"]; saathiUsed?: { day: string; n: number; extra: number };
 }
 const CRISIS = /suicide|kill myself|end my life|self.?harm|marna chahta|marna chahti|jeena nahi/i;
 const CRISIS_REPLY = "I'm really glad you told me. You deserve support from a real person right now. Please call Tele-MANAS on 14416 " +
@@ -71,18 +76,24 @@ export class DemoApi implements Api {
 
   async settings(): Promise<PublicSettings> {
     return { onboarding_step_credits: { woman: [19, 19, 18, 19, 19, 18, 19, 19], man: [9, 9, 8, 9, 9, 8, 9, 9] },
-             welcome_bonus: { woman: 150, man: 70, expiry_days: 90 } };
+             welcome_bonus: { woman: 150, man: 70, expiry_days: 90 },
+             grievance_officer: { name: "[NAME]", email: "grievance@likha.in", phone: "[NUMBER]", ack_hours: 24, resolve_days: 15 },
+             company: { legal_name: "[COMPANY NAME] Private Limited", gstin: "[GSTIN]", cin: "[CIN]", address: "[ADDRESS], Jaipur, Rajasthan" } };
   }
 
   async state(): Promise<OnboardingState> {
-    const db = this.load();
+    let db = this.load();
+    if (db.profile && !(db.profile as Record<string, unknown>).wasActive && this.pct(db) >= 75 && db.profile.selfie_status === "passed") {
+      db = this.edit((d) => { (d.profile as Record<string, unknown>).wasActive = true; });
+    }
     if (!db.profile) return { has_profile: false };
     return {
       has_profile: true, first_name: db.profile.first_name, gender: db.profile.gender, step: db.profile.onboarding_step,
       pct: this.pct(db), selfie_status: db.profile.selfie_status, goal: (db.profile.goal as Goal) ?? null, city: db.city ?? null,
       has_birth: !!db.birth, photos: db.photos.length, prompts: db.prompts.length, has_prefs: !!db.prefs,
       kundli_ready: !!db.kundliAt && Date.now() > db.kundliAt, consents: db.consents,
-      status: this.pct(db) >= 75 && db.profile.selfie_status === "passed" ? "active" : "onboarding",
+      // like the database: becoming active needs a passed selfie; once active, a re-check (name or main photo change) keeps you active
+      status: (db.profile as Record<string, unknown>).wasActive || (this.pct(db) >= 75 && db.profile.selfie_status === "passed") ? "active" : "onboarding",
     };
   }
 
@@ -508,5 +519,163 @@ export class DemoApi implements Api {
   }
   async answerMaasi(pickId: string, interested: boolean) {
     return interested ? this.like(pickId.replace(/^mp-/, "")) : { matched: false };
+  }
+
+  // ---------------------------------------------------------------- me, settings, privacy (demo)
+  async myProfile(): Promise<MyProfile> {
+    const db = this.load(); const p = this.me(db) as Record<string, unknown>;
+    const g = (k: string) => (p[k] ?? null) as never;
+    return { id: "demo-me", first_name: p.first_name as string, gender: p.gender as Gender, age: 29, city: db.city?.name ?? "Jaipur", height_cm: g("height_cm"),
+      mother_tongue: g("mother_tongue"), languages: (p.languages as string[]) ?? [], education: g("education"), profession: g("profession"), company: g("company"),
+      college: g("college"), hometown: g("hometown"), diet: g("diet"), drinking: g("drinking"), smoking: g("smoking"), workout: g("workout"), kids: g("kids"),
+      relocate: g("relocate"), religion: g("religion"), show_religion: !!p.show_religion, goal: g("goal"), bio: g("bio"), voice_intro_path: p.voice ? "voice" : null,
+      status: "active", selfie_status: (p.selfie_status as string) ?? "passed", profile_complete_pct: this.pct(db), tier: "none",
+      incognito: !!p.incognito, i_message_first: !!p.i_message_first, hide_company: !!p.hide_company, read_receipts: p.read_receipts !== false,
+      show_online: p.show_online !== false, paused: !!p.paused, language_pref: (p.language_pref as MyProfile["language_pref"]) ?? "hinglish",
+      photos: db.photos, prompts: db.prompts.map((x) => ({ key: x.key, label: x.key === "about_you" ? "About me" : x.key === "fond_of" ? "I'm fond of" : "The planets got me right about…", answer: x.answer })),
+      interests: db.interests, birth: db.birth ? { date: db.birth.date, time: db.birth.time, place: db.birth.place.label } : null,
+      balance: this.balance(db), streak: db.kickOpen === today() ? 1 : 0, matches: (db.matches ?? []).length, bonus_waiting: this.pct(db) < 100 ? (p.gender === "woman" ? 150 : 70) : null };
+  }
+  async saveProfile(patch: ProfilePatch) {
+    await wait(150);
+    this.edit((d) => {
+      const p = this.me(d);
+      if (patch.first_name && patch.first_name !== p.first_name && p.selfie_status === "passed") p.selfie_status = "manual_review";
+      Object.assign(p, patch);
+    });
+  }
+  async notifPrefs() { return this.load().nprefs ?? { kick_time: "07:00", new_likes: true, matches: true, golden_hours: true, offers: false, quiet_start: "23:00", quiet_end: "07:00" }; }
+  async saveNotifPrefs(p: NotifPrefs) { this.edit((d) => { d.nprefs = p; }); }
+  async trustedContacts() { return this.load().contacts ?? []; }
+  async addTrustedContact(name: string, phone: string, relation: string) {
+    if (!name.trim()) throw new Error("Their name, please.");
+    if (!/^(\+?91)?0?[6-9]\d{9}$/.test(phone.replace(/[\s-]/g, ""))) throw new Error("Enter a valid Indian mobile number.");
+    const c = { id: crypto.randomUUID(), name: name.trim(), phone: phone.trim(), relation: relation || null };
+    this.edit((d) => { d.contacts = [...(d.contacts ?? []), c]; });
+    return c;
+  }
+  async removeTrustedContact(id: string) { this.edit((d) => { d.contacts = (d.contacts ?? []).filter((c) => c.id !== id); }); }
+  async blocks() { return this.load().blocked ?? []; }
+  async unblock(id: string) { this.edit((d) => { d.blocked = (d.blocked ?? []).filter((b) => b.id !== id); }); }
+  async block(id: string) {
+    const o = sampleProfile(id);
+    this.edit((d) => {
+      d.blocked = [...(d.blocked ?? []).filter((b) => b.id !== id), { id, first_name: o?.first_name ?? "Someone", since: new Date().toISOString() }];
+      d.matches = (d.matches ?? []).filter((m) => m.other !== id); d.passes = [...(d.passes ?? []), id];
+    });
+  }
+  async unmatch(matchId: string) { this.edit((d) => { const m = (d.matches ?? []).find((x) => x.id === matchId); d.matches = (d.matches ?? []).filter((x) => x.id !== matchId); if (m) d.passes = [...(d.passes ?? []), m.other]; }); }
+  async report(id: string, _reason: ReportReason, _details: string, alsoBlock: boolean) {
+    await wait(300); if (alsoBlock) await this.block(id);
+    this.edit((d) => { d.reportsMade = (d.reportsMade ?? 0) + 1; });
+  }
+  async sendDeleteOtp() { await wait(300); this.edit((d) => { d.otpSent = true; }); }
+  async deleteAccount(code: string) {
+    if (code !== "123456") throw new Error("That code didn't work. (Demo code: 123456)");
+    const lost = this.balance(this.load());
+    localStorage.removeItem("likha-demo-db");
+    return { credits_lost: lost };
+  }
+
+  // ---------------------------------------------------------------- safety (demo: nothing is sent)
+  async shareDate(matchId: string | null, place: string, startsAt: Date, checkinAt: Date, contactIds: string[]) {
+    if (!place.trim()) throw new Error("Where are you meeting?");
+    if (!contactIds.length) throw new Error("Add someone you trust first.");
+    if (checkinAt <= startsAt) throw new Error("Check-in must be after the start.");
+    const db = this.load();
+    const m = (db.matches ?? []).find((x) => x.id === matchId);
+    const s: DateShare = { id: crypto.randomUUID(), place: place.trim(), starts_at: startsAt.toISOString(), checkin_at: checkinAt.toISOString(), status: "scheduled",
+      match_id: matchId, with: m ? sampleProfile(m.other)?.first_name ?? null : null, contacts: (db.contacts ?? []).filter((c) => contactIds.includes(c.id)), alert_after_minutes: 15 };
+    this.edit((d) => { d.shares = [s, ...(d.shares ?? [])]; });
+    return s.id;
+  }
+  async dateShare(id: string) { return (this.load().shares ?? []).find((s) => s.id === id) ?? null; }
+  async checkin(id: string, answer: "ok" | "later" | "help") {
+    this.edit((d) => { const s = (d.shares ?? []).find((x) => x.id === id); if (!s) return;
+      if (answer === "ok") s.status = "ok"; else if (answer === "help") s.status = "help";
+      else { s.status = "scheduled"; s.checkin_at = new Date(Math.max(Date.parse(s.checkin_at), Date.now()) + 3600e3).toISOString(); } });
+    return (await this.dateShare(id))!;
+  }
+  async sosStart(_m: string | null, lat: number | null, lng: number | null) {
+    const s = { id: crypto.randomUUID(), token: Math.random().toString(36).slice(2, 14), share_until: new Date(Date.now() + 2 * 3600e3).toISOString(), lat, lng, updated_at: new Date().toISOString() };
+    this.edit((d) => { d.sos = [s, ...(d.sos ?? [])]; });
+    return { id: s.id, token: s.token, share_until: s.share_until };
+  }
+  async sosUpdate(id: string, lat: number, lng: number) { this.edit((d) => { const s = (d.sos ?? []).find((x) => x.id === id); if (s) { s.lat = lat; s.lng = lng; s.updated_at = new Date().toISOString(); } }); }
+  async sosStop(id: string) { this.edit((d) => { const s = (d.sos ?? []).find((x) => x.id === id); if (s) s.share_until = new Date().toISOString(); }); }
+  async sosView(token: string) {
+    const db = this.load(); const s = (db.sos ?? []).find((x) => x.token === token && Date.parse(x.share_until) > Date.now());
+    return s ? { first_name: db.profile?.first_name ?? "", lat: s.lat, lng: s.lng, updated_at: s.updated_at, share_until: s.share_until } : null;
+  }
+
+  // ---------------------------------------------------------------- inbox, history, help, account (demo)
+  async notices(): Promise<Notice[]> {
+    const db = this.load(); const out: Notice[] = []; let id = 1;
+    const read = (n: number) => (db.reads ?? 0) >= n;
+    for (const l of await this.likesMe()) out.push({ id: id++, type: "like", title: l.kind === "cosmic_like" ? "A Cosmic Like for you" : "Someone likes you",
+      body: `Someone with ${l.jodi_score}% liked you`, data: { link: "/likes" }, read: read(1), created_at: l.liked_at, group: "likes" });
+    for (const m of db.matches ?? []) out.push({ id: id++, type: "match", title: "It's a match!", body: `You and ${sampleProfile(m.other)?.first_name}. Ab baat karo!`,
+      data: { link: `/match/${m.id}` }, read: read(1), created_at: new Date(m.at).toISOString(), group: "likes" });
+    for (const r of db.readings ?? []) out.push({ id: id++, type: "reading_ready", title: "Your reading is ready", body: "Tap to read it.", data: { link: `/readings/${r.id}` },
+      read: read(1), created_at: r.created_at, group: "readings" });
+    for (const a of (db.ledger ?? []).filter((x) => x.kind === "purchase")) out.push({ id: id++, type: "payment", title: `${a.delta} credits added`, body: a.reason,
+      data: { link: "/plans" }, read: read(1), created_at: a.at, group: "account" });
+    return out.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+  async markAllRead() { this.edit((d) => { d.reads = 1; }); }
+  async history(): Promise<History> {
+    const db = this.load(); this.settle();
+    let bal = (db.bonus ?? 0);
+    const rows = [...(db.ledger ?? [])].reverse().map((l) => { bal += l.delta; return { at: l.at, reason: l.reason, delta: l.delta, kind: l.kind, balance: bal }; });
+    return {
+      plans: Object.entries(db.subs ?? {}).map(([key, until]) => ({ id: key, key, label: PLANS.find((p) => p.key === key)?.label ?? key, price_paise: PLANS.find((p) => p.key === key)?.price_paise ?? 0,
+        interval: "month", status: until > Date.now() ? "active" : "expired", until: new Date(until).toISOString() })),
+      ledger: [...rows.reverse(), ...(db.bonus ? [{ at: new Date(db.profile?.created ?? Date.now()).toISOString(), reason: "Welcome bonus", delta: db.bonus, kind: "bonus", balance: db.bonus }] : [])],
+      invoices: Object.entries(db.orders ?? {}).filter(([, o]) => o.done).map(([id, o]) => ({ id, invoice_no: `LKH/DEMO/${id.slice(5, 9)}`, amount_paise: o.amount,
+        gst_paise: Math.round(o.amount - o.amount / 1.18), item: o.type === "pack" ? `${PACKS.find((p) => p.id === o.key)?.credits} credits` : PLANS.find((p) => p.key === o.key)?.label ?? o.key,
+        at: new Date(o.at).toISOString() })),
+    };
+  }
+  async invoice(id: string): Promise<Invoice | null> {
+    const inv = (await this.history()).invoices.find((x) => x.id === id);
+    if (!inv) return null;
+    return { invoice_no: inv.invoice_no, date: inv.at, amount_paise: inv.amount_paise, gst_paise: inv.gst_paise, taxable_paise: inv.amount_paise - inv.gst_paise,
+      method: "upi", payment_ref: `pay_${id.slice(5)}`, item: inv.item, sac: "[SAC]",
+      company: { legal_name: "[COMPANY NAME] Private Limited", gstin: "[GSTIN]", cin: "[CIN]", address: "[ADDRESS], Jaipur, Rajasthan" },
+      customer: { name: this.load().profile?.first_name ?? "", phone: this.load().phone ?? null } };
+  }
+  async openTicket(subject: string, body: string) {
+    if (!body.trim()) throw new Error("Tell us what happened.");
+    const t: Ticket = { id: crypto.randomUUID(), subject: subject || "Help", status: "open", created_at: new Date().toISOString(),
+      messages: [{ from: "me", body: body.trim(), at: new Date().toISOString() }] };
+    this.edit((d) => { d.tickets = [t, ...(d.tickets ?? [])]; });
+    return t.id;
+  }
+  async tickets() { return this.load().tickets ?? []; }
+  async replyTicket(id: string, body: string) { this.edit((d) => { const t = (d.tickets ?? []).find((x) => x.id === id); t?.messages.push({ from: "me", body, at: new Date().toISOString() }); }); }
+  async fileGrievance(_c: string, description: string) {
+    if (!description.trim()) throw new Error("Tell us what happened.");
+    await wait(300);
+    const n = (this.load().grievances ?? 0) + 1000; this.edit((d) => { d.grievances = (d.grievances ?? 0) + 1; });
+    return { ticket_no: `GR-${n}`, resolve_due_at: new Date(Date.now() + 15 * 864e5).toISOString() };
+  }
+  async accountState(): Promise<AccountState> {
+    const p = this.load().profile;
+    return { status: "active", selfie_status: (p?.selfie_status as string) ?? "passed", paused: !!p?.paused, tier_paused_until: null, action: null };
+  }
+  async appeal() { await wait(200); }
+  async toolkit(): Promise<Toolkit> {
+    const t = this.load().tried ?? [];
+    const items = [["check_anyone", "Check With Anyone", "Crush, ex or co-founder", "/check"], ["saathi", "Saathi", "Chat till you match", "/saathi"],
+      ["cupid_opener", "Cupid opener", "First line, sorted", "/matches"], ["gift", "Gift a Reading", "A birthday surprise", "/gift"],
+      ["who_suits_me", "Who Suits Me", "What your chart wants", "/my-kundli?tab=suits"], ["my_kundli", "My Kundli", "Chart and dasha", "/my-kundli"],
+      ["golden_hours", "Golden Hours", "Best times to talk", "/matches"], ["daily_kick", "Daily Kick", "Your day, decoded", "/kick"]];
+    return { reward: 5, items: items.map(([key, title, body, link]) => ({ key, title, body, link, tried: t.includes(key) })) };
+  }
+  async tried(key: string) {
+    const db = this.load(); if ((db.tried ?? []).includes(key)) return false;
+    this.edit((d) => { d.tried = [...(d.tried ?? []), key]; d.purchased = (d.purchased ?? 0) + 5;
+      d.ledger = [{ delta: 5, kind: "reward", reason: `Tried ${key.replace(/_/g, " ")}`, at: new Date().toISOString() }, ...(d.ledger ?? [])]; });
+    return true;
   }
 }

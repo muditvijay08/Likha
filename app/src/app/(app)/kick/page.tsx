@@ -2,7 +2,7 @@
 // H2 Daily Kick. Scores and times are computed; the words around them are written overnight. Paid part unlocks with credits or Kick Pass.
 import { useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
-import { LockIcon, price, useApp } from "@/components/app";
+import { LockIcon, price, useApp, useTried } from "@/components/app";
 import { api, type Kick } from "@/lib/api";
 
 const ICONS = [
@@ -21,12 +21,13 @@ export default function DailyKick() {
   const { home, prices, reload, toast } = useApp();
   const [opened, setOpened] = useState<Kick | null>(null);
   const { busy, error, run } = useAction();
+  const tried = useTried();
   const k = opened ?? home?.kick ?? null;
   const city = home?.city;
   const date = city ? new Intl.DateTimeFormat("en-IN", { timeZone: city.timezone, weekday: "long", day: "numeric", month: "long" }).format(new Date()) : "";
   const cost = price(prices, "daily_kick", home?.kick_price ?? 10);
 
-  const unlock = () => run(async () => { setOpened(await api().unlockKick()); await reload(); });
+  const unlock = () => run(async () => { setOpened(await api().unlockKick()); await reload(); tried("daily_kick", "the Daily Kick"); });
   const share = async () => {
     if (!k) return;
     const text = `My love weather today: ${k.teaser.vibe}/10. "${k.teaser.love_weather}" · Likha, jo likha hai, woh milega`;
