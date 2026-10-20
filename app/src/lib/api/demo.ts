@@ -1,9 +1,11 @@
 // Demo backend: everything lives in this browser. Used for design reviews and automated tests.
 // OTP code is always 123456. Selfie always passes. The kundli is a fixed sample chart.
 import type {
-  Api, Basics, Birth, City, CityQueue, Gender, Goal, Interest, Lifestyle, MyChart, OnboardingState, Photo, Place, Prefs,
-  PublicSettings, Refresh, SelfieResult,
+  Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
+  MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
 } from "./types";
+import { SAMPLES, sampleProfile } from "./samples";
+import { dayPlan, range } from "../panchang";
 
 const KEY = "likha-demo-db";
 const CITIES: City[] = [
@@ -21,7 +23,12 @@ interface Db {
   profile?: Record<string, unknown> & { first_name: string; gender: Gender; onboarding_step: number; selfie_status: OnboardingState["selfie_status"]; created: number };
   consents: string[]; city?: City; birth?: Birth; photos: Photo[]; prompts: { key: string; answer: string }[];
   interests: number[]; prefs?: Prefs; bonus?: number; kundliAt?: number; pushTokens: string[];
+  // member app
+  spent?: number; likes?: string[]; passes?: string[]; matches?: { id: string; other: string; at: number }[];
+  seenLikes?: boolean; kickOpen?: string; reports?: string[]; golden?: string[]; filters?: Filters;
 }
+const PRICES: Prices = { cosmic_like: 9, full_report: 29, golden_hours: 19, daily_kick: 10, cupid_opener: 15, check_anyone: 29, boost: 29, travel_mode: 29, top_matches_india: 49 };
+const today = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
 
 const fresh = (): Db => ({ signedIn: false, consents: [], photos: [], prompts: [], interests: [], pushTokens: [] });
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
@@ -135,4 +142,133 @@ export class DemoApi implements Api {
     };
   }
   async savePushToken(t: string) { this.edit((d) => { d.pushTokens.push(t); }); }
+
+  // ---------------------------------------------------------------- member app (sample profiles, clearly labelled)
+  private pool(db: Db): Card[] {
+    const want = db.profile?.gender === "man" ? "woman" : "man";
+    return SAMPLES.filter((x) => x.gender === want).map(({ gender: _g, likesYou: _l, ...c }) => ({ ...c, is_sample: true }));
+  }
+  private likers(db: Db) { const want = db.profile?.gender === "man" ? "woman" : "man"; return SAMPLES.filter((x) => x.gender === want && x.likesYou); }
+  private balance(db: Db) { return (db.bonus ?? 0) - (db.spent ?? 0); }
+  private spend(key: string) {
+    const db = this.load();
+    if (this.balance(db) < PRICES[key]) throw new Error("Not enough credits. Top up your wallet to continue.");
+    this.edit((d) => { d.spent = (d.spent ?? 0) + PRICES[key]; });
+  }
+  private kick(db: Db): Kick {
+    const open = db.kickOpen === today();
+    const pl = dayPlan(26.9124, 75.7873, "Asia/Kolkata");                         // same maths as the overnight writer
+    const w = (h: { start: number; end: number } | null) => h ? range(h.start, h.end) : "–";
+    return {
+      date: today(), unlocked: open, streak: open ? 1 : 0,
+      teaser: { vibe: 8, date_score: 7, love_weather: "Venus is flirting with your 7th house", line: "Bold first moves land well tonight.",
+                lucky_window: pl.love ? w(pl.love) : null, rahu_kaal: range(pl.rahu[0], pl.rahu[1]) },
+      content: open ? {
+        fix: ["Wear something yellow today.", "Say \"Om Budhaya Namah\" 11 times before work.", "Call the friend you've been meaning to call."],
+        time_windows: [{ label: "Office and meetings", time: w(pl.office) }, { label: "Travel", time: w(pl.travel) },
+                       { label: "Date or chat", time: w(pl.love) }, { label: "Avoid big money moves (Rahu Kaal)", time: range(pl.rahu[0], pl.rahu[1]) }],
+        first_date_answer: "Yes, after sunset. A calm, chatty evening.", tara: "Sampat", today_moon: "Rohini in Taurus",
+      } : null,
+    };
+  }
+  private visible(db: Db) {
+    const gone = new Set([...(db.likes ?? []), ...(db.passes ?? [])]);
+    const f = db.filters;
+    return this.pool(db).filter((c) => !gone.has(c.id) && (!f || ((c.age ?? 0) >= f.age_min && (c.age ?? 0) <= f.age_max
+      && (f.distance === "any_city" || c.city === (db.city?.name ?? "Jaipur")) && (!f.goals.length || !c.goal || f.goals.includes(c.goal))
+      && (!f.diets.length || (c.diet && f.diets.includes(c.diet))))))
+      .sort((a, b) => (b.jodi_score ?? 0) - (a.jodi_score ?? 0));
+  }
+
+  async home(): Promise<HomeData> {
+    await wait(150);
+    const db = this.load(); const p = this.me(db);
+    const day = Math.floor((Date.now() - p.created) / 864e5) + 1;
+    return {
+      first_name: p.first_name, gender: p.gender, tier: "none", status: "active", pct: this.pct(db),
+      city: { name: db.city?.name ?? "Jaipur", lat: 26.9124, lng: 75.7873, timezone: "Asia/Kolkata", status: db.city?.status ?? "live" },
+      balance: this.balance(db), kick: this.kick(db), kick_pass: false, kick_price: PRICES.daily_kick, streak: db.kickOpen === today() ? 1 : 0,
+      likes_count: (await this.likesMe()).length, top: this.visible(db).slice(0, 4),
+      feature: { key: "golden_hours", title: "Golden Hours", body: "The best time to text each match. Try it, +5 credits", link: "/matches", reward: 5, day: Math.max(day, 2) },
+      unread: 0,
+    };
+  }
+  async prices() { return PRICES; }
+  async unlockKick() {
+    const db = this.load();
+    if (db.kickOpen !== today()) { this.spend("daily_kick"); this.edit((d) => { d.kickOpen = today(); }); }
+    return this.kick(this.load());
+  }
+  async discover(offset = 0) { await wait(150); return this.visible(this.load()).slice(offset, offset + 10); }
+  async discoverCount(anyCity = false) {
+    const db = this.load();
+    if (!anyCity) return this.visible(db).length;
+    const keep = db.filters; this.edit((d) => { d.filters = { ...(keep ?? this.defaults()), distance: "any_city" }; });
+    const n = this.visible(this.load()).length; this.edit((d) => { d.filters = keep; });
+    return n;
+  }
+  async pulse(): Promise<Pulse | null> { return { city: this.load().city?.name ?? "Jaipur", matches_last_hour: 2, top_score: 94, minutes_ago: 2 }; }
+  async profile(id: string): Promise<ProfileFull> {
+    await wait(150);
+    const db = this.load();
+    const p = sampleProfile(id);
+    if (!p) throw new Error("This profile isn't available any more.");
+    const m = (db.matches ?? []).find((x) => x.other === id);
+    return { ...p, is_sample: true, i_liked: (db.likes ?? []).includes(id), match_id: m?.id ?? null,
+             liked_me: this.likers(db).some((x) => x.id === id) };
+  }
+  async like(id: string, kind: "like" | "cosmic_like" = "like"): Promise<LikeResult> {
+    await wait(200);
+    const db = this.load();
+    if ((db.likes ?? []).includes(id)) return { matched: false, already_liked: true };
+    if (kind === "cosmic_like") this.spend("cosmic_like");
+    this.edit((d) => { d.likes = [...(d.likes ?? []), id]; });
+    if (this.likers(db).some((x) => x.id === id)) {
+      const mid = `m-${id}`;
+      this.edit((d) => { d.matches = [...(d.matches ?? []), { id: mid, other: id, at: Date.now() }]; });
+      return { matched: true, match_id: mid };
+    }
+    return { matched: false };
+  }
+  async pass(id: string) { this.edit((d) => { d.passes = [...(d.passes ?? []), id]; }); }
+  async likesMe(): Promise<LikeCard[]> {
+    const db = this.load(); const gone = new Set([...(db.likes ?? []), ...(db.passes ?? [])]);
+    return this.likers(db).filter((x) => !gone.has(x.id)).map(({ gender: _g, likesYou, ...c }, i) => ({
+      ...c, is_sample: true, liked_at: new Date(Date.now() - (likesYou as number) * 3600e3).toISOString(), kind: i === 0 ? "cosmic_like" : "like",
+      note: i === 0 ? "Chai at Tapri, Sunday?" : null, new: !db.seenLikes }));
+  }
+  async markLikesSeen() { this.edit((d) => { d.seenLikes = true; }); }
+  async matches(): Promise<MatchRow[]> {
+    const db = this.load();
+    return (db.matches ?? []).map((m) => {
+      const o = sampleProfile(m.other)!;
+      return { match_id: m.id, matched_at: new Date(m.at).toISOString(), other_id: o.id, first_name: o.first_name, age: o.age, photo: null,
+               jodi_score: o.jodi_score, gunas: o.gunas, last_body: null, last_kind: null, last_from_me: null, last_at: null, unread: 0, couple: false };
+    }).reverse();
+  }
+  private defaults(): Filters {
+    return { age_min: 21, age_max: 35, distance: "same_city", diets: [], goals: ["dating", "matchmaking"], languages: [],
+             height_min_cm: null, height_max_cm: null, active_this_week: true, has_voice_intro: false };
+  }
+  async filters() { const db = this.load(); return db.filters ?? { ...this.defaults(), ...(db.prefs ?? {}) } as Filters; }
+  async saveFilters(f: Filters) { await wait(150); this.edit((d) => { d.filters = f; }); }
+  async compatReport(otherId: string): Promise<Reading> {
+    const db = this.load();
+    if (!(db.reports ?? []).includes(otherId)) { this.spend("full_report"); this.edit((d) => { d.reports = [...(d.reports ?? []), otherId]; }); await wait(900); }
+    return (await this.reading("compat_report", otherId))!;
+  }
+  async reading(kind: string, otherId?: string): Promise<Reading | null> {
+    if (kind !== "compat_report" || !otherId || !(this.load().reports ?? []).includes(otherId)) return null;
+    const o = sampleProfile(otherId)!;
+    return { id: `r-${otherId}`, status: "ready", content: {
+      title: `You and ${o.first_name}`, summary: `${o.gunas}/36 Gunas and a Jodi Score of ${o.jodi_score}. Sample reading for demo mode.`,
+      sections: [{ heading: "Strengths", body: "Easy trust. Shared humour. Similar pace for big decisions." },
+                 { heading: "Watch-outs", body: "One of you plans, the other improvises. Talk money early." }],
+      try_this: "Plan one small trip together and see who packs first." } };
+  }
+  async goldenUnlocked(matchId: string) { return (this.load().golden ?? []).includes(matchId); }
+  async unlockGolden(matchId: string) {
+    if ((this.load().golden ?? []).includes(matchId)) return;
+    this.spend("golden_hours"); this.edit((d) => { d.golden = [...(d.golden ?? []), matchId]; });
+  }
 }

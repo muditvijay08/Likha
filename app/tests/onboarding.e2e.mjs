@@ -138,7 +138,7 @@ async function person({ name, gender, phone, city, tob, expectLive }) {
       await page.getByRole("link", { name: n < 3 ? "Next" : "Start exploring" }).click();
     }
     await page.waitForURL("**/home");
-    ok(await page.getByText("Profile 100% complete").waitFor({ timeout: 5000 }).then(() => true, () => false), `${name}: lands on Home with a complete profile`);
+    ok(await page.getByText(`Hey ${name}`).waitFor({ timeout: 8000 }).then(() => true, () => false), `${name}: lands on Home`);
     // resume: a reload of the entry page goes straight to home
     await page.goto(`${BASE}/`); await page.waitForURL("**/home");
     ok(true, `${name}: returning member resumes at Home`);

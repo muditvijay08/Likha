@@ -405,12 +405,13 @@ end $$;
 
 -- Daily Kicks: who still needs today's kick (05:00 IST batch).
 create or replace function public.svc_kick_targets(p_date date, p_limit int default 500)
-returns table (user_id uuid, first_name text, gender public.gender_t, summary jsonb, dasha jsonb)
+returns table (user_id uuid, first_name text, gender public.gender_t, summary jsonb, dasha jsonb, city jsonb)
 language plpgsql security definer set search_path = public as $$
 begin
   perform private.require_service();
   return query
-  select p.id, p.first_name, p.gender, to_jsonb(k) - 'user_id', c.dashas -> 'current'
+  select p.id, p.first_name, p.gender, to_jsonb(k) - 'user_id', c.dashas -> 'current',
+         (select jsonb_build_object('name', ct.name, 'lat', ct.lat, 'lng', ct.lng, 'timezone', ct.timezone) from public.cities ct where ct.id = p.city_id)
   from public.profiles p join public.kundli_summary k on k.user_id = p.id join private.kundli_charts c on c.user_id = p.id
   where p.status = 'active' and not p.is_demo and p.last_active_at > now() - interval '14 days'
     and not exists (select 1 from public.daily_kicks d where d.user_id = p.id and d.kick_date = p_date)

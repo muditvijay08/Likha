@@ -5,7 +5,7 @@ const schema = readFileSync(process.argv[2] ?? "../schema/likha_schema.sql", "ut
 const code = readFileSync(new URL("../src/lib/api/supabase.ts", import.meta.url), "utf8");
 let bad = 0, n = 0;
 const check = (kind, name, re) => { n++; if (!re.test(schema)) { bad++; console.log(`MISSING ${kind}: ${name}`); } };
-for (const [, f] of code.matchAll(/\.rpc\("([a-z_]+)"/g)) check("function", f, new RegExp(`function public\\.${f}\\(`));
+for (const [, f] of code.matchAll(/\.rpc(?:<[^>]*>)?\("([a-z_]+)"/g)) check("function", f, new RegExp(`function public\\.${f}\\(`));
 for (const [, t] of code.matchAll(/\.from\("([a-z_]+)"\)/g)) {
   if (code.includes(`storage.from("${t}")`)) check("bucket", t, new RegExp(`\\('${t}'`));
   else check("table", t, new RegExp(`create table public\\.${t} `));

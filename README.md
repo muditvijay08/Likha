@@ -4,12 +4,13 @@
 | Area | Status |
 |---|---|
 | Design canvas (105 app + 25 admin screens) | Done |
-| Database (8 parts, 274 checks passing) | Done |
+| Database (9 parts, 320 checks passing) | Done |
 | Kundli engine (NASA JPL, final rules ak-2.0) | Done |
 | AI gateway, spend caps, Claude/Gemini/GPT switch | Done |
 | Be a Cupid (referrals, payouts, TDS) | Done |
 | **Member app: onboarding O1–O15 + tour** | **Done, tested end to end in demo mode (23 checks)** |
-| Member app: Home, Discover, Likes, Chats, Menu and the rest | Next |
+| **Member app batch 1: Home, Daily Kick, Discover, Profile, Filters, Compatibility report, Likes, Match + Golden Hours, Menu, Chats list** | **Done, 34 end-to-end checks in demo mode** |
+| Member app batch 2: chat (realtime), Guru Ji, Saathi | Next |
 | Admin web app | Not started |
 | Selfie liveness (AWS), Razorpay payments, OneSignal | Not started |
 

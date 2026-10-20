@@ -43,3 +43,11 @@ def test_bad_time_rejected():
 def test_lookup_sql():
     r = c.get("/v1/guna-lookup.sql", headers=H)
     assert r.status_code == 200 and r.text.count("(") > 11664
+
+
+def test_day_endpoint():
+    r = c.post("/v1/day", headers=H, json={"date": "2026-10-20", "lat": 26.91, "lng": 75.79, "tz_name": "Asia/Kolkata",
+                                            "people": [{"id": "a", "nakshatra_index": 26, "moon_sign_index": 11}]})
+    assert r.status_code == 200
+    j = r.json()
+    assert 0 <= j["moon"]["nakshatra"] <= 26 and 1 <= j["people"][0]["vibe"] <= 10

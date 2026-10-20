@@ -77,3 +77,11 @@ Deno.test("parseJson tolerates text around the JSON", () => {
   assertEquals(parseJson('Here you go: {"a": 1} thanks')?.a, 1);
   assertEquals(parseJson("no json"), null);
 });
+
+Deno.test("compat report and daily kick prompts", async () => {
+  const { readingPrompt, kickPrompt } = await import("../functions/_shared/core.ts");
+  const r = readingPrompt("compat_report", { pair: { gunas: "28.5/36" } });
+  assert(r.user.includes("8 kootas") && r.user.includes("28.5/36"));
+  const k = kickPrompt(["Keep it light"], { vibe: "8/10" }, "2026-10-20");
+  assert(k.user.includes("Keep it light") && k.user.includes('"fix"') && !k.user.includes("lucky_window"));
+});

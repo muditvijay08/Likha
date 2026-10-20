@@ -59,7 +59,7 @@ Everything here was run and tested on 20 Oct 2026.
 |---|---|---|
 | `ai-gateway` | app (member token) / internal | Readings, Saathi, Guru Ji, Cupid openers |
 | `kundli-worker` | cron, every minute | Build queued kundlis |
-| `kick-batch` | cron: `submit` 00:30 IST, `collect` every 15 min | Daily Kicks via Batches API (half price) |
+| `kick-batch` | cron: `submit` 00:30 IST, `collect` every 15 min | Daily Kicks: scores and times computed (kundli `/v1/day` + panchang), words via Batches API (half price) |
 | `cupid-redirect` | public `likha.in/c/*` | Log click, set cookie, redirect |
 | `payout-worker` | cron hourly + RazorpayX webhook | UPI payouts |
 

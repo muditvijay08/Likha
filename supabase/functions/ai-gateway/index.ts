@@ -64,6 +64,10 @@ async function reading(readingId: string) {
     });
     if (!res.ok) throw new Error(`kundli ${res.status}`);
     facts = (await res.json()).facts;
+  } else if (kind === "compat_report") {
+    // only what both members can already see on each other's profile: summaries and the pair's Gunas (no full charts, no dashas)
+    const pub = (x: any) => x && { ...x, chart: null, summary: { ...x.summary, current_dasha: undefined } };
+    facts = { a: personFacts(ctx.me?.first_name, pub(ctx.me)), b: personFacts(ctx.partner?.first_name, pub(ctx.partner)), pair: pairFacts(ctx.compatibility) };
   } else {
     facts = {
       a: personFacts(ctx.me?.first_name, ctx.me),

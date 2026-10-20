@@ -165,6 +165,7 @@ export const FEATURE_PROMPTS: Record<string, string> = {
   gift: "A warm reading written as a gift for the named person. 3 short sections.",
   seven_questions: "Reflect on the answers in <user_text> next to the chart facts. Kind, curious, no verdicts. 3 short sections.",
   next_12_months: "Month-by-month themes for love from the dasha facts only. 12 one-line entries. Tendencies only.",
+  compat_report: "The written part of a compatibility report for two members who can see each other's profile. Go through the 8 kootas in the facts (only the ones given), then the Manglik note, then 'how to make it work'. Mention the Guna score and Jodi Score exactly as given. 5 short sections.",
   golden_hours: "Explain the Golden Hours windows given in the facts, in 2 short sections.",
 };
 
@@ -177,12 +178,15 @@ export function readingPrompt(kind: string, facts: unknown, userText?: string) {
   };
 }
 
-export function kickPrompt(template: string, facts: unknown, date: string) {
+/** Daily Kick: scores and times are computed (Tara bala, horas, Rahu Kaal). The writer only adds words around them. */
+export function kickPrompt(templates: string[], facts: unknown, date: string) {
   return {
     system: HOUSE_RULES,
-    user: `<facts>\n${JSON.stringify(facts)}\n</facts>\nDate: ${date}\nTemplate from the team: ${template}\n` +
-      `Reply with JSON only: {"teaser": {"love_weather": string (max 8 words), "vibe": string (max 12 words), "lucky_window": string}, ` +
-      `"content": {"fix": string (max 40 words), "time_windows": [string], "first_date_answer": string (max 30 words)}}`,
+    user: `<facts>\n${JSON.stringify(facts)}\n</facts>\nDate: ${date}\nTeam notes for each part:\n- ${templates.join("\n- ")}\n` +
+      `Use the vibe, date score and time windows exactly as given; do not add other times or scores.\n` +
+      `Reply with JSON only: {"headline": string (max 8 words, playful), "line": string (max 14 words), ` +
+      `"fix": [string, string, string] (a colour, a short traditional mantra, one kind act; max 14 words each), ` +
+      `"first_date_answer": string (max 20 words)}`,
   };
 }
 

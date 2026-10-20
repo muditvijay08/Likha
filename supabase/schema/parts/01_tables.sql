@@ -46,7 +46,7 @@ create type public.payment_status_t  as enum ('created','authorized','captured',
 create type public.sub_status_t      as enum ('trialing','active','past_due','cancelled','expired');
 create type public.refund_method_t   as enum ('credits','bank');
 create type public.refund_status_t   as enum ('requested','awaiting_second_approval','approved','processed','rejected');
-create type public.reading_kind_t    as enum ('daily_kick','full_report','check_anyone','why_not','gift','who_suits_me','our_stars','our_alignment','imagine_us','seven_questions','guru_chat','golden_hours','cupid_opener','next_12_months','rishta_maasi');
+create type public.reading_kind_t    as enum ('daily_kick','full_report','check_anyone','why_not','gift','who_suits_me','our_stars','our_alignment','imagine_us','seven_questions','guru_chat','golden_hours','cupid_opener','next_12_months','rishta_maasi','compat_report');
 create type public.reading_status_t  as enum ('pending_consent','generating','ready','failed','refunded','declined');
 create type public.consent_scope_t   as enum ('once','always');
 create type public.team_role_t       as enum ('owner','admin','safety','support','finance','viewer');

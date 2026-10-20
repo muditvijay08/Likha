@@ -81,6 +81,56 @@ export interface CityQueue {
 
 export type SelfieResult = { status: "passed" | "pending" | "manual_review" | "failed"; message?: string };
 
+// ---------------------------------------------------------------- member app (Home, Discover, Likes, Matches)
+export type Tier = "none" | "tara" | "graha" | "surya";
+export interface Card {
+  id: string; first_name: string; age: number | null; profession: string | null; goal: Goal | null; tier: Tier; city: string | null;
+  verified: boolean; diet: string | null; gunas: number | null; jodi_score: number | null; summary: string | null;
+  moon_sign: string | null; nakshatra: string | null; manglik: boolean | null;
+  photos: string[];                                   // signed URLs, approved photos only
+  prompt: { label: string; answer: string } | null; interests: string[]; liked_me: boolean;
+  is_sample?: boolean;                                // demo mode only: a labelled sample profile, never a real person
+}
+export interface Dosha { present: boolean; cancelled: boolean; reason: string | null }
+export interface ProfileFull extends Card {
+  height_cm: number | null; education: string | null; company: string | null; languages: string[]; drinking: string | null;
+  smoking: string | null; kids: string | null; religion: string | null; voice_url: string | null;
+  lagna: string | null; pada: number | null; borderline: boolean | null;
+  prompts: { label: string; answer: string }[];
+  kootas: Record<string, number> | null;
+  doshas: { nadi?: Dosha; bhakoot?: Dosha; gana?: Dosha; manglik_match?: boolean } | null;
+  i_liked: boolean; match_id: string | null;
+}
+export interface LikeCard extends Card { liked_at: string; kind: "like" | "cosmic_like"; note: string | null; new: boolean }
+export interface MatchRow {
+  match_id: string; matched_at: string; other_id: string; first_name: string; age: number | null; photo: string | null;
+  jodi_score: number | null; gunas: number | null; last_body: string | null; last_kind: string | null; last_from_me: boolean | null;
+  last_at: string | null; unread: number; couple: boolean;
+}
+export interface TimeWindow { label: string; time: string }
+export interface Kick {
+  date: string; unlocked: boolean; streak: number;
+  teaser: { vibe: number; date_score: number; love_weather: string; line: string; lucky_window: string | null; rahu_kaal?: string };
+  content: { fix: string[]; time_windows: TimeWindow[]; first_date_answer: string; tara?: string; today_moon?: string } | null;
+}
+export interface HomeCity { name: string; lat: number; lng: number; timezone: string; status: string }
+export interface HomeData {
+  first_name: string; gender: Gender; tier: Tier; status: string; pct: number; city: HomeCity | null; balance: number;
+  kick: Kick | null; kick_pass: boolean; kick_price: number; streak: number; likes_count: number; top: Card[];
+  feature: { key: string; title: string; body: string; link: string; reward: number; day: number } | null; unread: number;
+}
+export interface Pulse { city: string; matches_last_hour: number; top_score: number | null; minutes_ago: number }
+export interface Filters {
+  age_min: number; age_max: number; distance: "same_city" | "any_city"; diets: string[]; goals: Goal[]; languages: string[];
+  height_min_cm: number | null; height_max_cm: number | null; active_this_week: boolean; has_voice_intro: boolean;
+}
+export interface LikeResult { matched: boolean; match_id?: string; already_liked?: boolean }
+export interface Reading {
+  id: string; status: "generating" | "ready" | "failed" | "refunded";
+  content: { title: string; summary: string; sections: { heading: string; body: string }[]; try_this: string } | null;
+}
+export type Prices = Record<string, number>;
+
 export interface Api {
   readonly demo: boolean;
   sendOtp(phoneE164: string, channel: "sms" | "whatsapp"): Promise<void>;
@@ -108,4 +158,24 @@ export interface Api {
   cityQueue(): Promise<CityQueue | null>;
   myChart(): Promise<MyChart | null>;
   savePushToken(token: string): Promise<void>;
+
+  // member app
+  home(): Promise<HomeData>;
+  prices(): Promise<Prices>;
+  unlockKick(): Promise<Kick>;
+  discover(offset?: number): Promise<Card[]>;
+  discoverCount(anyCity?: boolean): Promise<number>;
+  pulse(): Promise<Pulse | null>;
+  profile(id: string): Promise<ProfileFull>;
+  like(id: string, kind?: "like" | "cosmic_like", note?: string): Promise<LikeResult>;
+  pass(id: string): Promise<void>;
+  likesMe(): Promise<LikeCard[]>;
+  markLikesSeen(): Promise<void>;
+  matches(): Promise<MatchRow[]>;
+  filters(): Promise<Filters>;
+  saveFilters(f: Filters): Promise<void>;
+  compatReport(otherId: string): Promise<Reading>;           // buys it the first time (idempotent), then returns it
+  reading(kind: string, otherId?: string): Promise<Reading | null>;
+  goldenUnlocked(matchId: string): Promise<boolean>;
+  unlockGolden(matchId: string): Promise<void>;
 }

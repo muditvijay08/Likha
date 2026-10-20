@@ -1,12 +1,18 @@
 // Daily Kicks, written overnight.
-// Claude: Message Batches API (half the price of live calls). Gemini / GPT: live calls, 300 members per run.
+// 1. Facts: today's Moon and each member's Tara bala / Chandrashtama from the kundli service (/v1/day), and the city's
+//    sunrise, Rahu Kaal and planetary hours (panchang.ts). Scores and times are never written by the model.
+// 2. Words: the model adds a headline, a line, three small fixes and a first-date answer.
+// Claude: Message Batches API (half price). Gemini / GPT: live calls, 300 members per run.
 // Cron (internal secret):  {"step":"submit"} at 00:30 IST   ->  {"step":"collect"} every 15 min 01:00-05:00 IST
 import { batchResults, batchStatus, createBatch, type ClaudeRequest } from "../_shared/anthropic.ts";
-import { callLLM } from "../_shared/llm.ts";
-import { allowedFrom, cleanName, estimateTokens, kickPrompt, numberCheck, parseJson, readableText, styleCheck } from "../_shared/core.ts";
+import { cleanName, estimateTokens, kickPrompt, parseJson, readableText, styleCheck } from "../_shared/core.ts";
 import { admin, isInternal, json, rpc } from "../_shared/db.ts";
+import { callLLM } from "../_shared/llm.ts";
+import { dayPlan, range } from "../_shared/panchang.ts";
 
 const istToday = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
+type Target = { user_id: string; first_name: string; summary: any; dasha: any; city: { name: string; lat: number; lng: number; timezone: string } | null };
+type Built = { facts: any; teaser: any; content: any };
 
 async function kickProvider(): Promise<string> {
   const { data: f } = await admin.from("ai_features").select("model").eq("key", "daily_kick").single();
@@ -14,38 +20,79 @@ async function kickProvider(): Promise<string> {
   return m?.provider ?? "anthropic";
 }
 
-function kickOk(out: any, ks: unknown) {
-  const t = out ? readableText(out) : "";
-  return !!out?.teaser && !!out?.content && numberCheck(t, allowedFrom(ks), { otherNumbers: false }).ok && styleCheck(t).ok;
+/** Computed facts for everyone in the list, grouped by city (one kundli-service call per city). */
+async function buildFacts(targets: Target[], date: string): Promise<Map<string, Built>> {
+  const out = new Map<string, Built>();
+  const byCity = new Map<string, Target[]>();
+  for (const t of targets) if (t.city) byCity.set(t.city.name, [...(byCity.get(t.city.name) ?? []), t]);
+  for (const list of byCity.values()) {
+    const c = list[0].city!;
+    const res = await fetch(`${Deno.env.get("KUNDLI_URL")}/v1/day`, {
+      method: "POST", headers: { "content-type": "application/json", "x-likha-key": Deno.env.get("KUNDLI_KEY")! },
+      body: JSON.stringify({ date, lat: c.lat, lng: c.lng, tz_name: c.timezone,
+        people: list.map((t) => ({ id: t.user_id, nakshatra_index: t.summary.nakshatra_index, moon_sign_index: t.summary.moon_sign_index })) }),
+    });
+    if (!res.ok) throw new Error(`kundli /v1/day ${res.status}`);
+    const day = await res.json();
+    const plan = dayPlan(c.lat, c.lng, c.timezone, new Date(`${date}T06:00:00+05:30`));
+    const windows = [
+      plan.office && { label: "Office and meetings", time: range(plan.office.start, plan.office.end) },
+      plan.travel && { label: "Travel", time: range(plan.travel.start, plan.travel.end) },
+      plan.love && { label: "Date or chat", time: range(plan.love.start, plan.love.end) },
+      { label: "Avoid big money moves (Rahu Kaal)", time: range(plan.rahu[0], plan.rahu[1]) },
+    ].filter(Boolean);
+    for (const p of day.people) {
+      const t = list.find((x) => x.user_id === p.id)!;
+      const facts = { first_name: cleanName(t.first_name), moon_sign: t.summary.moon_sign, nakshatra: t.summary.nakshatra,
+        dasha_now: t.summary.current_dasha, today_moon: `${day.moon.nakshatra_name} in ${day.moon.sign_name}`,
+        tara: p.tara_name, chandrashtama: p.chandrashtama, vibe: `${p.vibe}/10`, date_score: `${p.date_score}/10`, time_windows: windows };
+      out.set(p.id, {
+        facts,
+        teaser: { vibe: p.vibe, date_score: p.date_score, lucky_window: plan.love ? range(plan.love.start, plan.love.end) : null,
+                  rahu_kaal: range(plan.rahu[0], plan.rahu[1]) },
+        content: { time_windows: windows, tara: p.tara_name, chandrashtama: p.chandrashtama, today_moon: facts.today_moon },
+      });
+    }
+  }
+  return out;
 }
 
-// Gemini / GPT: no batch discount, so write kicks live, a slice per run, 5 at a time.
+function finish(b: Built, words: any) {
+  const t = readableText(words);
+  if (!words?.headline || !Array.isArray(words?.fix) || !styleCheck(t).ok) return null;
+  return { teaser: { ...b.teaser, love_weather: words.headline, line: words.line ?? "" },
+           content: { ...b.content, fix: words.fix.slice(0, 3), first_date_answer: words.first_date_answer ?? "" } };
+}
+
+async function templates(): Promise<string[]> {
+  const { data } = await admin.from("kick_templates").select("template").eq("active", true);
+  return (data ?? []).map((x: any) => x.template);
+}
+
 async function live(date: string, limit = 300) {
-  const { data: templates } = await admin.from("kick_templates").select("key,template").eq("active", true);
-  if (!templates?.length) return { saved: 0, reason: "no templates" };
-  const targets = await rpc<any[]>("svc_kick_targets", { p_date: date, p_limit: limit });
+  const tpl = await templates();
+  if (!tpl.length) return { saved: 0, reason: "no templates" };
+  const targets = await rpc<Target[]>("svc_kick_targets", { p_date: date, p_limit: limit });
+  const built = await buildFacts(targets, date);
   let saved = 0, failed = 0, stopped = false;
-  for (let i = 0; i < targets.length && !stopped; i += 5) {
-    await Promise.all(targets.slice(i, i + 5).map(async (t, j) => {
-      const facts = { first_name: cleanName(t.first_name), lagna: t.summary.lagna, moon_sign: t.summary.moon_sign,
-        nakshatra: t.summary.nakshatra, dasha_now: t.summary.current_dasha };
-      const p = kickPrompt(templates[(i + j) % templates.length].template, facts, date);
-      const hold = await rpc<any>("svc_ai_reserve", { p_user: t.user_id, p_feature: "daily_kick",
-        p_est_input_tokens: estimateTokens(p.system, p.user) });
-      if (!hold.ok) { stopped = true; return; }                   // budget reached
+  const list = targets.filter((t) => built.has(t.user_id));
+  for (let i = 0; i < list.length && !stopped; i += 5) {
+    await Promise.all(list.slice(i, i + 5).map(async (t) => {
+      const b = built.get(t.user_id)!;
+      const p = kickPrompt(tpl, b.facts, date);
+      const hold = await rpc<any>("svc_ai_reserve", { p_user: t.user_id, p_feature: "daily_kick", p_est_input_tokens: estimateTokens(p.system, p.user) });
+      if (!hold.ok) { stopped = true; return; }
       try {
         const r = await callLLM(hold.provider, { model: hold.model, system: p.system, messages: [{ role: "user", content: p.user }],
           maxTokens: hold.max_output_tokens, temperature: hold.temperature });
-        const out = parseJson(r.text);
-        const ok = kickOk(out, t.summary);
+        const done = finish(b, parseJson(r.text));
         await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: r.inputTokens, p_out: r.outputTokens, p_cache: r.cacheReadTokens,
-          p_status: ok ? "ok" : "failed", p_number_check: ok, p_latency_ms: r.latencyMs, p_error: ok ? null : "kick failed checks" });
-        if (ok) { await rpc("svc_save_kick", { p_user: t.user_id, p_date: date, p_teaser: out.teaser, p_content: out.content }); saved++; }
+          p_status: done ? "ok" : "failed", p_number_check: !!done, p_latency_ms: r.latencyMs, p_error: done ? null : "kick failed checks" });
+        if (done) { await rpc("svc_save_kick", { p_user: t.user_id, p_date: date, p_teaser: done.teaser, p_content: done.content }); saved++; }
         else failed++;
       } catch (e) {
         failed++;
-        await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: 0, p_out: 0, p_cache: 0, p_status: "failed",
-          p_error: String((e as Error).message) }).catch(() => {});
+        await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: 0, p_out: 0, p_cache: 0, p_status: "failed", p_error: String((e as Error).message) }).catch(() => {});
       }
     }));
   }
@@ -54,21 +101,20 @@ async function live(date: string, limit = 300) {
 
 async function submit(date: string) {
   if (await kickProvider() !== "anthropic") return live(date);
-  const { data: templates } = await admin.from("kick_templates").select("key,template").eq("active", true);
-  if (!templates?.length) return { submitted: 0, reason: "no templates" };
-  const targets = await rpc<any[]>("svc_kick_targets", { p_date: date, p_limit: 5000 });
+  const tpl = await templates();
+  if (!tpl.length) return { submitted: 0, reason: "no templates" };
+  const targets = await rpc<Target[]>("svc_kick_targets", { p_date: date, p_limit: 5000 });
+  const built = await buildFacts(targets, date);
   const items: { custom_id: string; req: ClaudeRequest }[] = [];
-  const map: Record<string, { user_id: string; call_id: number }> = {};
+  const map: Record<string, { user_id: string; call_id: number; built: Built }> = {};
   for (const [i, t] of targets.entries()) {
-    const facts = { first_name: cleanName(t.first_name), lagna: t.summary.lagna, moon_sign: t.summary.moon_sign,
-      nakshatra: t.summary.nakshatra, dasha_now: t.summary.current_dasha };
-    const tpl = templates[i % templates.length];
-    const p = kickPrompt(tpl.template, facts, date);
+    const b = built.get(t.user_id); if (!b) continue;
+    const p = kickPrompt(tpl, b.facts, date);
     const hold = await rpc<any>("svc_ai_reserve", { p_user: t.user_id, p_feature: "daily_kick",
       p_est_input_tokens: estimateTokens(p.system, p.user), p_batch: true });
     if (!hold.ok) break;                                           // budget reached: the rest get tomorrow's
     const id = `k${i}`;
-    map[id] = { user_id: t.user_id, call_id: hold.call_id };
+    map[id] = { user_id: t.user_id, call_id: hold.call_id, built: b };
     items.push({ custom_id: id, req: { model: hold.model, system: p.system, messages: [{ role: "user", content: p.user }],
       maxTokens: hold.max_output_tokens, temperature: hold.temperature, cacheSystem: true } });
   }
@@ -95,12 +141,10 @@ async function collect() {
     for await (const r of batchResults(st.resultsUrl)) {
       const it = b.items[r.custom_id];
       if (!it) continue;
-      const out = r.ok ? parseJson(r.text) : null;
-      const { data: ks } = await admin.from("kundli_summary").select("lagna,moon_sign,nakshatra,current_dasha").eq("user_id", it.user_id).single();
-      const ok = kickOk(out, ks);
+      const done = r.ok ? finish(it.built, parseJson(r.text)) : null;
       await rpc("svc_ai_finish", { p_call: it.call_id, p_in: r.inputTokens, p_out: r.outputTokens, p_cache: r.cacheReadTokens,
-        p_status: ok ? "ok" : "failed", p_number_check: ok, p_batch: true, p_error: ok ? null : "kick failed checks" });
-      if (ok) { await rpc("svc_save_kick", { p_user: it.user_id, p_date: b.for_date, p_teaser: out.teaser, p_content: out.content }); saved++; }
+        p_status: done ? "ok" : "failed", p_number_check: !!done, p_batch: true, p_error: done ? null : "kick failed checks" });
+      if (done) { await rpc("svc_save_kick", { p_user: it.user_id, p_date: b.for_date, p_teaser: done.teaser, p_content: done.content }); saved++; }
       else failed++;                                                // no kick today for this member: nothing was charged
     }
     await admin.from("ai_batches").update({ status: "collected", collected_at: new Date().toISOString() }).eq("id", b.id);

@@ -89,6 +89,29 @@ def pair(body: PairIn):
             "borderline": sa["borderline"] or sb["borderline"]}
 
 
+class DayPerson(BaseModel):
+    id: str
+    nakshatra_index: int = Field(ge=0, le=26)
+    moon_sign_index: int = Field(ge=0, le=11)
+
+
+class DayIn(BaseModel):
+    date: date
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+    tz_name: str
+    people: list[DayPerson] = Field(max_length=5000)
+
+
+@app.post("/v1/day", dependencies=[Depends(auth)])
+def day(body: DayIn):
+    """Daily Kick facts for one city and many people: the Moon at 6 AM local, then each person's Tara and scores."""
+    from likha_kundli.day import person_day, transit_moon
+    moon = transit_moon(body.date, body.tz_name, body.lat, body.lng)
+    return {"date": body.date.isoformat(), "moon": moon,
+            "people": [{"id": p.id, **person_day(p.nakshatra_index, p.moon_sign_index, moon)} for p in body.people]}
+
+
 @app.get("/v1/guna-lookup.sql", dependencies=[Depends(auth)], response_class=PlainTextResponse)
 def lookup_sql():
     return build_sql()

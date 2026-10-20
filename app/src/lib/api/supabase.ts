@@ -1,11 +1,22 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
-  Api, Basics, Birth, City, CityQueue, Gender, Goal, Interest, Lifestyle, MyChart, OnboardingState, Photo, Place, Prefs,
-  PublicSettings, Refresh, SelfieResult,
+  Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
+  MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
 } from "./types";
 
+/** Errors the database raises on purpose, in member words. */
+const FRIENDLY: [string, string][] = [
+  ["insufficient_credits", "Not enough credits. Top up your wallet to continue."],
+  ["daily_like_limit", "That's all your likes for today. New ones arrive at midnight."],
+  ["profile not available", "This profile isn't available any more."],
+  ["kick_not_ready", "Today's Kick is still being written. Check back in a little while."],
+  ["account not active", "Finish your profile to start liking people."],
+];
+
 function fail(error: { message: string } | null, what: string): void {
-  if (error) throw new Error(`${what}: ${error.message}`);
+  if (!error) return;
+  const f = FRIENDLY.find(([code]) => error.message.includes(code));
+  throw new Error(f ? f[1] : `${what}: ${error.message}`);
 }
 
 export class SupabaseApi implements Api {
@@ -203,4 +214,78 @@ export class SupabaseApi implements Api {
     const id = await this.uid();
     await this.sb.from("push_tokens").upsert({ user_id: id, token, platform: "web" }, { onConflict: "token" });
   }
+
+  // ---------------------------------------------------------------- member app
+  private async rpc<T>(fn: string, args: Record<string, unknown> = {}, what = "Loading"): Promise<T> {
+    const { data, error } = await this.sb.rpc(fn, args);
+    fail(error, what);
+    return data as T;
+  }
+
+  /** Turns storage paths into signed URLs for a batch of cards (one request). */
+  private async sign<T extends { photos?: string[] }>(rows: T[]): Promise<T[]> {
+    const paths = [...new Set(rows.flatMap((r) => r.photos ?? []))];
+    if (!paths.length) return rows;
+    const { data } = await this.sb.storage.from("photos").createSignedUrls(paths, 3600);
+    const url = new Map((data ?? []).map((d) => [d.path, d.signedUrl]));
+    return rows.map((r) => ({ ...r, photos: (r.photos ?? []).map((x) => url.get(x) ?? "").filter(Boolean) }));
+  }
+
+  async home(): Promise<HomeData> {
+    const h = await this.rpc<HomeData>("app_home");
+    return { ...h, top: await this.sign(h.top ?? []) };
+  }
+  async prices(): Promise<Prices> { return this.rpc<Prices>("my_prices"); }
+  async unlockKick(): Promise<Kick> {
+    await this.rpc("unlock_kick", {}, "Unlocking your Kick");
+    return this.rpc<Kick>("get_kick");
+  }
+  async discover(offset = 0): Promise<Card[]> { return this.sign(await this.rpc<Card[]>("discover_cards", { p_limit: 10, p_offset: offset })); }
+  async discoverCount(anyCity = false): Promise<number> { return this.rpc<number>("discover_count", { p_any_city: anyCity }); }
+  async pulse(): Promise<Pulse | null> { return (await this.rpc<Pulse | null>("city_pulse")) ?? null; }
+  async profile(id: string): Promise<ProfileFull> {
+    const p = await this.rpc<ProfileFull & { voice_intro_path?: string | null }>("profile_view", { p_user: id }, "Profile");
+    const [signed] = await this.sign([p]);
+    let voice_url: string | null = null;
+    if (p.voice_intro_path) voice_url = (await this.sb.storage.from("voice").createSignedUrl(p.voice_intro_path, 3600)).data?.signedUrl ?? null;
+    return { ...signed, voice_url };
+  }
+  async like(id: string, kind: "like" | "cosmic_like" = "like", note?: string): Promise<LikeResult> {
+    return this.rpc<LikeResult>("send_like", { p_target: id, p_kind: kind, p_note: note ?? null }, "Like");
+  }
+  async pass(id: string) { await this.rpc("pass_profile", { p_target: id }, "Pass"); }
+  async likesMe(): Promise<LikeCard[]> { return this.sign(await this.rpc<LikeCard[]>("likes_me")); }
+  async markLikesSeen() { await this.rpc("mark_likes_seen"); }
+  async matches(): Promise<MatchRow[]> {
+    const rows = await this.rpc<MatchRow[]>("my_matches");
+    const signed = await this.sign(rows.map((r) => ({ ...r, photos: r.photo ? [r.photo] : [] })));
+    return signed.map(({ photos, ...r }) => ({ ...r, photo: photos[0] ?? null }));
+  }
+  async filters(): Promise<Filters> {
+    const id = await this.uid();
+    const { data, error } = await this.sb.from("preferences")
+      .select("age_min,age_max,distance,diets,goals,languages,height_min_cm,height_max_cm,active_this_week,has_voice_intro").eq("user_id", id).maybeSingle();
+    fail(error, "Filters");
+    return (data as Filters) ?? { age_min: 21, age_max: 35, distance: "same_city", diets: [], goals: ["dating", "matchmaking"], languages: [],
+      height_min_cm: null, height_max_cm: null, active_this_week: true, has_voice_intro: false };
+  }
+  async saveFilters(f: Filters) {
+    const id = await this.uid();
+    const { error } = await this.sb.from("preferences").upsert({ user_id: id, ...f }, { onConflict: "user_id" });
+    fail(error, "Saving filters");
+  }
+  async compatReport(otherId: string): Promise<Reading> {
+    const id = await this.rpc<string>("request_compat_report", { p_other: otherId }, "Report");
+    let r = await this.reading("compat_report", otherId);
+    if (r?.status === "generating") {
+      await this.sb.functions.invoke("ai-gateway", { body: { action: "reading", reading_id: id } });   // writes it, or refunds
+      r = await this.reading("compat_report", otherId);
+    }
+    return r ?? { id, status: "generating", content: null };
+  }
+  async reading(kind: string, otherId?: string): Promise<Reading | null> {
+    return (await this.rpc<Reading | null>("my_reading", { p_kind: kind, p_other: otherId ?? null })) ?? null;
+  }
+  async goldenUnlocked(matchId: string) { return this.rpc<boolean>("golden_unlocked", { p_match: matchId }); }
+  async unlockGolden(matchId: string) { await this.rpc("unlock_golden_hours", { p_match: matchId }, "Golden Hours"); }
 }

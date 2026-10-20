@@ -225,3 +225,25 @@ def test_facts_allowed_numbers_contain_scores():
 def test_years_outside_jpl_range_rejected():
     with pytest.raises(BirthTimeError):
         compute_chart(Birth(date(1890, 1, 1), time(12, 0), **JAIPUR))
+
+
+# ---------- daily facts ------------------------------------------------------
+def test_day_tara_and_chandrashtama():
+    from likha_kundli.day import person_day
+    moon = {"nakshatra": 3, "sign": 1}                    # Moon in Rohini, Taurus
+    d = person_day(0, 0, moon)                            # born Ashwini, Aries Moon: count 4 -> Kshema
+    assert d["tara"] == 4 and d["tara_name"] == "Kshema" and d["vibe"] == 7
+    assert d["moon_house_from_moon"] == 2 and not d["chandrashtama"]
+    bad = person_day(0, 6, {"nakshatra": 2, "sign": 1})   # Libra Moon, transit Taurus = 8th: Chandrashtama
+    assert bad["chandrashtama"] and bad["vibe"] <= 4
+    for n in range(27):
+        for s in range(12):
+            x = person_day(n, s, {"nakshatra": 13, "sign": 6})
+            assert 1 <= x["vibe"] <= 10 and 1 <= x["date_score"] <= 10
+
+
+def test_transit_moon_matches_chart_engine():
+    from likha_kundli.day import transit_moon
+    m = transit_moon(date(2024, 1, 15), "Asia/Kolkata", 26.91, 75.79)
+    c = compute_chart(Birth(date(2024, 1, 15), time(6, 0), **JAIPUR))
+    assert m["nakshatra"] == c["planets"][1]["nakshatra"] and m["sign"] == c["planets"][1]["sign"]
