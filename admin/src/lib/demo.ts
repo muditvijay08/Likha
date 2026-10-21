@@ -1,5 +1,6 @@
 // Demo admin: everything lives in this browser. Any team email works, codes are 123456. Mirrors the database rules in part 14.
-import type { AdminApi, Ai, Feature, KeySlot, Keys, Me, MfaState, Model, TestResult } from "./types";
+import type { AdminApi, Ai, Feature, KeySlot, Keys, Me, MfaState, Model, TestResult, ModAction, Overview, UserList, Payments, Tickets, Grievances, GrievanceReport } from "./types";
+import { candidates, maasiMembers, nextSunday, seedOps, shortId, userDetail, type Ops } from "./demo-ops";
 
 type Slot = [string, KeySlot["mode"], string, string, string | null, boolean, boolean, boolean, string | null];
 const SLOTS: Slot[] = [
@@ -55,11 +56,15 @@ const FEATURES: Feature[] = [
   { key: "cupid_opener", label: "Cupid opener", kind: "text", model: "claude-haiku-5-5", fallback: null, enabled: true, paid: true, spent_7d_paise: 0 },
   { key: "imagine", label: "Imagine Us (2 images)", kind: "image", model: "gemini-nano-banana-2.1", fallback: null, enabled: true, paid: true, spent_7d_paise: 0 },
 ];
+/** Same as the Owner role in the database (04_seed, 07, 14). */
+const OWNER_PERMS = ["ai.approve", "ai.limits", "ai.view", "audit.read", "birth.reveal", "campaigns.manage", "cities.unlock", "credits.adjust", "cupid.manage", "data.manage",
+  "fraud.manage", "grievances.manage", "keys.manage", "payments.read", "payouts.manage", "refunds.large", "refunds.small", "reports.read_chats", "settings.write", "support.reply",
+  "team.manage", "users.moderate", "users.read"];
 const PROVIDER_KEY: Record<string, string> = { anthropic: "ANTHROPIC_API_KEY", gemini: "GEMINI_API_KEY", openai: "OPENAI_API_KEY", fal: "FAL_KEY" };
 const KEY = "likha-admin-demo";
 interface Stored { value: string; set_at: string; tested_at: string | null; test_ok: boolean | null; test_note: string | null }
 interface Db { email?: string; signedIn: boolean; mfaFactor?: string; aal2: boolean; mode: "test" | "live"; vals: Record<string, Stored>;
-  models: Omit<Model, "key_set" | "used_by">[]; features: Feature[]; spent: number }
+  models: Omit<Model, "key_set" | "used_by">[]; features: Feature[]; spent: number; ops?: Ops }
 const fresh = (): Db => ({ signedIn: false, aal2: false, mode: "test", vals: {}, models: MODELS, features: FEATURES, spent: 0 });
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 
@@ -90,7 +95,7 @@ export class DemoAdmin implements AdminApi {
   async me(): Promise<Me | null> {
     const d = this.load(); if (!d.signedIn) return null;
     return { name: (d.email ?? "team").split("@")[0].replace(/^\w/, (c) => c.toUpperCase()), role: "owner", mfa: d.aal2,
-             perms: ["ai.view", "audit.read", "keys.manage", "settings.write", "team.manage"] };
+             perms: OWNER_PERMS };
   }
   async signOut() { this.edit((d) => { d.signedIn = false; d.aal2 = false; }); }
 
@@ -178,4 +183,211 @@ export class DemoAdmin implements AdminApi {
     this.edit((x) => { const y = x.models.find((z) => z.model === model)!; y.verified_at = new Date().toISOString(); y.test_note = r.note; x.spent += cost; });
     return r;
   }
+
+  // ---------------------------------------------------------------- daily work (sample data)
+  private ops(): Ops { this.owner(); const d = this.load(); if (!d.ops) { d.ops = seedOps(); this.save(d); } return d.ops; }
+  private opsEdit<T>(fn: (o: Ops) => T): T { this.owner(); const d = this.load(); d.ops ??= seedOps(); const r = fn(d.ops); this.save(d); return r; }
+  private note(n: string, what = "a short note") { if (!n || !n.trim()) throw new Error(`Add ${what}.`); }
+
+  async overview(): Promise<Overview> {
+    await wait(120); const o = this.ops();
+    return { queues: { reports: o.reports.filter((r) => r.status === "open").length, reports_urgent: o.reports.filter((r) => r.status === "open" && r.priority === "urgent").length,
+        appeals: o.appeals.filter((a) => a.status === "open").length, selfies: o.selfies.length, selfie_oldest: o.selfies.at(-1)?.at ?? null,
+        grievances: o.grievances.filter((g) => !["resolved", "dismissed"].includes(g.status)).length,
+        grievances_ack_overdue: o.grievances.filter((g) => !g.acked && g.ack_due < new Date().toISOString() && g.status !== "resolved").length,
+        tickets: o.tickets.filter((t) => t.status !== "resolved").length, data_requests: o.dataRequests.filter((x) => x.status !== "resolved").length,
+        refunds_waiting: o.refunds.filter((r) => r.status === "awaiting_second_approval").length, not_credited: o.payments.filter((p) => p.status === "captured" && !p.credited).length,
+        readings_stuck: o.readings.filter((r) => r.status === "generating").length },
+      today: { signups: 412, signups_yesterday: 349, women_pct: 46, revenue_paise: 3820000, payments: 212, ai_paise: 194000, matches: 1126, paying_pct: 7.4 },
+      signups_14d: Array.from({ length: 14 }, (_, i) => ({ day: new Date(Date.now() - (13 - i) * 864e5).toISOString().slice(0, 10), n: 180 + i * 17 + (i % 3) * 9 })),
+      funnel: [{ step: "Signed up", n: 5422 }, { step: "Selfie verified", n: 4229 }, { step: "Sent a like", n: 3470 }, { step: "Got a match", n: 2223 }, { step: "First message", n: 1789 }],
+      cities: [{ slug: "jaipur", name: "Jaipur", status: "live", members: 4812, women_pct: 46, matches_today: 1126, revenue_today_paise: 3820000 },
+        { slug: "pune", name: "Pune", status: "waitlist", members: 612, women_pct: 44, matches_today: 0, revenue_today_paise: 0 },
+        { slug: "ahmedabad", name: "Ahmedabad", status: "waitlist", members: 410, women_pct: 39, matches_today: 0, revenue_today_paise: 0 }] };
+  }
+  async users(query: string, filter: string): Promise<UserList> {
+    await wait(120); const o = this.ops(); const q = query.trim().toLowerCase(); const qd = query.replace(/\D/g, "");
+    const all = o.users;
+    const rows = all.filter((u) => (!q || (qd.length >= 10 && u.phone.endsWith(qd.slice(-10))) || shortId(u.id).toLowerCase().startsWith(q.startsWith("#") ? q : "#" + q) || u.first_name.toLowerCase().startsWith(q))
+      && (filter === "women" ? u.gender === "woman" : filter === "men" ? u.gender === "man" : filter === "under_review" ? u.status === "under_review" || u.selfie === "manual_review"
+        : filter === "suspended" ? u.status === "suspended" : filter === "banned" ? u.status === "banned" : true))
+      .map((u) => ({ id: u.id, short_id: shortId(u.id), first_name: u.first_name, age: u.age, city: u.city, gender: u.gender, joined: u.joined, selfie: u.selfie, tier: u.tier,
+        credits: u.credits, reports: o.reports.filter((r) => r.reported_id === u.id).length, status: u.status, paused: u.paused }));
+    return { counts: { all: all.length, women: all.filter((u) => u.gender === "woman").length, men: all.filter((u) => u.gender === "man").length,
+      under_review: all.filter((u) => u.status === "under_review" || u.selfie === "manual_review").length, suspended: all.filter((u) => u.status === "suspended").length,
+      banned: all.filter((u) => u.status === "banned").length }, rows };
+  }
+  async user(id: string) { await wait(120); return userDetail(this.ops(), id); }
+  async adjustCredits(user: string, delta: number, reason: string) {
+    await wait(); this.note(reason, "a reason");
+    if (!delta || Math.abs(delta) > 500) throw new Error("Adjust between 1 and 500 credits at a time.");
+    return this.opsEdit((o) => { const u = o.users.find((x) => x.id === user)!; if (u.credits + delta < 0) throw new Error("Not enough credits to take back.");
+      u.credits += delta; (o.ledger[user] ??= []).unshift({ at: new Date().toISOString(), delta, kind: "adjustment", reason, balance: u.credits }); return u.credits; });
+  }
+  async setTier(user: string, tier: string, days: number, reason: string) {
+    await wait(); this.note(reason, "a reason"); if (days > 365) throw new Error("At most 365 days.");
+    this.opsEdit((o) => { const u = o.users.find((x) => x.id === user)!;
+      if (days <= 0) { u.tier_override = null; } else { u.tier_override = { tier, until: new Date(Date.now() + days * 864e5).toISOString() }; u.tier = tier; } });
+  }
+  async moderate(user: string, action: ModAction, reason: string, days: number | null) {
+    await wait(); this.note(reason, "a reason");
+    this.opsEdit((o) => { const u = o.users.find((x) => x.id === user)!;
+      u.status = action === "suspend" ? "suspended" : action === "ban" ? "banned" : action === "hide" ? "under_review" : ["unban", "restore"].includes(action) ? "active" : u.status;
+      o.actions.unshift({ id: crypto.randomUUID(), user_id: user, action, reason, until: days ? new Date(Date.now() + days * 864e5).toISOString() : null, at: new Date().toISOString(), by: "team", by_me: true }); });
+  }
+  async revealBirth(_user: string, reason: string) { await wait(); this.note(reason, "a reason"); return { birth_date: "1997-08-14", birth_time: "21:10", birth_place: "Jaipur (sample)" }; }
+  async lookupToken(token: string) {
+    await wait(); const o = this.ops(); const c = o.crush.find((x) => x.token === token.trim());
+    if (!c) return null; const u = o.users.find((x) => x.id === c.from)!;
+    return { type: "crush" as const, from_id: c.from, from: u.first_name, to: c.to, created: c.at, expires: c.expires, joined_id: null, reading_status: "pending_consent" };
+  }
+  async reports(status: "open" | "closed") {
+    await wait(120); return this.ops().reports.filter((r) => status === "open" ? r.status === "open" : r.status !== "open").map(({ chat: _c, reporter_id: _r, ...x }) => x);
+  }
+  async report(id: string) {
+    await wait(120); const o = this.ops(); const r = o.reports.find((x) => x.id === id)!; const u = o.users.find((x) => x.id === r.reported_id)!;
+    return { id: r.id, reason: r.reason, details: r.details, priority: r.priority, status: r.status, at: r.at, ai_check: r.ai_check, resolution: null, reported_id: r.reported_id, reporter_id: r.reporter_id,
+      reported: { name: u.first_name, age: u.age, status: u.status, selfie: u.selfie, joined: u.joined, photo: null },
+      other_reports: o.reports.filter((x) => x.reported_id === r.reported_id && x.id !== r.id).map((x) => ({ reason: x.reason, at: x.at, status: x.status })),
+      chat: r.has_chat ? r.chat : null, can_read_chat: true };
+  }
+  async resolveReport(id: string, outcome: "resolved" | "dismissed", note: string, action: ModAction | null, days: number | null) {
+    await wait(); this.note(note);
+    const r = this.ops().reports.find((x) => x.id === id)!;
+    if (action) await this.moderate(r.reported_id, action, note, days);
+    this.opsEdit((o) => { const x = o.reports.find((y) => y.id === id)!; x.status = outcome; });
+  }
+  async appeals() { await wait(120); return this.ops().appeals.filter((a) => a.status === "open").map(({ action_id: _a, status: _s, ...x }) => x); }
+  async decideAppeal(id: string, overturn: boolean, note: string) {
+    await wait(); this.note(note);
+    const a = this.ops().appeals.find((x) => x.id === id)!;
+    if (this.ops().actions.find((x) => x.id === a.action_id)?.by_me) throw new Error("Someone else must review an appeal of your own decision.");
+    this.opsEdit((o) => { o.appeals.find((x) => x.id === id)!.status = overturn ? "overturned" : "upheld"; if (overturn) o.users.find((u) => u.id === a.user_id)!.status = "active"; });
+  }
+  async selfies() { await wait(120); return { reviewed_today: 46, approved_today: 41, rows: this.ops().selfies }; }
+  async decideSelfie(id: string, decision: "approve" | "retry" | "reject") {
+    await wait(150);
+    this.opsEdit((o) => { const s = o.selfies.find((x) => x.id === id); if (!s) throw new Error("Already decided.");
+      const u = o.users.find((x) => x.id === s.user_id)!; u.selfie = decision === "approve" ? "passed" : decision === "reject" ? "failed" : "not_started";
+      if (decision === "approve" && u.status === "under_review") u.status = "active"; o.selfies = o.selfies.filter((x) => x.id !== id); });
+  }
+  async payments(filter: string, query: string): Promise<Payments> {
+    await wait(120); const o = this.ops(); const q = query.trim();
+    const rows = o.payments.filter((p) => (!q || p.ref === q || p.order === q || p.invoice === q) && (filter === "not_credited" ? p.status === "captured" && !p.credited
+      : filter === "unconfirmed" ? p.status === "created" : filter === "failed" ? p.status === "failed" : filter === "refunded" ? p.status.includes("refunded") : true));
+    return { kpis: { gross_today_paise: o.payments.filter((p) => p.status === "captured").reduce((a, p) => a + p.amount_paise, 0), payments_today: o.payments.filter((p) => p.status === "captured").length,
+        refunds_today: o.refunds.length, refunds_today_paise: o.refunds.filter((r) => r.status === "processed").reduce((a, r) => a + (r.amount_paise ?? (r.credits ?? 0) * 100), 0),
+        failed_today: o.payments.filter((p) => p.status === "failed").length, attempts_today: o.payments.length,
+        not_credited: o.payments.filter((p) => p.status === "captured" && !p.credited).length, unconfirmed: o.payments.filter((p) => p.status === "created").length },
+      rows, refunds: o.refunds.map(({ payment_id: _p, ...r }) => r), can_approve: true };
+  }
+  async recheckPayment(id: string) {
+    await wait(600);
+    return this.opsEdit((o) => { const p = o.payments.find((x) => x.id === id)!;
+      if (p.status === "created") { p.status = "captured"; p.credited = true; p.ref = "pay_DEMO" + id.slice(-1); const u = o.users.find((x) => x.id === p.user_id)!; u.credits += 275;
+        return { ok: true, note: `Captured by Razorpay (${p.ref}). Credited now. · demo` }; }
+      return { ok: true, note: `Razorpay says ${p.status}. Nothing to change. · demo` }; });
+  }
+  async refund(user: string, method: "credits" | "bank", reason: string, credits: number | null, amountPaise: number | null, payment: string | null) {
+    await wait(); this.note(reason, "a reason");
+    const value = amountPaise ?? (credits ?? 0) * 100;
+    this.opsEdit((o) => { const u = o.users.find((x) => x.id === user)!; const direct = method === "credits" && value <= 50000;
+      if (direct) { u.credits += credits ?? 0; (o.ledger[user] ??= []).unshift({ at: new Date().toISOString(), delta: credits ?? 0, kind: "refund", reason, balance: u.credits }); }
+      o.refunds.unshift({ id: crypto.randomUUID(), user: `${shortId(user)} ${u.first_name}`, user_id: user, method, credits, amount_paise: amountPaise, reason,
+        status: direct ? "processed" : "awaiting_second_approval", at: new Date().toISOString(), requested_by: "You", mine: true,
+        payment_ref: o.payments.find((p) => p.id === payment)?.ref ?? null, payment_id: payment }); });
+  }
+  async approveRefund(id: string) {
+    await wait();
+    this.opsEdit((o) => { const r = o.refunds.find((x) => x.id === id)!; if (r.mine) throw new Error("Second approver must be a different person.");
+      r.status = r.method === "credits" ? "processed" : "approved"; });
+  }
+  async sendRefund(id: string) {
+    await wait(500);
+    return this.opsEdit((o) => { const r = o.refunds.find((x) => x.id === id)!; if (r.status !== "approved") throw new Error("Needs a second approval first.");
+      r.status = "processed"; const p = o.payments.find((x) => x.id === r.payment_id); if (p) { p.refunded_paise += r.amount_paise ?? 0; p.status = "refunded"; }
+      return { ok: true, note: "Sent to Razorpay (rfnd_DEMO). Money reaches the member in 5 to 7 working days. · demo" }; });
+  }
+  async readings(filter: "problems" | "all", user?: string) {
+    await wait(120); return this.ops().readings.filter((r) => (!user || r.user_id === user) && (filter === "all" || ["generating", "failed", "refunded"].includes(r.status) || r.helpful === false))
+      .map(({ content: _c, ...r }) => r);
+  }
+  async readingContent(id: string) { await wait(120); const r = this.ops().readings.find((x) => x.id === id)!; return { id: r.id, kind: r.kind, status: r.status, content: r.content, credits: r.credits, at: r.at }; }
+  async rewriteReading(id: string, reason: string) {
+    await wait(); this.note(reason, "a reason");
+    this.opsEdit((o) => { const r = o.readings.find((x) => x.id === id)!; if (r.kind === "imagine_us" && r.status === "ready") throw new Error("Pictures are not rewritten; refund instead."); r.status = "generating"; r.attempts = 0; });
+  }
+  async refundReading(id: string, reason: string) {
+    await wait(); this.note(reason, "a reason");
+    this.opsEdit((o) => { const r = o.readings.find((x) => x.id === id)!; if (r.status === "refunded") throw new Error("Already refunded."); r.status = "refunded";
+      const u = o.users.find((x) => x.id === r.user_id)!; u.credits += r.credits; });
+  }
+  async tickets(status: "open" | "closed"): Promise<Tickets> {
+    await wait(120); const o = this.ops();
+    return { kpis: { open: o.tickets.filter((t) => t.status !== "resolved").length, new: o.tickets.filter((t) => t.new).length, first_reply_min: 6, csat: 4.6 },
+      rows: o.tickets.filter((t) => status === "open" ? t.status !== "resolved" : t.status === "resolved").map(({ messages: _m, ...t }) => t) };
+  }
+  async ticket(id: string) {
+    await wait(120); const o = this.ops(); const t = o.tickets.find((x) => x.id === id)!; const u = o.users.find((x) => x.id === t.user_id);
+    return { id: t.id, subject: t.subject, status: t.status, channel: t.channel, at: t.at, user_id: t.user_id,
+      user: u ? { name: u.first_name, short_id: shortId(u.id), credits: u.credits, status: u.status, city: u.city } : null, messages: t.messages,
+      recent_payments: o.payments.filter((p) => p.user_id === t.user_id).map((p) => ({ id: p.id, amount_paise: p.amount_paise, status: p.status, credited: p.credited, ref: p.ref, at: p.at })) };
+  }
+  async replyTicket(id: string, body: string, status: "in_progress" | "waiting_user" | "resolved", draftId: number | null) {
+    await wait();
+    this.opsEdit((o) => { const t = o.tickets.find((x) => x.id === id)!;
+      if (body.trim()) { if (draftId) { const m = t.messages.find((x) => x.id === draftId)!; m.body = body.trim(); m.draft = false; m.from = "team"; m.by = "You"; }
+        else t.messages.push({ id: Date.now(), from: "team", by: "You", body: body.trim(), draft: false, at: new Date().toISOString() }); t.new = false; t.last = body.trim(); }
+      t.status = status; t.draft = t.messages.some((m) => m.draft); });
+  }
+  async grievances(): Promise<Grievances> {
+    await wait(120); const o = this.ops(); const now = new Date().toISOString();
+    return { kpis: { open: o.grievances.filter((g) => g.status !== "resolved").length, ack_overdue: o.grievances.filter((g) => !g.acked && g.ack_due < now && g.status !== "resolved").length,
+        due_3d: o.grievances.filter((g) => g.status !== "resolved" && g.resolve_due < new Date(Date.now() + 3 * 864e5).toISOString()).length,
+        resolved_month: o.grievances.filter((g) => g.status === "resolved").length + 31, avg_days: 4.2 },
+      rows: o.grievances, team: [{ id: "t-1", name: "You", role: "owner" }, { id: "t-2", name: "Anil", role: "safety" }, { id: "t-3", name: "Seema", role: "finance" }] };
+  }
+  async ackGrievance(id: string, owner: string | null) {
+    await wait();
+    this.opsEdit((o) => { const g = o.grievances.find((x) => x.id === id)!; g.acked ??= new Date().toISOString(); g.status = "in_progress";
+      g.owner = owner ? ({ "t-1": "You", "t-2": "Anil", "t-3": "Seema" } as Record<string, string>)[owner] ?? g.owner : g.owner ?? "You"; });
+  }
+  async resolveGrievance(id: string, resolution: string) {
+    await wait(); if (resolution.trim().length < 20) throw new Error("Write the outcome the member will read (at least a sentence).");
+    this.opsEdit((o) => { const g = o.grievances.find((x) => x.id === id)!; g.status = "resolved"; g.resolution = resolution.trim(); g.resolved = new Date().toISOString(); g.acked ??= g.resolved; });
+  }
+  async grievanceReport(month: string): Promise<GrievanceReport> {
+    await wait(); const o = this.ops();
+    return { month: new Date(month).toLocaleDateString("en-IN", { month: "short", year: "numeric" }), received: o.grievances.length + 33, resolved: o.grievances.filter((g) => g.status === "resolved").length + 31,
+      acked_in_24h: 33, resolved_in_15d: 31, by_category: { impersonation: 9, payment: 11, account: 8, other: 7 }, actions: 14 };
+  }
+  async dataRequests() { await wait(120); return this.ops().dataRequests; }
+  async exportUser(requestId: string) {
+    await wait(400);
+    return this.opsEdit((o) => { const r = o.dataRequests.find((x) => x.id === requestId)!; if (r.kind !== "export") throw new Error("Not an export request.");
+      const data = { generated_at: new Date().toISOString(), notes: "Sample export in demo mode.", profile: userDetail(o, r.user_id!), messages_sent: [], payments: o.payments.filter((p) => p.user_id === r.user_id) };
+      r.status = "resolved"; r.done = new Date().toISOString(); r.proof = { exported_at: r.done, sections: Object.keys(data) }; return data; });
+  }
+  async eraseUser(user: string, requestId: string) {
+    await wait(400);
+    return this.opsEdit((o) => { const u = o.users.find((x) => x.id === user)!; u.first_name = "Deleted user"; u.status = "deleted";
+      const proof = { erased_at: new Date().toISOString(), items: ["photos", "prompts", "saathi", "birth_details", "kundli", "messages", "profile"], kept: ["payments (tax law)"] };
+      const r = o.dataRequests.find((x) => x.id === requestId)!; r.status = "resolved"; r.done = proof.erased_at; r.proof = proof; return proof; });
+  }
+  async closeDataRequest(id: string, note: string) {
+    await wait(); this.note(note);
+    this.opsEdit((o) => { const r = o.dataRequests.find((x) => x.id === id)!; if (r.kind === "delete") throw new Error("Deletions are closed by Erase, which records the checklist.");
+      r.status = "resolved"; r.done = new Date().toISOString(); r.proof = { note }; });
+  }
+  async maasi() { await wait(120); const w = nextSunday(); return { week_of: w, per_week: 3, members: maasiMembers(this.ops(), w) }; }
+  async maasiCandidates(user: string) { await wait(120); return candidates(this.ops(), user); }
+  async addMaasiPick(user: string, pick: string, note: string) {
+    await wait();
+    if (note.trim().length < 10) throw new Error("Write Maasi's note (why this person).");
+    if (/(guarantee|100%|marriage fixed|definitely)/i.test(note)) throw new Error("No promises in the note.");
+    this.opsEdit((o) => { const w = nextSunday(); if (o.picks.filter((p) => p.user_id === user && p.week_of === w).length >= 3) throw new Error("Three picks a week.");
+      o.picks.push({ id: crypto.randomUUID(), user_id: user, pick_id: pick, name: o.users.find((u) => u.id === pick)!.first_name, note: note.trim(), response: null, week_of: w }); });
+  }
+  async removeMaasiPick(id: string) { await wait(); this.opsEdit((o) => { o.picks = o.picks.filter((p) => p.id !== id || p.response !== null); }); }
+  async photoUrl() { return null; }
 }

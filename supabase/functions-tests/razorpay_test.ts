@@ -32,3 +32,22 @@ Deno.test("order is created with our amount and basic auth", async () => {
   assertEquals((seen.init.headers as Record<string, string>).authorization, `Basic ${btoa("rzp_test_x:s3cret")}`);
   assertEquals(JSON.parse(seen.init.body).amount, 49900);
 });
+
+import { orderPayments, refundPayment } from "../functions/_shared/razorpay.ts";
+import { _useKeys } from "../functions/_shared/keys.ts";
+Deno.test("re-check picks the captured payment of an order", async () => {
+  _useKeys({ RAZORPAY_KEY_ID: "rzp_test_1", RAZORPAY_KEY_SECRET: "s" });
+  let url = "";
+  const fake = (async (u: string) => { url = u; return new Response(JSON.stringify({ items: [{ id: "pay_1", status: "failed", amount: 9900, method: "upi" },
+    { id: "pay_2", status: "captured", amount: 9900, method: "upi" }] })); }) as unknown as typeof fetch;
+  const r = await orderPayments("order_X", fake);
+  if (url !== "https://api.razorpay.com/v1/orders/order_X/payments" || r?.id !== "pay_2") throw new Error(JSON.stringify([url, r]));
+  const none = await orderPayments("order_Y", (async () => new Response(JSON.stringify({ items: [] }))) as unknown as typeof fetch);
+  if (none !== null) throw new Error("expected null");
+});
+Deno.test("bank refund sends amount and receipt", async () => {
+  _useKeys({ RAZORPAY_KEY_ID: "rzp_test_1", RAZORPAY_KEY_SECRET: "s" });
+  let body: any = null, url = "";
+  const id = await refundPayment("pay_2", 24900, "refund-abc", (async (u: string, init: RequestInit) => { url = u; body = JSON.parse(String(init.body)); return new Response(JSON.stringify({ id: "rfnd_9" })); }) as unknown as typeof fetch);
+  if (id !== "rfnd_9" || url !== "https://api.razorpay.com/v1/payments/pay_2/refund" || body.amount !== 24900 || body.receipt !== "refund-abc") throw new Error(JSON.stringify(body));
+});

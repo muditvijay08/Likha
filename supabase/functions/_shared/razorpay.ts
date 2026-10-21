@@ -45,3 +45,29 @@ export function paymentFromEvent(ev: any): { orderId: string; paymentId: string;
   if (!status) return null;
   return { orderId: p.order_id, paymentId: p.id, status, method: p.method ?? "unknown", amount: p.amount };
 }
+
+const rzpAuth = () => {
+  const id = key("RAZORPAY_KEY_ID"), secret = key("RAZORPAY_KEY_SECRET");
+  if (!id || !secret) throw new Error("Razorpay keys are not set");
+  return `Basic ${btoa(`${id}:${secret}`)}`;
+};
+
+/** Admin "Re-check": what Razorpay says happened to an order. The best payment wins: captured > authorized > failed. */
+export async function orderPayments(orderId: string, fetcher: typeof fetch = fetch): Promise<{ id: string; status: string; method: string; amount: number; raw: unknown } | null> {
+  const res = await fetcher(`https://api.razorpay.com/v1/orders/${encodeURIComponent(orderId)}/payments`, { headers: { authorization: rzpAuth() } });
+  if (!res.ok) throw new Error(`Razorpay ${res.status}: ${(await res.text()).slice(0, 160)}`);
+  const items: any[] = (await res.json()).items ?? [];
+  const rank: Record<string, number> = { captured: 3, refunded: 3, authorized: 2, failed: 1 };
+  const best = items.sort((a, b) => (rank[b.status] ?? 0) - (rank[a.status] ?? 0))[0];
+  return best ? { id: best.id, status: best.status, method: best.method, amount: best.amount, raw: best } : null;
+}
+
+/** Bank refund after two people approved it. The receipt makes Razorpay ignore a repeat of the same request. */
+export async function refundPayment(paymentId: string, amountPaise: number, receipt: string, fetcher: typeof fetch = fetch): Promise<string> {
+  const res = await fetcher(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}/refund`, {
+    method: "POST", headers: { authorization: rzpAuth(), "content-type": "application/json" },
+    body: JSON.stringify({ amount: amountPaise, speed: "normal", receipt: receipt.slice(0, 40), notes: { source: "likha-admin" } }),
+  });
+  if (!res.ok) throw new Error(`Razorpay refund ${res.status}: ${(await res.text()).slice(0, 160)}`);
+  return (await res.json()).id;
+}

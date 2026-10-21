@@ -8,8 +8,8 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 |---|---|---|
 | `app/` | Member PWA, Next.js 16 + React 19 + TypeScript. Onboarding O1–O15, tour T1–T3, and the bottom-nav app (H1, H2, D1–D6, M1–M5, C1–C5, Q1, E1–E14, K1–K2, A1, N1; public landings L1–L2 at /k and /g) in `src/app/(app)/`. | `npm run dev` · `npm run build` · `npm run test:e2e` · `npm run check:db` |
 | `supabase/schema/` | Postgres schema in 12 parts, concatenated into `likha_schema.sql`. | `supabase/test/*.sql` (456 checks) |
-| `admin/` | Team console, Next.js 16. Sign-in with email code + authenticator (MFA). Built so far: Keys & live mode, AI models. | `npm run dev` (port 3100) · `npm run build` · `npm run test:e2e` |
-| `supabase/functions/` | Edge Functions: ai-gateway, kundli-worker, kick-batch, cupid-redirect, payout-worker, create-order, razorpay-webhook, safety-worker, reading-worker, admin-keys. | `deno test tests/` · `deno check` |
+| `admin/` | Team console, Next.js 16. Sign-in with email code + authenticator (MFA). Built so far: Dashboard, Users, Moderation, Selfie review, Support, Grievances, Data requests, Payments and refunds, Readings, Rishta Maasi picks, Keys & live mode, AI models. Every admin action is a `public.admin_*` function that checks a permission and writes the audit log. | `npm run dev` (port 3100) · `npm run build` · `npm run test:e2e` |
+| `supabase/functions/` | Edge Functions: ai-gateway, kundli-worker, kick-batch, cupid-redirect, payout-worker, create-order, razorpay-webhook, safety-worker, reading-worker, admin-keys, admin-ops. | `deno test tests/` · `deno check` |
 | `kundli/` | Python FastAPI kundli service (NASA JPL DE421 via Skyfield, Lahiri, Ashtakoota rules `ak-2.0`). | `pytest tests` |
 
 ## How the pieces talk

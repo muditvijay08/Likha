@@ -29,7 +29,9 @@ ok(await seen(page.getByText("Set up your authenticator app")) && await seen(pag
 await shot("01-mfa");
 await page.getByLabel("Code from the app").fill("123456");
 await btn("Turn on and sign in").click();
-ok(await page.waitForURL("**/keys").then(() => true, () => false), "Signed in with MFA lands on Keys");
+ok(await page.waitForURL("**/dashboard").then(() => true, () => false), "Signed in with MFA lands on the dashboard");
+await page.getByRole("link", { name: "Keys & live mode" }).click();
+await page.waitForURL("**/keys");
 
 // keys
 ok(await seen(page.getByText("Payments are in test mode: no real money moves")), "Payments start in test");

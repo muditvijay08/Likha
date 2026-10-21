@@ -63,6 +63,7 @@ Everything here was run and tested on 20 Oct 2026.
 | `cupid-redirect` | public `likha.in/c/*` | Log click, set cookie, redirect |
 | `payout-worker` | cron hourly + RazorpayX webhook | UPI payouts |
 | `create-order` | app (member token) | Razorpay order for a credit pack or one prepaid month of a plan; price from our tables |
+| `admin-ops` | Admin buttons | Re-check a payment with Razorpay (credits land if captured); send an approved bank refund. Team only, MFA, `LIKHA_ADMIN_SITE` for CORS |
 | `admin-keys` | Admin buttons | Test a key (one read-only call) or a model (one short answer or one labelled picture). Team only, MFA |
 | `reading-worker` | cron every minute | Writes paid readings still waiting (app closed, gift opened, crush joined, both finished Seven Questions, partner said yes). A 3-minute lease stops double writing; refunds after 5 tries |
 | `safety-worker` | cron every 5 min | Share my date: reminds at check-in time, then SMS-alerts trusted contacts after 15 min (MSG91 DLT template) |
