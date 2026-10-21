@@ -73,6 +73,27 @@ await admin({});
 await page.goto(`${BASE}/profile/s-tanvi`);
 ok(await seen(page.getByRole("button", { name: "Cosmic Like · free this week" })), "Cosmic Like: first one this week shown as free");
 
+// Verification on auto-approve (Admin > Verification): the selfie step doesn't act out a check, and there's no Verified badge
+const step5 = JSON.parse(JSON.stringify(SEED));
+Object.assign(step5.profile, { onboarding_step: 5, selfie_status: "not_started" }); delete step5.prompts; step5.prompts = []; step5.likes = []; step5.matches = [];
+await page.evaluate((s) => localStorage.setItem("likha-demo-db", JSON.stringify(s)), step5);
+await admin({ verification: { selfie: "auto", photos: "auto" } });
+await page.goto(`${BASE}/selfie`);
+ok(await seen(page.getByRole("heading", { name: "Selfie check" })) && await seen(page.getByText(/Checks aren.t running yet/)) && (await page.getByText("Blink").count()) === 0,
+  "Selfie (auto): says checks aren't running, no pretend liveness steps");
+await page.getByRole("button", { name: "Continue" }).click();
+await page.waitForURL("**/vibe");
+ok(true, "Selfie (auto): member continues to the next step");
+await page.goto(`${BASE}/photos`);
+ok(await seen(page.getByText(/Photos that break these rules are taken down/)) && (await page.getByText("Every photo is checked").count()) === 0, "Photos (auto): no claim that photos are checked");
+await page.evaluate((s) => localStorage.setItem("likha-demo-db", JSON.stringify(s)), { ...SEED, profile: { ...SEED.profile, selfie_auto: true } });
+await page.goto(`${BASE}/me`);
+ok(await seen(page.getByRole("heading", { name: /Aarav/ })) && (await page.getByText("Verified", { exact: true }).count()) === 0, "Me (auto): no Verified badge");
+await admin({});
+await page.evaluate((s) => localStorage.setItem("likha-demo-db", JSON.stringify(s)), SEED);
+await page.goto(`${BASE}/me`);
+ok(await seen(page.getByText("Verified", { exact: true })), "Me (checked): Verified badge");
+
 ok(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 await browser.close();
 console.log(`\n${pass} passed, ${fail} failed`);

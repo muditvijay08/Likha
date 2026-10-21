@@ -44,7 +44,7 @@ export interface ReportDetail { id: string; reason: string; details: string | nu
   other_reports: { reason: string; at: string; status: string }[]; chat: { from: "reported" | "reporter"; body: string; held: boolean; at: string }[] | null; can_read_chat: boolean }
 export interface Appeal { id: string; user_id: string; user: string; text: string; at: string; action: string; reason: string; until: string | null; acted_at: string }
 export interface SelfieRow { id: string; user_id: string; user: string; age: number | null; score: number | null; liveness: boolean | null; tries: number; why: string | null; at: string;
-  photo: string | null; same_face: number; under_18_report: boolean }
+  photo: string | null; same_face: number; under_18_report: boolean; /** kept in the selfies bucket until decided (manual mode) */ selfie?: string | null }
 export interface SelfieQueue { reviewed_today: number; approved_today: number; rows: SelfieRow[] }
 export interface PaymentRow { id: string; at: string; user_id: string; user: string; item: string; amount_paise: number; order: string | null; ref: string | null; status: string;
   credited: boolean; method: string | null; invoice: string | null; refunded_paise: number }
@@ -164,7 +164,7 @@ export interface AdminApi {
   maasiCandidates(user: string): Promise<Candidate[]>;
   addMaasiPick(user: string, pick: string, note: string): Promise<void>;
   removeMaasiPick(id: string): Promise<void>;
-  photoUrl(path: string | null): Promise<string | null>;
+  photoUrl(path: string | null, bucket?: "photos" | "selfies"): Promise<string | null>;
   // growth and control
   settings(keys: string[]): Promise<Record<string, SettingValue>>;
   saveSettings(changes: Record<string, unknown>, note: string): Promise<number>;
@@ -220,7 +220,22 @@ export interface AdminApi {
   aiEmergency(stop: boolean, reason: string): Promise<void>;
   /** Admin > Security > sign team members out after this many idle minutes. */
   session(): Promise<{ idle_minutes: number }>;
+  // verification (selfie and photo checks)
+  verification(): Promise<Verification>;
+  setVerification(check: "selfie" | "photos", mode: VerifyMode, url: string | null, note: string): Promise<void>;
+  testVerification(check: "selfie" | "photos"): Promise<{ ok: boolean; note: string }>;
+  photoQueue(): Promise<PhotoQueue>;
+  decidePhoto(id: string, approve: boolean, reason: string | null): Promise<void>;
 }
+
+export type VerifyMode = "auto" | "manual" | "api";
+export interface Verification {
+  config: Record<"selfie" | "photos", { mode: VerifyMode; url: string | null }>; can_edit: boolean; keys: Record<"selfie" | "photos", boolean>;
+  counts: { auto_members: number; selfie_queue: number; photo_queue: number; auto_photos_7d: number; unreviewed_auto_photos: number };
+  last_tests: Record<string, { at: string; ok: string; note: string }>;
+}
+export interface PhotoRow { id: string; user_id: string; user: string; path: string; position: number; at: string; labels?: Record<string, unknown> | null }
+export interface PhotoQueue { pending: PhotoRow[]; auto_recent: PhotoRow[]; mode: VerifyMode }
 
 // ---------------------------------------------------------------- batch C
 export interface Pack { id: string; label: string; price_paise: number; credits: number; bonus_pct: number; active: boolean; sort: number }

@@ -34,6 +34,7 @@ update public.profiles p set status='active', selfie_status='passed', age=27, pr
   city_id = (select id from public.cities where slug = case when p.first_name='Dev' then 'pune' else 'jaipur' end)
   where id::text like 'd0000000%';
 insert into public.preferences (user_id, age_min, age_max, distance) select id, 21, 35, 'same_city' from public.profiles where id::text like 'd0000000%';
+update public.app_settings set value = jsonb_set(value, '{photos,mode}', '"manual"') where key = 'verification';   -- photos wait for the team (part 19)
 insert into public.photos (user_id, storage_path, position, moderation_status) values
  ('d0000000-0000-0000-0000-000000000002','a/1.jpg',1,'approved'), ('d0000000-0000-0000-0000-000000000002','a/2.jpg',2,'pending'),
  ('d0000000-0000-0000-0000-000000000003','k/1.jpg',1,'approved'), ('d0000000-0000-0000-0000-000000000001','r/1.jpg',1,'approved');

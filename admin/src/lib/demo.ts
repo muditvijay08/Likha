@@ -3,7 +3,7 @@ import type { AdminApi, Ai, Feature, KeySlot, Keys, Me, MfaState, Model, TestRes
 import { candidates, maasiMembers, nextSunday, seedOps, shortId, userDetail, type Ops } from "./demo-ops";
 import { PERMISSIONS, seedGrowth, type Growth } from "./demo-growth";
 import type { AiSpend, Cities, CupidAdmin, Fraud, Health, Team } from "./types";
-import type { AiCeo, AppString, Catalog, Consents, Content, Flag, Pricing, Security } from "./types";
+import type { AiCeo, AppString, Catalog, Consents, Content, Flag, Pricing, Security, PhotoQueue, PhotoRow, Verification, VerifyMode } from "./types";
 import { CONSENT_MEMBERS, SEED, UNUSED, seedConf, type Conf } from "./demo-settings";
 
 type Slot = [string, KeySlot["mode"], string, string, string | null, boolean, boolean, boolean, string | null];
@@ -12,6 +12,8 @@ const SLOTS: Slot[] = [
   ["GEMINI_API_KEY", "any", "AI", "Google Gemini (text and images)", "gemini", false, true, true, "aistudio.google.com > Get API key"],
   ["OPENAI_API_KEY", "any", "AI", "OpenAI (text and GPT Image)", "openai", false, true, true, "platform.openai.com > API keys"],
   ["FAL_KEY", "any", "AI", "fal.ai (FLUX, Seedream and more)", "fal", false, true, false, "fal.ai > Dashboard > Keys. Checked with AI models > Test"],
+  ["SELFIE_API_KEY", "any", "Verification", "Selfie check API key", "verify", false, true, false, "Sent as \"Authorization: Bearer …\" to the selfie URL set in Settings > Verification"],
+  ["PHOTO_API_KEY", "any", "Verification", "Photo check API key", "verify", false, true, false, "Sent as \"Authorization: Bearer …\" to the photo URL set in Settings > Verification"],
   ["RAZORPAY_KEY_ID", "test", "Payments", "Razorpay key id (test)", "razorpay", true, false, false, "Starts rzp_test_"],
   ["RAZORPAY_KEY_SECRET", "test", "Payments", "Razorpay key secret (test)", "razorpay", false, true, true, "Tested together with the key id"],
   ["RAZORPAY_WEBHOOK_SECRET", "test", "Payments", "Razorpay webhook secret (test)", "razorpay", false, true, false, "Dashboard > Webhooks (test mode)"],
@@ -69,7 +71,8 @@ const KEY = "likha-admin-demo";
 const H = 3600e3;
 interface Stored { value: string; set_at: string; tested_at: string | null; test_ok: boolean | null; test_note: string | null }
 interface Db { email?: string; signedIn: boolean; mfaFactor?: string; aal2: boolean; mode: "test" | "live"; vals: Record<string, Stored>;
-  models: Omit<Model, "key_set" | "used_by">[]; features: Feature[]; spent: number; ops?: Ops; growth?: Growth; conf?: Conf }
+  models: Omit<Model, "key_set" | "used_by">[]; features: Feature[]; spent: number; ops?: Ops; growth?: Growth; conf?: Conf;
+  verify?: { config: Verification["config"]; pending: PhotoRow[]; auto_recent: PhotoRow[]; tests: Verification["last_tests"]; auto_members: number } }
 const fresh = (): Db => ({ signedIn: false, aal2: false, mode: "test", vals: {}, models: MODELS, features: FEATURES, spent: 0 });
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 
@@ -748,6 +751,49 @@ export class DemoAdmin implements AdminApi {
     await wait(); if (!reason.trim()) throw new Error("Reason required.");
     this.cEdit((c, g) => { if (mode === "pause") c.paused = true; else if (mode === "resume") c.paused = false; else c.agents.forEach((a) => { a.acting = false; });
       this.log(g, `agents_${mode}`, "all", reason.trim()); });
+  }
+  // ---------------------------------------------------------------- verification (sample data; rules mirror database part 19)
+  private v() {
+    this.owner(); const d = this.load();
+    if (!d.verify) {
+      const at = (h: number) => new Date(Date.now() - h * 36e5).toISOString();
+      d.verify = { config: { selfie: { mode: "auto", url: null }, photos: { mode: "auto", url: null } }, tests: {}, auto_members: 214,
+        pending: [],
+        auto_recent: [
+          { id: "ph-1", user_id: "u-r1y4a7", user: "#R1Y4A7 Riya", path: "sample/riya-1.jpg", position: 1, at: at(2) },
+          { id: "ph-2", user_id: "u-k4b1r9", user: "#K4B1R9 Kabir", path: "sample/kabir-2.jpg", position: 2, at: at(5) },
+          { id: "ph-3", user_id: "u-n3h4a2", user: "#N3H4A2 Neha", path: "sample/neha-1.jpg", position: 1, at: at(9) }] };
+      this.save(d);
+    }
+    return d.verify;
+  }
+  private vEdit<T>(fn: (v: NonNullable<Db["verify"]>) => T): T { this.v(); const d = this.load(); const r = fn(d.verify!); this.save(d); return r; }
+  async verification(): Promise<Verification> {
+    await wait(120); const v = this.v(); const d = this.load();
+    return { config: v.config, can_edit: true, keys: { selfie: !!d.vals["SELFIE_API_KEY:any"], photos: !!d.vals["PHOTO_API_KEY:any"] },
+      counts: { auto_members: v.auto_members, selfie_queue: (await this.selfies()).rows.length, photo_queue: v.pending.length, auto_photos_7d: 640, unreviewed_auto_photos: v.auto_recent.length },
+      last_tests: v.tests };
+  }
+  async setVerification(check: "selfie" | "photos", mode: VerifyMode, url: string | null, note: string) {
+    await wait(); if (!note || note.trim().length < 3) throw new Error("Add a note saying why.");
+    const u = url?.trim() || null;
+    if (u && !/^https:\/\/\S+$/.test(u)) throw new Error("The API address must start with https://");
+    if (mode === "api" && !u) throw new Error("Add the API address first.");
+    if (mode === "api" && !this.load().vals[`${check === "selfie" ? "SELFIE" : "PHOTO"}_API_KEY:any`]) throw new Error(`Set the ${check === "selfie" ? "selfie" : "photo"} key on Keys and integrations first.`);
+    this.vEdit((v) => { v.config[check] = { mode, url: u };
+      if (check === "photos" && mode !== "auto" && !v.pending.length)            // sample: a new upload now waits for the team
+        v.pending.push({ id: "ph-new", user_id: "u-a4r4v1", user: "#A4R4V1 Aarav", path: "sample/aarav-3.jpg", position: 3, at: new Date().toISOString() }); });
+  }
+  async testVerification(check: "selfie" | "photos") {
+    await wait(300);
+    const note = "Demo admin: no calls leave this browser. On the live admin this sends one labelled sample request and shows the answer.";
+    this.vEdit((v) => { v.tests[check] = { at: new Date().toISOString(), ok: "false", note }; });
+    return { ok: false, note };
+  }
+  async photoQueue(): Promise<PhotoQueue> { await wait(120); const v = this.v(); return { pending: v.pending, auto_recent: v.auto_recent, mode: v.config.photos.mode }; }
+  async decidePhoto(id: string, approve: boolean, reason: string | null) {
+    await wait(); if (!approve && !reason?.trim()) throw new Error("Say why (the member sees it).");
+    this.vEdit((v) => { v.pending = v.pending.filter((p) => p.id !== id); v.auto_recent = v.auto_recent.filter((p) => p.id !== id); });
   }
   async session() { return { idle_minutes: Number(this.g().settings.admin_session_minutes?.value ?? 30) }; }
   async aiEmergency(stop: boolean, reason: string) {

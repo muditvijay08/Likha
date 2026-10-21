@@ -68,6 +68,8 @@ Everything here was run and tested on 20 Oct 2026.
 | `reading-worker` | cron every minute | Writes paid readings still waiting (app closed, gift opened, crush joined, both finished Seven Questions, partner said yes). A 3-minute lease stops double writing; refunds after 5 tries |
 | `safety-worker` | cron every 5 min | Share my date: reminds at check-in time, then SMS-alerts trusted contacts after the minutes set in Admin (`date_checkin_alert_minutes`, MSG91 DLT template) |
 | `payment-recheck` | cron every 15 min | Orders still unpaid after the hours set in Admin (`refunds.auto_credit_after_hours`) get one automatic look at Razorpay; captured ones are credited like the webhook would |
+| `selfie-check` | app (member token) | Selfie step. Follows Admin > Settings > Verification: auto (let in, no Verified badge), team review (the frame is kept in the private `selfies` bucket until someone decides, then the safety worker deletes it), or the selfie API you set (any failure goes to the team) |
+| `photo-check` | app after each upload | Photos: auto-approved or waiting for the team is decided in the database; in API mode the photo service answers here. Failures wait for the team |
 | `razorpay-webhook` | Razorpay (deploy with `--no-verify-jwt`) | Checks the signature, records the payment, credits the wallet once (`svc_record_payment`) |
 
 **Payments:** plans (Kick Pass, Rishta Maasi, Couple Mode) are sold as prepaid months for now; they don't auto-renew. UPI autopay needs Razorpay Subscriptions with an e-mandate, which is a later step. In the Razorpay dashboard add the webhook URL with events `payment.captured`, `payment.failed`, `order.paid`, `refund.processed`.
@@ -125,3 +127,9 @@ Every setting in Admin is read by the database, the functions or the apps, excep
 - **Selfie** (`selfie.pass_score`, `max_tries`): the selfie-check function calls `svc_selfie_result(user, score, liveness)`; the database decides pass, retry or manual review.
 - **Push** (`push`, `push_types`, member notification settings): the push sender takes `svc_push_outbox()` (quiet hours, offers opt-in, one offer a day, switched-off types held) and marks sent with `svc_push_sent(ids)`.
 Retention erases database rows; photo files in Storage are removed by the same job once Storage cleanup is added.
+
+## Verification (part 19)
+Admin > Settings > Verification sets each check (selfie, photos) to **Auto-approve for now**, **Team reviews**, or **Call an API**.
+- Auto-approved members get in but never get the Verified badge until a real check passes (`profiles.selfie_auto`). Auto-approved photos are marked and listed for spot checks in Selfie and photo review > Photos.
+- API mode needs an https address (saved in the setting) and a key on Keys (`SELFIE_API_KEY`, `PHOTO_API_KEY`). The request and reply format is shown on the Verification page and in `functions/_shared/verify.ts`. "Send a test call" sends one labelled sample with no member data.
+- Starts on auto-approve for both. Switch to API mode when your check service (or an adapter in front of AWS Face Liveness / Sightengine) is ready.

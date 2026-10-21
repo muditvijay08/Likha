@@ -11,13 +11,13 @@ export const useAdmin = () => useContext(Ctx)!;
 type Item = [string, string, string[]];
 const NAV: [string, Item[]][] = [
   ["Overview", [["/dashboard", "Dashboard", []], ["/ai-ceo", "AI CEO", []]]],
-  ["People", [["/users", "Users", ["users.read"]], ["/moderation", "Moderation", ["users.moderate"]], ["/selfies", "Selfie review", ["users.moderate"]],
+  ["People", [["/users", "Users", ["users.read"]], ["/moderation", "Moderation", ["users.moderate"]], ["/selfies", "Selfie and photo review", ["users.moderate"]],
     ["/support", "Support inbox", ["support.reply"]], ["/grievances", "Grievances", ["grievances.manage"]], ["/data-requests", "Data requests", ["data.manage"]]]],
   ["Money", [["/payments", "Payments and refunds", ["payments.read"]], ["/readings", "Readings", ["users.read"]], ["/ai-spend", "AI spend and limits", ["ai.view"]]]],
   ["Growth", [["/cities", "Cities and waitlist", []], ["/cupid", "Be a Cupid", ["cupid.manage", "payouts.manage"]], ["/maasi", "Rishta Maasi picks", ["users.moderate"]]]],
   ["Trust", [["/fraud", "Fraud and abuse", ["fraud.manage"]], ["/health", "System health", []]]],
   ["Settings", [["/settings/pricing", "Pricing and credits", []], ["/settings/features", "Features, matching, safety", []], ["/settings/comms", "Notifications, Saathi, AI", []],
-    ["/settings/onboarding", "Onboarding", []], ["/settings/content", "Content", []], ["/settings/payments", "Payments and tax", []], ["/settings/general", "General and legal", []],
+    ["/settings/onboarding", "Onboarding", []], ["/settings/verification", "Verification", []], ["/settings/content", "Content", []], ["/settings/payments", "Payments and tax", []], ["/settings/general", "General and legal", []],
     ["/settings/security", "Security and data", []], ["/ai-ceo/rules", "AI CEO rules", []], ["/keys", "Keys and integrations", ["keys.manage"]], ["/ai", "AI models", ["ai.view", "settings.write"]],
     ["/team", "Team and audit", []]]],
 ];

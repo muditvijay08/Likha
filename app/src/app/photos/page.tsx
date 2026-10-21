@@ -28,6 +28,7 @@ export default function Photos() {
   const target = useRef(1);
   const { busy, error, run, setError } = useAction();
   const { settings } = useFlow();
+  const photoMode = settings?.verification_modes?.photos ?? "api";
   const min = settings?.photos?.min ?? 2, max = Math.min(6, settings?.photos?.max ?? 6);
   const slots = Array.from({ length: max }, (_, i) => i + 1);
 
@@ -103,7 +104,7 @@ export default function Photos() {
           </span>
         ))}
       </section>
-      <span className="small">Every photo is checked for safety before others can see it.</span>
+      <span className="small">{photoMode === "auto" ? "Photos that break these rules are taken down, and anyone can report a profile." : "Every photo is checked for safety before others can see it."}</span>
 
       <div className="grow" />
       <ErrorNote error={error} />

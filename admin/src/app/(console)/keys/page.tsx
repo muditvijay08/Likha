@@ -8,7 +8,8 @@ const GROUPS: [string, string][] = [["AI", "Writers and picture makers. Text fea
   ["Payments", "Razorpay. Only one pair is in use at a time: the payments switch above picks test or live."],
   ["Payouts", "RazorpayX, for Be a Cupid withdrawals. Follows the same payments switch."],
   ["SMS", "Safety alerts to trusted contacts."], ["Kundli", "The Likha kundli service (NASA JPL ephemeris)."],
-  ["Maps", "City search in the app. Browser key: restrict it to likha.in in Google Cloud."], ["Alerts", "Where the team hears about AI spend and safety alerts."]];
+  ["Maps", "City search in the app. Browser key: restrict it to likha.in in Google Cloud."],
+  ["Verification", "Only needed when a check is set to \"Call an API\" on Settings > Verification."], ["Alerts", "Where the team hears about AI spend and safety alerts."]];
 
 function Row({ s, reload }: { s: KeySlot; reload(): void }) {
   const { toast } = useAdmin();
@@ -113,7 +114,7 @@ export default function KeysPage() {
   useEffect(() => { load(); }, [load]);
   if (err) return <div className="note warn">{err}</div>;
   if (!k) return <div className="skel" style={{ height: 400 }} />;
-  const missing = k.slots.filter((s) => s.in_use && !s.set && s.grp !== "Alerts").length;
+  const missing = k.slots.filter((s) => s.in_use && !s.set && s.grp !== "Alerts" && s.grp !== "Verification").length;
   return (
     <>
       <div className="stack" style={{ gap: 4 }}><h1>Keys &amp; live mode</h1>

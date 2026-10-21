@@ -17,7 +17,7 @@ export default function Me() {
           <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 26, fontWeight: 600 }}>{p.first_name}{p.age ? `, ${p.age}` : ""}</h1>
           <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
             {TIER_LABEL[p.tier] && <span className="tag tier">{TIER_LABEL[p.tier]}</span>}
-            {p.selfie_status === "passed" ? <span className="tag v">Verified</span> : <Link href="/account-status" className="tag" style={{ textDecoration: "none", color: "var(--saffron-ink)" }}>Selfie being checked</Link>}
+            {p.selfie_status === "passed" ? (p.selfie_auto ? null : <span className="tag v">Verified</span>) : <Link href="/account-status" className="tag" style={{ textDecoration: "none", color: "var(--saffron-ink)" }}>Selfie being checked</Link>}
             {p.paused && <span className="tag">Paused</span>}
           </div>
         </div>

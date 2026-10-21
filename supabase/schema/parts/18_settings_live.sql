@@ -599,5 +599,5 @@ end $$;
 
 
 grant execute on function public.admin_session() to authenticated;
-revoke execute on function public.svc_payments_to_recheck(int), public.svc_selfie_result(uuid, numeric, boolean), public.svc_push_outbox(int),
+revoke execute on function public.svc_payments_to_recheck(int), public.svc_push_outbox(int),
   public.svc_push_sent(bigint[]), public.svc_ai_rules() from anon, authenticated;

@@ -25,10 +25,10 @@ export function Kpi({ k, v, s, alert, href }: { k: string; v: ReactNode; s?: Rea
   return href ? <a className={`kpi ${alert ? "alert" : ""}`} href={href}>{body}</a> : <div className={`kpi ${alert ? "alert" : ""}`}>{body}</div>;
 }
 
-export function Photo({ path, name }: { path: string | null; name: string }) {
+export function Photo({ path, name, bucket = "photos", label }: { path: string | null; name: string; bucket?: "photos" | "selfies"; label?: string }) {
   const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => { api().photoUrl(path).then(setUrl).catch(() => {}); }, [path]);
-  return <div className="photo" aria-label={`Photo of ${name}`}>{url ? <img src={url} alt={`${name}'s main photo`} /> : name.slice(0, 1)}</div>;
+  useEffect(() => { api().photoUrl(path, bucket).then(setUrl).catch(() => {}); }, [path, bucket]);
+  return <div className="photo" aria-label={label ?? `Photo of ${name}`}>{url ? <img src={url} alt={label ?? `${name}'s main photo`} /> : name.slice(0, 1)}</div>;
 }
 
 /** A button that opens a small form asking for a note (and optionally days), then runs. */

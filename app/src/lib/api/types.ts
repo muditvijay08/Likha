@@ -38,6 +38,8 @@ export interface PublicSettings {
   photos?: { min: number; max: number };
   prompts?: { required: number; max_length: number; interests_min: number; interests_max: number };
   saathi?: { max_session_minutes?: number };
+  /** Admin > Verification: auto (let in, no check yet), manual (the team looks) or api */
+  verification_modes?: { selfie: "auto" | "manual" | "api"; photos: "auto" | "manual" | "api" };
 }
 
 /** A required document (Terms, birth details…) republished in Admin that this member hasn't agreed to yet. */
@@ -97,7 +99,7 @@ export interface CityQueue {
   invite_code: string | null; live_cities: string[]; next_cities: string[];
 }
 
-export type SelfieResult = { status: "passed" | "pending" | "manual_review" | "failed"; message?: string };
+export type SelfieResult = { status: "passed" | "pending" | "manual_review" | "failed"; message?: string; /** let in without a check (Admin > Verification) */ auto?: boolean };
 
 // ---------------------------------------------------------------- member app (Home, Discover, Likes, Matches)
 export type Tier = "none" | "tara" | "graha" | "surya";
@@ -190,7 +192,7 @@ export interface MyProfile {
   languages: string[]; education: string | null; profession: string | null; company: string | null; college: string | null; hometown: string | null;
   diet: string | null; drinking: string | null; smoking: string | null; workout: string | null; kids: string | null; relocate: string | null;
   religion: string | null; show_religion: boolean; goal: Goal | null; bio: string | null; voice_intro_path: string | null;
-  status: string; selfie_status: string; profile_complete_pct: number; tier: Tier;
+  status: string; selfie_status: string; selfie_auto?: boolean; profile_complete_pct: number; tier: Tier;
   incognito: boolean; i_message_first: boolean; hide_company: boolean; read_receipts: boolean; show_online: boolean; paused: boolean;
   language_pref: "en" | "hinglish" | "hi";
   photos: Photo[]; prompts: { key: string; label: string; answer: string }[]; interests: number[];
@@ -266,7 +268,8 @@ export interface Api {
   photos(): Promise<Photo[]>;
   uploadPhoto(file: Blob, position: number): Promise<Photo>;
   removePhoto(id: string): Promise<void>;
-  startSelfie(): Promise<SelfieResult>;
+  /** image: one JPEG frame as a data URL, sent only when a person or the check service will look at it */
+  startSelfie(image?: string): Promise<SelfieResult>;
   interests(): Promise<Interest[]>;
   saveVibe(prompts: { key: string; answer: string }[], interestIds: number[]): Promise<void>;
   uploadVoice(audio: Blob): Promise<void>;

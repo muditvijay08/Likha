@@ -1,10 +1,12 @@
 "use client";
-// O8 Live selfie (step 5). The camera preview is local; the real liveness check runs server-side (selfie-check Edge Function).
+// O8 Live selfie (step 5). The camera preview is local. One frame goes to the selfie-check function only when a person or the
+// check service will look at it (Admin > Verification); in auto mode nothing is sent and the member gets no Verified badge yet.
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ErrorNote, Primary, Screen, Shield, StepHeader, useAction } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useGuard } from "@/lib/guard";
+import { useFlow } from "@/lib/flow";
 
 const STEPS = ["Look", "Turn", "Blink"];
 
@@ -16,6 +18,8 @@ export default function Selfie() {
   const [tries, setTries] = useState(0);
   const [phase, setPhase] = useState(0);
   const [result, setResult] = useState<string | null>(null);
+  const [auto, setAuto] = useState(false);
+  const mode = useFlow().settings?.verification_modes?.selfie ?? "api";
   const { busy, error, run, setError } = useAction();
 
   useEffect(() => () => { (video.current?.srcObject as MediaStream | null)?.getTracks().forEach((t) => t.stop()); }, []);
@@ -32,7 +36,14 @@ export default function Selfie() {
   const check = () => run(async () => {
     if (cam !== "on") { await startCamera(); return; }
     for (let i = 0; i < STEPS.length; i++) { setPhase(i); await new Promise((r) => setTimeout(r, 700)); }
-    const r = await api().startSelfie();
+    let frame: string | undefined;
+    if (mode !== "auto" && video.current) {                         // one still frame, sent once, never kept by the app
+      const c = document.createElement("canvas"); c.width = 480; c.height = Math.round(480 * (video.current.videoHeight / (video.current.videoWidth || 1))) || 600;
+      c.getContext("2d")?.drawImage(video.current, 0, 0, c.width, c.height);
+      frame = c.toDataURL("image/jpeg", 0.85);
+    }
+    const r = await api().startSelfie(frame);
+    setAuto(!!r.auto);
     setTries((t) => t + 1);
     if (r.status === "failed") { setError(r.message ?? "That didn't work. Try again in better light."); return; }
     setResult(r.status);
@@ -42,6 +53,20 @@ export default function Selfie() {
 
   const done = result === "passed" || result === "manual_review" || result === "pending";
   const instruction = cam === "on" ? ["Look straight at the camera", "Turn your head slowly to the left", "Blink twice"][phase] : "Your face will appear here";
+
+  // Auto mode (Admin > Verification): no check runs, so don't act out one.
+  if (mode === "auto" && !done) return (
+    <Screen style={{ gap: 16 }}>
+      <StepHeader step={5} back="/photos" />
+      <div className="stack">
+        <h1 className="h1">Selfie check</h1>
+        <p className="sub">Members get the Verified badge after a selfie check. Checks aren&apos;t running yet, so you can continue for now.</p>
+      </div>
+      <div className="grow" />
+      <ErrorNote error={error} />
+      <Primary onClick={() => run(async () => { const r = await api().startSelfie(); setAuto(!!r.auto); setResult(r.status); await api().setStep(6); await api().refresh(); router.push("/vibe"); })} busy={busy}>Continue</Primary>
+    </Screen>
+  );
 
   return (
     <Screen style={{ gap: 16 }}>
@@ -58,7 +83,7 @@ export default function Selfie() {
           {cam === "blocked" ? "Camera is blocked. Allow camera access in your browser settings." : "Camera starts when you tap below"}</span>}
       </div>
       <div role="status" style={{ textAlign: "center", fontWeight: 700, fontSize: 15 }}>
-        {done ? (result === "passed" ? "Verified. Welcome to the real side." : "Thanks. A person will review it within 24 hours.") : instruction}
+        {done ? (result === "passed" ? (auto ? "Thanks, you're in." : "Verified. Welcome to the real side.") : "Thanks. A person will review it within 24 hours.") : instruction}
       </div>
 
       <ol className="row" style={{ listStyle: "none", padding: 0, margin: 0, justifyContent: "center", gap: 8 }}>

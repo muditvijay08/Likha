@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -p 3100",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "node tests/admin.e2e.mjs && node tests/ops.e2e.mjs && node tests/growth.e2e.mjs && node tests/settings.e2e.mjs"
+    "test:e2e": "node tests/admin.e2e.mjs && node tests/ops.e2e.mjs && node tests/growth.e2e.mjs && node tests/settings.e2e.mjs && node tests/verify.e2e.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

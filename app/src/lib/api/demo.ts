@@ -16,7 +16,7 @@ import { SEVEN } from "../seven";
 const KEY = "likha-demo-db";
 /** Optional overrides a reviewer (or a test) can set to see what Admin changes look like in the app. */
 const ADMIN_KEY = "likha-demo-admin";
-interface DemoAdminView { maintenance?: string; minVersion?: string; features?: Record<string, boolean>; announcement?: Announcement; consent?: ConsentNeeded }
+interface DemoAdminView { maintenance?: string; minVersion?: string; verification?: { selfie: "auto" | "manual" | "api"; photos: "auto" | "manual" | "api" }; features?: Record<string, boolean>; announcement?: Announcement; consent?: ConsentNeeded }
 const adminView = (): DemoAdminView => { try { return JSON.parse(localStorage.getItem(ADMIN_KEY) ?? "{}"); } catch { return {}; } };
 const CITIES: City[] = [
   { id: "c-jaipur", slug: "jaipur", name: "Jaipur", status: "live" },
@@ -109,7 +109,7 @@ export class DemoApi implements Api {
              company: { legal_name: "[COMPANY NAME] Private Limited", gstin: "[GSTIN]", cin: "[CIN]", address: "[ADDRESS], Jaipur, Rajasthan" },
              app: { maintenance: !!adminView().maintenance, maintenance_message: adminView().maintenance, support_email: "support@likha.in", min_app_version: adminView().minVersion ?? "1.0.0" },
              max_age_filter: 60, gender_options: ["woman", "man"], gender_theme: { woman: "#E0457B", man: "#2F6FE0" },
-             photos: { min: 2, max: 6 }, prompts: { required: 2, max_length: 300, interests_min: 3, interests_max: 10 }, saathi: { max_session_minutes: 45 } };
+             verification_modes: adminView().verification ?? { selfie: "api", photos: "api" }, photos: { min: 2, max: 6 }, prompts: { required: 2, max_length: 300, interests_min: 3, interests_max: 10 }, saathi: { max_session_minutes: 45 } };
   }
 
   async myFeatures() { return { love_stories: false, hindi: false, porutham: false, ...(adminView().features ?? {}) }; }
@@ -178,8 +178,10 @@ export class DemoApi implements Api {
   async removePhoto(id: string) { this.edit((d) => { d.photos = d.photos.filter((p) => p.id !== id); }); }
   async startSelfie(): Promise<SelfieResult> {
     await wait(1200);
-    this.edit((d) => { this.me(d).selfie_status = "passed"; });
-    return { status: "passed" };
+    const mode = adminView().verification?.selfie ?? "api";          // demo default: behaves like a connected check that passes
+    if (mode === "manual") { this.edit((d) => { this.me(d).selfie_status = "manual_review"; }); return { status: "manual_review" }; }
+    this.edit((d) => { this.me(d).selfie_status = "passed"; (this.me(d) as Record<string, unknown>).selfie_auto = mode === "auto"; });
+    return mode === "auto" ? { status: "passed", auto: true } : { status: "passed" };
   }
   async interests(): Promise<Interest[]> { return INTERESTS.map((label, i) => ({ id: i + 1, slug: label.toLowerCase(), label })); }
   async saveVibe(prompts: { key: string; answer: string }[], ids: number[]) {
@@ -583,7 +585,7 @@ export class DemoApi implements Api {
       mother_tongue: g("mother_tongue"), languages: (p.languages as string[]) ?? [], education: g("education"), profession: g("profession"), company: g("company"),
       college: g("college"), hometown: g("hometown"), diet: g("diet"), drinking: g("drinking"), smoking: g("smoking"), workout: g("workout"), kids: g("kids"),
       relocate: g("relocate"), religion: g("religion"), show_religion: !!p.show_religion, goal: g("goal"), bio: g("bio"), voice_intro_path: p.voice ? "voice" : null,
-      status: "active", selfie_status: (p.selfie_status as string) ?? "passed", profile_complete_pct: this.pct(db), tier: "none",
+      status: "active", selfie_status: (p.selfie_status as string) ?? "passed", selfie_auto: !!p.selfie_auto, profile_complete_pct: this.pct(db), tier: "none",
       incognito: !!p.incognito, i_message_first: !!p.i_message_first, hide_company: !!p.hide_company, read_receipts: p.read_receipts !== false,
       show_online: p.show_online !== false, paused: !!p.paused, language_pref: (p.language_pref as MyProfile["language_pref"]) ?? "hinglish",
       photos: db.photos, prompts: db.prompts.map((x) => ({ key: x.key, label: x.key === "about_you" ? "About me" : x.key === "fond_of" ? "I'm fond of" : "The planets got me right about…", answer: x.answer })),

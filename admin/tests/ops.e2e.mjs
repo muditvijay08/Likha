@@ -73,7 +73,7 @@ await btn("Overturn and restore").click(); await page.getByLabel("Note").fill("C
 ok(await seen(page.getByText("No open appeals.")), "Appeals: overturned");
 
 // selfies
-await nav("Selfie review");
+await nav("Selfie and photo review");
 ok(await seen(page.getByText(/open under-18 report/)), "Selfies: under-18 report warning shown");
 await page.keyboard.press("s");
 ok(await seen(page.getByText("New selfie requested")), "Selfies: S asks for a new selfie");

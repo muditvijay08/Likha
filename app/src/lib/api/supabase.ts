@@ -167,7 +167,10 @@ export class SupabaseApi implements Api {
     const { data, error } = await this.sb.from("photos").insert({ user_id: id, storage_path: path, position }).select("id").single();
     fail(error, "Saving photo");
     const { data: s } = await this.sb.storage.from("photos").createSignedUrl(path, 3600);
-    return { id: (data as { id: string }).id, position, status: "pending", url: s?.signedUrl ?? "" };
+    const pid = (data as { id: string }).id;
+    // auto-approved or waiting for the team is decided in the database; in api mode the photo service answers here
+    const { data: chk } = await this.sb.functions.invoke("photo-check", { body: { photo_id: pid } });
+    return { id: pid, position, status: ((chk as { status?: Photo["status"] } | null)?.status ?? "pending"), url: s?.signedUrl ?? "" };
   }
 
   async removePhoto(photoId: string) {
@@ -175,9 +178,9 @@ export class SupabaseApi implements Api {
     fail(error, "Removing photo");
   }
 
-  // AWS Face Liveness runs in the selfie-check Edge Function (compares with photo 1, deletes the selfie).
-  async startSelfie(): Promise<SelfieResult> {
-    const { data, error } = await this.sb.functions.invoke("selfie-check", { body: {} });
+  // The selfie-check Edge Function decides by Admin > Verification: auto, a person, or the check service.
+  async startSelfie(image?: string): Promise<SelfieResult> {
+    const { data, error } = await this.sb.functions.invoke("selfie-check", { body: image ? { image } : {} });
     if (error) return { status: "failed", message: "The check could not start. Please try again." };
     return data as SelfieResult;
   }

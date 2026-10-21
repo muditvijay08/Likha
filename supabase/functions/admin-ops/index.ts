@@ -2,13 +2,18 @@
 //   {action:"recheck_payment", payment_id}  payments.read   ask Razorpay what happened; credits land if it was captured
 //   {action:"send_refund", refund_id}        refunds.large   send an approved bank refund to Razorpay
 //   {action:"invite_member", email, name, role}  team.manage  email invite to the admin; they set up an authenticator on first sign-in
+//   {action:"test_verify", check:"selfie"|"photos"}  settings.write  one sample call to the verification API set in Settings > Verification
 import { admin, asUser, rpc } from "../_shared/db.ts";
-import { loadKeys } from "../_shared/keys.ts";
+import { key, loadKeys } from "../_shared/keys.ts";
+import { callVerify, parsePhotoReply, parseSelfieReply } from "../_shared/verify.ts";
 import { orderPayments, refundPayment } from "../_shared/razorpay.ts";
 
 const H = { "access-control-allow-origin": Deno.env.get("LIKHA_ADMIN_SITE") ?? "*", "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
   "access-control-allow-methods": "POST, OPTIONS", "content-type": "application/json" };
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: H });
+
+// A tiny grey JPEG for test calls (not a face).
+const SAMPLE_JPEG = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: H });
@@ -39,6 +44,25 @@ Deno.serve(async (req) => {
       const id = await refundPayment(r.payment_ref, r.amount_paise, `refund-${r.id}`);
       await rpc("svc_refund_sent", { p_refund: r.id, p_razorpay_refund_id: id });
       return json({ ok: true, note: `Sent to Razorpay (${id}). Money reaches the member in 5 to 7 working days.` });
+    }
+    if (body.action === "test_verify") {
+      if (!(await allowed("settings.write"))) return json({ error: "not allowed" }, 403);
+      const check = body.check === "photos" ? "photos" : "selfie";
+      const cfg = await rpc<Record<string, { url: string | null }>>("svc_verification", {});
+      const url = cfg?.[check]?.url, apiKey = key(check === "selfie" ? "SELFIE_API_KEY" : "PHOTO_API_KEY");
+      if (!url || !apiKey) return json({ ok: false, note: !url ? "Add the API address first." : "Set the key on Keys and integrations first." });
+      // a labelled test call: no member data is sent
+      const sample = check === "selfie"
+        ? { user_id: "00000000-0000-0000-0000-000000000000", test: true, selfie_jpeg_base64: SAMPLE_JPEG, profile_photo_url: null }
+        : { photo_id: "00000000-0000-0000-0000-000000000000", user_id: "00000000-0000-0000-0000-000000000000", test: true, image_url: null, position: 1 };
+      let ok = false, note: string;
+      try {
+        const r = await callVerify(url, apiKey, sample);
+        const parsed = check === "selfie" ? parseSelfieReply(r.json) : parsePhotoReply(r.json);
+        ok = true; note = `Answered in ${r.ms} ms: ${JSON.stringify(parsed).slice(0, 160)}`;
+      } catch (e) { note = (e as Error).message; }
+      await rpc("svc_verification_tested", { p_check: check, p_ok: ok, p_note: note, p_actor: u.userId });
+      return json({ ok, note });
     }
     if (body.action === "invite_member") {
       if (!(await allowed("team.manage"))) return json({ error: "not allowed" }, 403);

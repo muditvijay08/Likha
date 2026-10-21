@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { AdminApi, Ai, Keys, Me, MfaState, Model, TestResult, Overview, UserList, UserDetail, ModAction, TokenInfo, ReportRow, ReportDetail, Appeal,
   SelfieQueue, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate,
   SettingValue, SettingVersion, Cities, CupidAdmin, AiSpend, Fraud, Health, Team, AuditRow,
-  Pricing, Catalog, Flag, Consents, Content, AppString, Security, AiCeo } from "./types";
+  Pricing, Catalog, Flag, Consents, Content, AppString, Security, AiCeo, Verification, PhotoQueue } from "./types";
 
 const FRIENDLY: [RegExp, string][] = [
   [/not allowed/, "You don't have permission for this."],
@@ -112,9 +112,9 @@ export class SupabaseAdmin implements AdminApi {
   async maasiCandidates(user: string) { return this.rpc<Candidate[]>("admin_maasi_candidates", { p_user: user }); }
   async addMaasiPick(user: string, pick: string, note: string) { await this.rpc("admin_add_maasi_pick", { p_user: user, p_pick: pick, p_note: note }); }
   async removeMaasiPick(id: string) { await this.rpc("admin_remove_maasi_pick", { p_id: id }); }
-  async photoUrl(path: string | null) {
+  async photoUrl(path: string | null, bucket: "photos" | "selfies" = "photos") {
     if (!path) return null;
-    const { data } = await this.sb.storage.from("photos").createSignedUrl(path, 600);
+    const { data } = await this.sb.storage.from(bucket).createSignedUrl(path, 600);
     return data?.signedUrl ?? null;
   }
 
@@ -190,4 +190,9 @@ export class SupabaseAdmin implements AdminApi {
   async agentsControl(mode: string, reason: string) { await this.rpc("admin_agents_control", { p_mode: mode, p_reason: reason }); }
   async aiEmergency(stop: boolean, reason: string) { await this.rpc("admin_ai_emergency", { p_stop: stop, p_reason: reason }); }
   async session() { return this.rpc<{ idle_minutes: number }>("admin_session"); }
+  async verification() { return this.rpc<Verification>("admin_verification"); }
+  async setVerification(check: string, mode: string, url: string | null, note: string) { await this.rpc("admin_set_verification", { p_check: check, p_mode: mode, p_url: url, p_note: note }); }
+  async testVerification(check: string) { return this.fn<{ ok: boolean; note: string }>({ action: "test_verify", check }, "admin-ops"); }
+  async photoQueue() { return this.rpc<PhotoQueue>("admin_photo_queue"); }
+  async decidePhoto(id: string, approve: boolean, reason: string | null) { await this.rpc("admin_photo_decide", { p_photo: id, p_approve: approve, p_reason: reason }); }
 }
