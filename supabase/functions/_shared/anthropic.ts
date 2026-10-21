@@ -1,4 +1,5 @@
 // Thin Claude API client: Messages + Message Batches. Docs: https://docs.claude.com/en/api/messages
+import { mustKey } from "./keys.ts";
 const API = "https://api.anthropic.com/v1";
 const VERSION = "2023-06-01";
 
@@ -21,9 +22,7 @@ export interface ClaudeRequest {
 }
 
 function headers() {
-  const key = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!key) throw new Error("ANTHROPIC_API_KEY missing");
-  return { "x-api-key": key, "anthropic-version": VERSION, "content-type": "application/json" };
+  return { "x-api-key": mustKey("ANTHROPIC_API_KEY"), "anthropic-version": VERSION, "content-type": "application/json" };
 }
 
 function body(r: ClaudeRequest) {

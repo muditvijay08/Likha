@@ -1,6 +1,7 @@
 // likha.in/c/<code>  ->  logs the click, sets a 30-day first-party cookie, sends the visitor to the deep link.
 // The app reads the cookie at sign-up and calls attach_cupid(code, click_id).
 // Route likha.in/c/* to this function (Vercel/Cloudflare rewrite).
+import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { rpc } from "../_shared/db.ts";
 
 async function sha(s: string) {
@@ -10,6 +11,7 @@ async function sha(s: string) {
 }
 
 Deno.serve(async (req) => {
+  await loadKeys();
   const url = new URL(req.url);
   const code = (url.pathname.split("/").filter(Boolean).pop() ?? "").toLowerCase();
   const site = Deno.env.get("LIKHA_SITE") ?? "https://likha.in";

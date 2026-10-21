@@ -1,10 +1,12 @@
 // Share my date: every 5 minutes. At check-in time the member gets "All good?" (in-app + push).
 // 15 minutes later with no answer, each trusted contact gets an SMS, and the safety team sees the alert.
 // Cron (internal secret): */5 * * * *
+import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { isInternal, json, rpc } from "../_shared/db.ts";
 import { sendSafetySms } from "../_shared/sms.ts";
 
 Deno.serve(async (req) => {
+  await loadKeys();
   if (!isInternal(req)) return json({ error: "internal only" }, 401);
   const due = await rpc<{ reminded: number; alerts: { share_id: string; member: string; place: string; starts_at: string; contacts: { name: string; phone: string }[] }[] }>("svc_due_checkins", {});
   let sent = 0, failed = 0;
@@ -17,7 +19,7 @@ Deno.serve(async (req) => {
       console.error("safety sms", a.share_id, (e as Error).message);
     }
   }
-  const hook = Deno.env.get("LIKHA_ALERT_WEBHOOK");                     // the safety team's channel
+  const hook = key("LIKHA_ALERT_WEBHOOK");                     // the safety team's channel
   if (hook && due.alerts.length) {
     await fetch(hook, { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ text: `Date check-in missed: ${due.alerts.map((a) => `${a.member} at ${a.place}`).join("; ")}. SMS sent ${sent}, failed ${failed}.` }) }).catch(() => {});

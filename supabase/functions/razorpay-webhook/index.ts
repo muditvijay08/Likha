@@ -1,14 +1,16 @@
 // Razorpay webhook (payment.captured, payment.failed, order.paid, refund.processed). Signature checked on the raw body.
 // Idempotent: Razorpay retries, and every event can safely arrive twice. Credits land only on "captured".
-// In the Razorpay dashboard: Webhooks -> https://<project>.supabase.co/functions/v1/razorpay-webhook, secret = RAZORPAY_WEBHOOK_SECRET.
+// In the Razorpay dashboard: Webhooks -> https://<project>.supabase.co/functions/v1/razorpay-webhook, secret = the webhook secret in Admin > Keys (test and live each have their own; the one in use follows the payments switch).
 // Deploy with --no-verify-jwt (Razorpay sends no Supabase token).
+import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { json, rpc } from "../_shared/db.ts";
 import { paymentFromEvent, verifyWebhook } from "../_shared/razorpay.ts";
 
 Deno.serve(async (req) => {
+  await loadKeys();
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const raw = await req.text();
-  if (!(await verifyWebhook(raw, req.headers.get("x-razorpay-signature"), Deno.env.get("RAZORPAY_WEBHOOK_SECRET") ?? ""))) {
+  if (!(await verifyWebhook(raw, req.headers.get("x-razorpay-signature"), key("RAZORPAY_WEBHOOK_SECRET") ?? ""))) {
     return json({ error: "bad signature" }, 401);
   }
   let ev: unknown;

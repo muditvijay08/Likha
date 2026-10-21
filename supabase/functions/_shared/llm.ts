@@ -2,16 +2,13 @@
 // Which one a feature uses is an admin setting (ai_features.model -> ai_models.provider). Nothing else changes:
 // prompts, number check, style check, crisis handling, caps and cost logging are the same for all three.
 import { callClaude, type ClaudeRequest, type ClaudeResult } from "./anthropic.ts";
+import { mustKey } from "./keys.ts";
 
 export type Provider = "anthropic" | "gemini" | "openai";
 export type LLMRequest = ClaudeRequest;
 export type LLMResult = ClaudeResult;
 
-function key(name: string) {
-  const k = Deno.env.get(name);
-  if (!k) throw new Error(`${name} missing`);
-  return k;
-}
+const key = mustKey;
 
 async function post(url: string, headers: Record<string, string>, body: unknown, timeoutMs: number): Promise<any> {
   for (let attempt = 0; attempt < 3; attempt++) {

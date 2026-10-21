@@ -8,7 +8,8 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 |---|---|---|
 | `app/` | Member PWA, Next.js 16 + React 19 + TypeScript. Onboarding O1–O15, tour T1–T3, and the bottom-nav app (H1, H2, D1–D6, M1–M5, C1–C5, Q1, E1–E14, K1–K2, A1, N1; public landings L1–L2 at /k and /g) in `src/app/(app)/`. | `npm run dev` · `npm run build` · `npm run test:e2e` · `npm run check:db` |
 | `supabase/schema/` | Postgres schema in 12 parts, concatenated into `likha_schema.sql`. | `supabase/test/*.sql` (456 checks) |
-| `supabase/functions/` | Edge Functions: ai-gateway, kundli-worker, kick-batch, cupid-redirect, payout-worker, create-order, razorpay-webhook, safety-worker, reading-worker. | `deno test tests/` · `deno check` |
+| `admin/` | Team console, Next.js 16. Sign-in with email code + authenticator (MFA). Built so far: Keys & live mode, AI models. | `npm run dev` (port 3100) · `npm run build` · `npm run test:e2e` |
+| `supabase/functions/` | Edge Functions: ai-gateway, kundli-worker, kick-batch, cupid-redirect, payout-worker, create-order, razorpay-webhook, safety-worker, reading-worker, admin-keys. | `deno test tests/` · `deno check` |
 | `kundli/` | Python FastAPI kundli service (NASA JPL DE421 via Skyfield, Lahiri, Ashtakoota rules `ak-2.0`). | `pytest tests` |
 
 ## How the pieces talk
@@ -25,7 +26,7 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 4. Consent boxes start unticked (DPDP). Birth details lock once saved; corrections only through support.
 5. Every credit change goes through `private.add_credits` / `consume_credits` with an idempotency key. Never update balances directly.
 6. Be a Cupid is single-level only. Nobody earns from their referrals' referrals.
-7. API keys never go in the database or the app bundle. Only `NEXT_PUBLIC_*` values reach the browser.
+7. Provider keys live only in Supabase Vault, set through Admin > Keys (write-only, owner, audited). Never in code, ordinary tables, logs or the app bundle. Functions read them with `key()` / `mustKey()` from `_shared/keys.ts`. Only browser-safe keys (Maps browser key, Razorpay key id) reach the app, via `public_settings`.
 
 ## Conventions
 - One screen = one route folder in `app/src/app/<route>/page.tsx`, with the design id in the first comment (`// O7 Photos`).

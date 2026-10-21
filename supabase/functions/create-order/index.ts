@@ -1,9 +1,11 @@
 // W2 Checkout: makes a Razorpay order for a credit pack or a prepaid plan month. The price always comes from our tables.
 // Member token required. Returns what Razorpay Checkout needs in the browser.
+import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { admin, asUser, json, preflight, rpc } from "../_shared/db.ts";
 import { createOrder } from "../_shared/razorpay.ts";
 
 Deno.serve(async (req) => {
+  await loadKeys();
   const pre = preflight(req); if (pre) return pre;
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const u = await asUser(req);
@@ -23,7 +25,7 @@ Deno.serve(async (req) => {
   try {
     const order = await createOrder(amount, `${item_type}:${item_key}:${u.userId.slice(0, 8)}`, { user_id: u.userId, item_type, item_key });
     await rpc("svc_create_payment", { p_user: u.userId, p_type: item_type, p_key: item_key, p_amount_paise: amount, p_order_id: order.id });
-    return json({ order_id: order.id, amount_paise: amount, currency: "INR", key_id: Deno.env.get("RAZORPAY_KEY_ID"), label });
+    return json({ order_id: order.id, amount_paise: amount, currency: "INR", key_id: key("RAZORPAY_KEY_ID"), label });
   } catch (e) {
     console.error(e);
     return json({ error: "Payments are busy. Please try again in a minute." }, 502);

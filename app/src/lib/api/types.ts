@@ -27,6 +27,8 @@ export interface PublicSettings {
   welcome_bonus: { woman: number; man: number; expiry_days: number };
   grievance_officer?: { name: string; email: string; phone: string; ack_hours: number; resolve_days: number };
   company?: { legal_name: string; gstin: string; cin: string; address: string };
+  /** Browser-safe keys set in Admin > Keys (Maps browser key, Razorpay key id in use). */
+  public_keys?: { google_maps_browser_key?: string; razorpay_key_id?: string };
 }
 
 export interface Place {

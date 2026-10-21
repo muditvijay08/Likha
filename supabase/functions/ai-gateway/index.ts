@@ -7,6 +7,7 @@
 //   {action:"saathi", character, message}          member token
 //   {action:"guru", match_id, question}            member token
 //   {action:"opener", match_id}                    member token (charges cupid_opener credits)
+import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import type { ClaudeRequest } from "../_shared/anthropic.ts";
 import { callLLM } from "../_shared/llm.ts";
 import {
@@ -14,13 +15,13 @@ import {
   pairFacts, parseJson, personFacts, readableText, readingPrompt, saathiSystem, sevenText, styleCheck, NAKSHATRAS, SIGNS
 } from "../_shared/core.ts";
 import { admin, asUser, isInternal, json, rpc, preflight } from "../_shared/db.ts";
-import { geminiImage, imaginePrompt, stampImagined } from "../_shared/image.ts";
+import { generateImage, imaginePrompt, stampImagined, type Ref } from "../_shared/image.ts";
 
 type Hold = { ok: boolean; call_id?: number; model?: string; provider?: string; max_output_tokens?: number; temperature?: number;
   number_check?: boolean; reason?: string; alert?: boolean; spent_today_paise?: number; daily_cap_paise?: number };
 
 async function alertTeam(h: Hold) {
-  const hook = Deno.env.get("LIKHA_ALERT_WEBHOOK");                   // Slack / Google Chat incoming webhook
+  const hook = key("LIKHA_ALERT_WEBHOOK");                   // Slack / Google Chat incoming webhook
   if (!hook || !h.alert) return;
   await fetch(hook, { method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ text: `Likha AI spend today: Rs ${((h.spent_today_paise ?? 0) / 100).toFixed(0)} of Rs ${((h.daily_cap_paise ?? 0) / 100).toFixed(0)} cap` }) })
@@ -61,8 +62,8 @@ async function reading(readingId: string) {
 
   if (subject.birth && ctx.me?.summary) {
     // someone not on Likha (Check With Anyone, gift, why it didn't work): ask the kundli service, nothing stored there
-    const res = await fetch(`${Deno.env.get("KUNDLI_URL")}/v1/pair`, {
-      method: "POST", headers: { "content-type": "application/json", "x-likha-key": Deno.env.get("KUNDLI_KEY")! },
+    const res = await fetch(`${mustKey("KUNDLI_URL")}/v1/pair`, {
+      method: "POST", headers: { "content-type": "application/json", "x-likha-key": mustKey("KUNDLI_KEY") },
       body: JSON.stringify({ a: { label: cleanName(ctx.me.first_name), gender: ctx.me.gender, birth: ctx.me_birth },
                              b: { label: cleanName(subject.name), gender: subject.gender ?? "other", birth: subject.birth } }),
     });
@@ -134,12 +135,13 @@ async function imagine(readingId: string, ctx: any) {
   const userId: string = ctx.reading.user_id;
   const { data: r } = await admin.from("readings").select("partner_user_id,match_id").eq("id", readingId).single();
   const scene: string = ctx.reading.subject?.scene ?? "travel";
-  const refs: { mime: string; data: Uint8Array }[] = [];
+  const refs: Ref[] = [];
   for (const uid of [userId, r!.partner_user_id]) {
     const { data: ph } = await admin.from("photos").select("storage_path").eq("user_id", uid).eq("position", 1).eq("moderation_status", "approved").maybeSingle();
     if (!ph) break;
     const { data: file } = await admin.storage.from("photos").download(ph.storage_path);
-    if (file) refs.push({ mime: file.type || "image/jpeg", data: new Uint8Array(await file.arrayBuffer()) });
+    const { data: link } = await admin.storage.from("photos").createSignedUrl(ph.storage_path, 600);   // for hosts that fetch (fal.ai); 10 minutes
+    if (file) refs.push({ mime: file.type || "image/jpeg", data: new Uint8Array(await file.arrayBuffer()), url: link?.signedUrl });
   }
   if (refs.length < 2) { await rpc("svc_reading_failed", { p_reading: readingId, p_reason: "main photos not available" }); return { ok: false, refunded: true }; }
   const paths: string[] = [];
@@ -149,13 +151,14 @@ async function imagine(readingId: string, ctx: any) {
       if (!hold.ok) throw Object.assign(new Error(hold.reason), { capped: hold.reason });
       const t0 = Date.now();
       try {
-        const img = await geminiImage(hold.model!, imaginePrompt(scene, i), refs);
+        const img = await generateImage(hold.provider!, hold.model!, imaginePrompt(scene, i), refs);
         const jpg = await stampImagined(img.bytes);
         const path = `${userId}/${r!.match_id}/imagine-${readingId}-${i + 1}.jpg`;
         const up = await admin.storage.from("stories").upload(path, jpg, { contentType: "image/jpeg", upsert: true });
         if (up.error) throw new Error(up.error.message);
         paths.push(path);
-        await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: img.inputTokens, p_out: img.outputTokens, p_cache: 0, p_status: "ok", p_latency_ms: Date.now() - t0 });
+        // image models are priced per picture: p_out is the number of pictures
+        await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: 0, p_out: 1, p_cache: 0, p_status: "ok", p_latency_ms: Date.now() - t0 });
       } catch (e) {
         await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: 0, p_out: 0, p_cache: 0, p_status: "failed", p_error: String((e as Error).message) }).catch(() => {});
         throw e;
@@ -264,6 +267,7 @@ async function opener(userId: string, client: any, matchId: string) {
 
 // ---------------------------------------------------------------- router
 Deno.serve(async (req) => {
+  await loadKeys();
   const pre = preflight(req); if (pre) return pre;
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   let body: any;

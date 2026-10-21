@@ -1,10 +1,11 @@
 // Sends approved Cupid payouts by UPI through RazorpayX, then records the result.
 // Cron hourly (internal secret). RazorpayX webhooks (payout.processed / payout.failed) also land here.
 // Docs: https://razorpay.com/docs/api/x/payouts/
+import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { admin, isInternal, json, rpc } from "../_shared/db.ts";
 
 const RZP = "https://api.razorpay.com/v1";
-const auth = () => "Basic " + btoa(`${Deno.env.get("RAZORPAYX_KEY_ID")}:${Deno.env.get("RAZORPAYX_KEY_SECRET")}`);
+const auth = () => "Basic " + btoa(`${key("RAZORPAYX_KEY_ID")}:${key("RAZORPAYX_KEY_SECRET")}`);
 
 async function hmacHex(secret: string, body: string) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -21,7 +22,7 @@ async function send() {
         method: "POST",
         headers: { authorization: auth(), "content-type": "application/json", "X-Payout-Idempotency": p.payout_id },
         body: JSON.stringify({
-          account_number: Deno.env.get("RAZORPAYX_ACCOUNT_NUMBER"), amount: p.net_paise, currency: "INR", mode: "UPI",
+          account_number: key("RAZORPAYX_ACCOUNT_NUMBER"), amount: p.net_paise, currency: "INR", mode: "UPI",
           purpose: "payout", queue_if_low_balance: true, reference_id: p.payout_id, narration: "Likha Cupid",
           fund_account: { account_type: "vpa", vpa: { address: p.upi_id },
             contact: { name: p.legal_name, type: "vendor", reference_id: p.payout_id } },
@@ -40,10 +41,11 @@ async function send() {
 }
 
 Deno.serve(async (req) => {
+  await loadKeys();
   const raw = await req.text();
   const sig = req.headers.get("x-razorpay-signature");
   if (sig) {                                                         // webhook from RazorpayX
-    if (sig !== await hmacHex(Deno.env.get("RAZORPAYX_WEBHOOK_SECRET")!, raw)) return json({ error: "bad signature" }, 401);
+    if (sig !== await hmacHex(mustKey("RAZORPAYX_WEBHOOK_SECRET"), raw)) return json({ error: "bad signature" }, 401);
     const ev = JSON.parse(raw);
     const p = ev.payload?.payout?.entity;
     if (p?.reference_id && ["payout.processed", "payout.failed", "payout.reversed"].includes(ev.event)) {

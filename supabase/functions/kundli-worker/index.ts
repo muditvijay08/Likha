@@ -1,16 +1,18 @@
 // Builds kundlis: claims queued jobs, calls the Python kundli service, saves results (and every Jodi Score).
 // Cron every minute (internal secret). Also safe to call right after a member saves birth details.
+import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { isInternal, json, rpc } from "../_shared/db.ts";
 
 Deno.serve(async (req) => {
+  await loadKeys();
   if (!isInternal(req)) return json({ error: "internal only" }, 401);
   const jobs = await rpc<any[]>("svc_kundli_claim", { p_limit: 20 });
   let done = 0, failed = 0;
   await Promise.all(jobs.map(async (j) => {
     try {
-      const res = await fetch(`${Deno.env.get("KUNDLI_URL")}/v1/chart`, {
+      const res = await fetch(`${mustKey("KUNDLI_URL")}/v1/chart`, {
         method: "POST",
-        headers: { "content-type": "application/json", "x-likha-key": Deno.env.get("KUNDLI_KEY")! },
+        headers: { "content-type": "application/json", "x-likha-key": mustKey("KUNDLI_KEY") },
         body: JSON.stringify({ birth_date: j.birth_date, birth_time: String(j.birth_time).slice(0, 5), lat: Number(j.lat),
           lng: Number(j.lng), tz_name: j.tz_name, borderline_minutes: 5 }),
         signal: AbortSignal.timeout(20_000),

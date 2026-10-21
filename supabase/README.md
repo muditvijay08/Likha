@@ -63,6 +63,7 @@ Everything here was run and tested on 20 Oct 2026.
 | `cupid-redirect` | public `likha.in/c/*` | Log click, set cookie, redirect |
 | `payout-worker` | cron hourly + RazorpayX webhook | UPI payouts |
 | `create-order` | app (member token) | Razorpay order for a credit pack or one prepaid month of a plan; price from our tables |
+| `admin-keys` | Admin buttons | Test a key (one read-only call) or a model (one short answer or one labelled picture). Team only, MFA |
 | `reading-worker` | cron every minute | Writes paid readings still waiting (app closed, gift opened, crush joined, both finished Seven Questions, partner said yes). A 3-minute lease stops double writing; refunds after 5 tries |
 | `safety-worker` | cron every 5 min | Share my date: reminds at check-in time, then SMS-alerts trusted contacts after 15 min (MSG91 DLT template) |
 | `razorpay-webhook` | Razorpay (deploy with `--no-verify-jwt`) | Checks the signature, records the payment, credits the wallet once (`svc_record_payment`) |
@@ -82,8 +83,13 @@ Everything here was run and tested on 20 Oct 2026.
 - A failed answer is rewritten once. If it fails again, the member is refunded.
 - Saathi crisis messages (English and Hinglish) never reach the model. The member gets Tele-MANAS 14416 and Safety is flagged.
 
-**Secrets:**
-`ANTHROPIC_API_KEY`, `GEMINI_API_KEY` (also needed for Imagine Us pictures; model `gemini-2.5-flash-image`, set in Admin under ai_features `imagine`, confirm the current id before launch), `OPENAI_API_KEY` (only if you switch to it), `KUNDLI_URL`, `KUNDLI_KEY`, `LIKHA_INTERNAL_SECRET`, `LIKHA_HASH_SALT`, `LIKHA_ALERT_WEBHOOK`, `LIKHA_SITE`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `MSG91_AUTH_KEY`, `MSG91_SAFETY_TEMPLATE_ID` (DLT-approved safety alert), `RAZORPAYX_KEY_ID`, `RAZORPAYX_KEY_SECRET`, `RAZORPAYX_ACCOUNT_NUMBER`, `RAZORPAYX_WEBHOOK_SECRET`. `LIKHA_SITE` (e.g. `https://likha.in`) is also the allowed browser origin (CORS) for member-facing functions.
+**Keys.** Provider keys are set in **Admin > Keys** (encrypted in Supabase Vault, write-only, owner only, every change audited). Functions read them through `_shared/keys.ts` (cached one minute). Razorpay and RazorpayX keys have test and live slots; the payments switch on the same page picks which pair is used, and going live needs every live key set, a passing test of the live secret and "LIVE" typed in.
+
+In Admin > Keys: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `FAL_KEY`, `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` (test and live), `RAZORPAYX_KEY_ID` / `RAZORPAYX_KEY_SECRET` / `RAZORPAYX_ACCOUNT_NUMBER` / `RAZORPAYX_WEBHOOK_SECRET` (test and live), `MSG91_AUTH_KEY`, `MSG91_SAFETY_TEMPLATE_ID`, `KUNDLI_URL`, `KUNDLI_KEY`, `GOOGLE_MAPS_BROWSER_KEY` (served to the app through `public_settings`), `LIKHA_ALERT_WEBHOOK`.
+
+**Function secrets** (Supabase > Edge Functions > Secrets), the few the functions need before they can read Admin: `LIKHA_INTERNAL_SECRET`, `LIKHA_HASH_SALT` (never change after launch: it would break saved phone hashes), `LIKHA_SITE` (member app address, CORS) and `LIKHA_ADMIN_SITE` (admin address, CORS for `admin-keys`). `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase. Any provider key also set here acts only as a fallback while Admin is empty.
+
+**Picture models** for Imagine Us are chosen in Admin > AI models: Google Nano Banana 2.1 (default), Nano Banana 2 Lite, Nano Banana Pro, OpenAI GPT Image 2 and 2.5 Flare, and through fal.ai FLUX.2 [max], GPT Image 2 and Seedream 5.0 Pro (off until its endpoint id is confirmed). Any fal.ai image-edit endpoint can be added there. Press Test (one labelled picture from stand-in portraits, cost logged) before switching.
 
 **Cron** (put the internal secret in Supabase Vault as `likha_internal`):
 ```sql

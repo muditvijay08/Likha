@@ -77,5 +77,5 @@ Deno.test("Busy provider is retried, then succeeds", async () => {
 Deno.test("Unknown provider and missing key fail clearly", async () => {
   await rejects(() => callLLM("mistral", REQ), /unknown provider/);
   Deno.env.delete("GEMINI_API_KEY");
-  await rejects(() => callLLM("gemini", REQ), /GEMINI_API_KEY missing/);
+  await rejects(() => callLLM("gemini", REQ), /GEMINI_API_KEY is not set \(Admin > Keys\)/);
 });

@@ -35,12 +35,20 @@ function loadMaps(key: string): Promise<void> {
   return window.__likhaMaps;
 }
 
+/** The Maps browser key set in Admin > Keys (so it can change without a new build). Asked once per visit. */
+let mapsKeyAsk: Promise<string | undefined> | null = null;
+function mapsKey(): Promise<string | undefined> {
+  if (typeof window === "undefined") return Promise.resolve(undefined);
+  mapsKeyAsk ??= import("./api").then(({ api }) => api().settings()).then((s) => s.public_keys?.google_maps_browser_key).catch(() => undefined);
+  return mapsKeyAsk;
+}
+
 export interface Suggestion { label: string; main: string; resolve(): Promise<Place> }
 
 export async function searchPlaces(input: string): Promise<Suggestion[]> {
   const q = input.trim().toLowerCase();
   if (q.length < 2) return [];
-  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || await mapsKey();
   if (key && typeof window !== "undefined") {
     try {
       await loadMaps(key);

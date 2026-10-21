@@ -4,6 +4,7 @@
 // 2. Words: the model adds a headline, a line, three small fixes and a first-date answer.
 // Claude: Message Batches API (half price). Gemini / GPT: live calls, 300 members per run.
 // Cron (internal secret):  {"step":"submit"} at 00:30 IST   ->  {"step":"collect"} every 15 min 01:00-05:00 IST
+import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { batchResults, batchStatus, createBatch, type ClaudeRequest } from "../_shared/anthropic.ts";
 import { cleanName, estimateTokens, kickPrompt, parseJson, readableText, styleCheck } from "../_shared/core.ts";
 import { admin, isInternal, json, rpc } from "../_shared/db.ts";
@@ -27,8 +28,8 @@ async function buildFacts(targets: Target[], date: string): Promise<Map<string, 
   for (const t of targets) if (t.city) byCity.set(t.city.name, [...(byCity.get(t.city.name) ?? []), t]);
   for (const list of byCity.values()) {
     const c = list[0].city!;
-    const res = await fetch(`${Deno.env.get("KUNDLI_URL")}/v1/day`, {
-      method: "POST", headers: { "content-type": "application/json", "x-likha-key": Deno.env.get("KUNDLI_KEY")! },
+    const res = await fetch(`${mustKey("KUNDLI_URL")}/v1/day`, {
+      method: "POST", headers: { "content-type": "application/json", "x-likha-key": mustKey("KUNDLI_KEY") },
       body: JSON.stringify({ date, lat: c.lat, lng: c.lng, tz_name: c.timezone,
         people: list.map((t) => ({ id: t.user_id, nakshatra_index: t.summary.nakshatra_index, moon_sign_index: t.summary.moon_sign_index })) }),
     });
@@ -153,6 +154,7 @@ async function collect() {
 }
 
 Deno.serve(async (req) => {
+  await loadKeys();
   if (!isInternal(req)) return json({ error: "internal only" }, 401);
   const { step, date } = await req.json().catch(() => ({}));
   try {

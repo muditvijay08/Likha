@@ -1,5 +1,6 @@
 // Razorpay: create an order (server side, amount from our own price tables) and check webhook signatures.
 // Secrets: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET.
+import { key } from "./keys.ts";
 
 const enc = new TextEncoder();
 
@@ -24,7 +25,7 @@ export async function verifyWebhook(rawBody: string, signature: string | null, s
 
 export async function createOrder(amountPaise: number, receipt: string, notes: Record<string, string>,
   fetcher: typeof fetch = fetch): Promise<{ id: string; amount: number; currency: string }> {
-  const id = Deno.env.get("RAZORPAY_KEY_ID"), secret = Deno.env.get("RAZORPAY_KEY_SECRET");
+  const id = key("RAZORPAY_KEY_ID"), secret = key("RAZORPAY_KEY_SECRET");
   if (!id || !secret) throw new Error("Razorpay keys are not set");
   const res = await fetcher("https://api.razorpay.com/v1/orders", {
     method: "POST",
