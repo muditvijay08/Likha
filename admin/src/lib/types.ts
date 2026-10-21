@@ -73,6 +73,39 @@ export interface Maasi { week_of: string; per_week: number; members: MaasiMember
 export interface Candidate { id: string; name: string; age: number | null; profession: string | null; jodi_score: number | null; gunas: number | null; moon: string | null;
   nakshatra: string | null; goal: string | null; photo: string | null }
 
+// ---------------------------------------------------------------- batch B: growth and control
+export interface SettingValue { value: unknown; version: number; updated_at: string; updated_by: string | null; description: string | null }
+export interface SettingVersion { version: number; value: unknown; note: string; at: string; by: string | null }
+export interface CityRow { slug: string; name: string; state: string | null; country: string; status: "locked" | "waitlist" | "live"; threshold: number; min_women: number; min_complete: number;
+  unlock_at: string | null; unlocked_at: string | null; lat: number | null; lng: number | null; timezone: string;
+  members: number; women_pct: number | null; complete_pct: number | null; waitlist_only: number; per_day: number; eta_days: number | null; ready: boolean }
+export interface Cities { can_edit: boolean; can_rules: boolean; cities: CityRow[]; invites_month: number; rules: Record<string, unknown> }
+export interface CupidRow { user_id: string; name: string; short_id: string; kind: "user" | "partner"; status: string; clicks: number; joined: number; verified: number; paying: number;
+  owed_paise: number; kyc: string | null; rates: { signup_paise: number | null; first_paid_paise: number | null } }
+export interface CupidAdmin { can_manage: boolean; can_pay: boolean; can_rules: boolean; config: Record<string, number | boolean | string>;
+  kpis: { active: number; partners: number; joined_30d: number; verified_pct: number | null; paying_30d: number; owed_paise: number; waiting_payouts: number; waiting_kyc: number; waiting_review: number };
+  cupids: CupidRow[];
+  review: { id: string; cupid_id: string; cupid: string; kind: string; amount_paise: number; at: string; signups_that_day: number; shared_network: number; face_matches: number }[];
+  kyc: { cupid_id: string; cupid: string; legal_name: string; pan: string; upi: string | null; resident: boolean; at: string }[];
+  payouts: { id: string; cupid_id: string; cupid: string; gross: number; tds: number; net: number; status: string; needs_review: boolean; requested_at: string; paid_at: string | null; utr: string | null;
+    reason: string | null; kyc: string | null }[];
+  blocked_30d: Record<string, number> }
+export interface AiSpend { can_edit: boolean; config: Record<string, number | boolean | string | string[]>; free_paused: boolean; today_paise: number; month_paise: number; calls_today: number;
+  capped_today: number; check_fail_pct_7d: number | null; refunded_today: number; by_feature: { feature: string; label: string; paise: number; calls: number }[];
+  top_users: { user_id: string; user: string; calls: number; paise: number; capped: number; paying: boolean; limit: { daily: number | null; monthly: number | null; blocked: boolean; reason: string } | null }[] }
+export interface FraudCase { id: string; pattern: string; risk: string; status: string; evidence: Record<string, unknown>; at: string; decision: string | null; decided_by: string | null;
+  accounts: { id: string; short_id: string; name: string; status: string; joined: string; bonus: boolean }[] }
+export interface Fraud { kpis: { open: number; high: number; bonuses_held: number; linked_groups: number; banned_today: number }; cases: FraudCase[]; rules: Record<string, unknown> }
+export interface Service { key: string; name: string; status: "up" | "slow" | "down" | "idle" | "off"; calls?: number; success_pct?: number | null; latency_ms?: number | null;
+  spend_paise?: number; note?: string | null; mode?: string; size_mb?: number }
+export interface Incident { id: string; started_at: string; title: string; impact: string | null; status: "open" | "watching" | "fixed"; fixed_at: string | null; notes: { at: string; by: string | null; note: string }[] }
+export interface Health { services: Service[]; jobs: { job: string; schedule: string; last_start: string | null; last_status: string | null; message: string | null; failed_24h: number }[] | null;
+  incidents: Incident[]; ai_cap_paise: number }
+export interface TeamMember { user_id: string; name: string; role: string; active: boolean; since: string; invited_by: string | null; email: string | null; last_sign_in: string | null; mfa: boolean | null }
+export interface Team { can_manage: boolean; me: string; members: TeamMember[]; roles: string[]; permissions: { key: string; label: string }[]; matrix: Record<string, string[]> }
+export interface AuditRow { id: number; at: string; actor_type: string; who: string; action: string; target_type: string | null; target_id: string | null; reason: string | null;
+  before: unknown; after: unknown }
+
 export interface AdminApi {
   readonly demo: boolean;
   sendCode(email: string): Promise<void>;
@@ -132,4 +165,34 @@ export interface AdminApi {
   addMaasiPick(user: string, pick: string, note: string): Promise<void>;
   removeMaasiPick(id: string): Promise<void>;
   photoUrl(path: string | null): Promise<string | null>;
+  // growth and control
+  settings(keys: string[]): Promise<Record<string, SettingValue>>;
+  saveSettings(changes: Record<string, unknown>, note: string): Promise<number>;
+  settingHistory(key: string): Promise<SettingVersion[]>;
+  cities(): Promise<Cities>;
+  saveCity(c: { slug: string; name: string; state: string | null; country: string; lat: number | null; lng: number | null; timezone: string; threshold: number; min_women: number; min_complete: number }): Promise<void>;
+  setCityStatus(slug: string, status: "locked" | "waitlist", reason: string): Promise<void>;
+  scheduleUnlock(slug: string, at: string | null, override: string | null): Promise<void>;
+  unlockNow(slug: string): Promise<{ notified: number }>;
+  cupidAdmin(): Promise<CupidAdmin>;
+  decideEarning(id: string, approve: boolean, note: string): Promise<void>;
+  decideKyc(cupid: string, verified: boolean, reason: string | null): Promise<void>;
+  decidePayout(id: string, approve: boolean, reason: string | null): Promise<void>;
+  setCupid(user: string, status: "active" | "paused" | "banned", reason: string): Promise<void>;
+  makePartner(user: string, signupPaise: number | null, firstPaidPaise: number | null, reason: string): Promise<void>;
+  cupidTds(fy: string): Promise<{ legal_name: string; pan: string; quarter: string; gross_paise: number; tds_paise: number; net_paise: number; payouts: number }[]>;
+  aiSpend(): Promise<AiSpend>;
+  pauseFreeAi(pause: boolean, reason: string): Promise<void>;
+  setAiUserLimit(user: string, daily: number | null, monthly: number | null, blocked: boolean, reason: string): Promise<void>;
+  aiCalls(days: number): Promise<Record<string, unknown>[]>;
+  fraud(): Promise<Fraud>;
+  scanFraud(): Promise<number>;
+  decideFraud(id: string, action: "ban_all" | "keep_oldest" | "remove_bonuses" | "not_fraud", reason: string): Promise<void>;
+  health(): Promise<Health>;
+  saveIncident(id: string | null, title: string, impact: string, status: "open" | "watching" | "fixed", note: string): Promise<void>;
+  team(): Promise<Team>;
+  setMember(user: string, role: string, active: boolean, reason: string): Promise<void>;
+  setRolePermission(role: string, perm: string, on: boolean, reason: string): Promise<void>;
+  inviteMember(email: string, name: string, role: string): Promise<{ ok: boolean; note: string }>;
+  audit(query: string, actor: string | null, before: number | null): Promise<AuditRow[]>;
 }

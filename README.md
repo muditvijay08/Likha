@@ -4,7 +4,7 @@
 | Area | Status |
 |---|---|
 | Design canvas (105 app + 25 admin screens) | Done |
-| Database (15 parts, 656 checks passing) | Done |
+| Database (16 parts, 713 checks passing) | Done |
 | Kundli engine (NASA JPL, final rules ak-2.0) | Done |
 | AI gateway, spend caps, Claude/Gemini/GPT switch | Done |
 | Be a Cupid (referrals, payouts, TDS) | Done |
@@ -16,8 +16,8 @@
 | **Member app batch 5: Our Universe (partner says yes first), partner consent, Seven Questions, Imagine Us (labelled pictures), Couple Mode + Plus, Our Story, 30/90/180-day check-ins, Boost, Travel Mode, Invite, Be a Cupid + payouts, /k /g /i landing pages, reading worker, invite and Cupid attached at sign-up** | **Done, 61 end-to-end checks** |
 | **Admin: sign-in with authenticator (MFA), Keys & live mode (all provider keys, encrypted, write-only, test buttons, test/live payments switch), AI models (10 picture models for Imagine Us across Google, OpenAI and fal.ai; text feature routing; model list and prices)** | **Done, 36 end-to-end checks** |
 | **Admin batch A, daily work: Dashboard, Users (search by phone/#ID/name, credits, tier override, suspend/ban, birth-details reveal), Moderation + appeals (reported chat, logged), Selfie review (keyboard), Payments and refunds (Razorpay re-check, two-person bank refunds), Readings (rewrite/refund), Support inbox (agent drafts sent by a person), Grievances (24 h / 15 day, monthly report), Data requests (export, erase with proof), Rishta Maasi picks, crush/gift link lookup** | **Done, 43 end-to-end checks** |
-| Admin batch B: Cities, Be a Cupid, AI spend, Fraud, System health, Team | Next |
-| Admin batch C: settings pages (pricing, features, comms, general, onboarding, content, payments and tax, security), AI CEO console and rules | After B |
+| **Admin batch B: Cities and waitlist (readiness, scheduled unlock, members told in the app), Be a Cupid (review signals, KYC, payouts, partners, rates, TDS export), AI spend and limits (caps, pause free AI, member limits, call log), Fraud (hourly scan, decide cases), System health (measured from own records, jobs, incidents), Team and roles (invite, role changes, permission matrix, audit log); settings publish with a note and version history** | **Done, 41 end-to-end checks** |
+| Admin batch C: settings pages (pricing, features, comms, general, onboarding, content, payments and tax, security), AI CEO console and rules | Next |
 | Razorpay payments (create-order + signed webhook) | Built and tested; paste live keys in Admin > Keys, test, then Go live |
 | Selfie liveness (AWS), OneSignal push | Not started |
 

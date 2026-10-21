@@ -1,6 +1,7 @@
 // Admin money buttons that need Razorpay. Team only (MFA via has_perm), from the admin site (LIKHA_ADMIN_SITE).
 //   {action:"recheck_payment", payment_id}  payments.read   ask Razorpay what happened; credits land if it was captured
 //   {action:"send_refund", refund_id}        refunds.large   send an approved bank refund to Razorpay
+//   {action:"invite_member", email, name, role}  team.manage  email invite to the admin; they set up an authenticator on first sign-in
 import { admin, asUser, rpc } from "../_shared/db.ts";
 import { loadKeys } from "../_shared/keys.ts";
 import { orderPayments, refundPayment } from "../_shared/razorpay.ts";
@@ -38,6 +39,21 @@ Deno.serve(async (req) => {
       const id = await refundPayment(r.payment_ref, r.amount_paise, `refund-${r.id}`);
       await rpc("svc_refund_sent", { p_refund: r.id, p_razorpay_refund_id: id });
       return json({ ok: true, note: `Sent to Razorpay (${id}). Money reaches the member in 5 to 7 working days.` });
+    }
+    if (body.action === "invite_member") {
+      if (!(await allowed("team.manage"))) return json({ error: "not allowed" }, 403);
+      const email = String(body.email ?? "").trim().toLowerCase(), name = String(body.name ?? "").trim(), role = String(body.role ?? "");
+      if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(email) || name.length < 2) return json({ error: "Name and a work email, please." }, 400);
+      if (!["admin", "safety", "support", "finance", "viewer"].includes(role)) return json({ error: "Owners are made by another owner after they join." }, 400);
+      let id = await rpc<string | null>("svc_user_by_email", { p_email: email });
+      if (!id) {
+        const site = Deno.env.get("LIKHA_ADMIN_SITE") ?? "";
+        const { data, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${site}/login` });
+        if (error) return json({ error: error.message }, 400);
+        id = data.user.id;
+      }
+      await rpc("svc_add_team_member", { p_user: id, p_name: name, p_role: role, p_by: u.userId });
+      return json({ ok: true, note: `Invited ${name}. They sign in with their email and set up an authenticator app.` });
     }
     return json({ error: "unknown action" }, 400);
   } catch (e) {

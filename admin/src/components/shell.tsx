@@ -13,9 +13,10 @@ const NAV: [string, Item[]][] = [
   ["Overview", [["/dashboard", "Dashboard", []]]],
   ["People", [["/users", "Users", ["users.read"]], ["/moderation", "Moderation", ["users.moderate"]], ["/selfies", "Selfie review", ["users.moderate"]],
     ["/support", "Support inbox", ["support.reply"]], ["/grievances", "Grievances", ["grievances.manage"]], ["/data-requests", "Data requests", ["data.manage"]]]],
-  ["Money", [["/payments", "Payments and refunds", ["payments.read"]], ["/readings", "Readings", ["users.read"]]]],
-  ["Growth", [["/maasi", "Rishta Maasi picks", ["users.moderate"]]]],
-  ["Settings", [["/keys", "Keys & live mode", ["keys.manage"]], ["/ai", "AI models", ["ai.view", "settings.write"]]]],
+  ["Money", [["/payments", "Payments and refunds", ["payments.read"]], ["/readings", "Readings", ["users.read"]], ["/ai-spend", "AI spend and limits", ["ai.view"]]]],
+  ["Growth", [["/cities", "Cities and waitlist", []], ["/cupid", "Be a Cupid", ["cupid.manage", "payouts.manage"]], ["/maasi", "Rishta Maasi picks", ["users.moderate"]]]],
+  ["Trust", [["/fraud", "Fraud and abuse", ["fraud.manage"]], ["/health", "System health", []]]],
+  ["Settings", [["/keys", "Keys & live mode", ["keys.manage"]], ["/ai", "AI models", ["ai.view", "settings.write"]], ["/team", "Team and audit", []]]],
 ];
 
 export function Shell({ children }: { children: ReactNode }) {

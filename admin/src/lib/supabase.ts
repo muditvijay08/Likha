@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { AdminApi, Ai, Keys, Me, MfaState, Model, TestResult, Overview, UserList, UserDetail, ModAction, TokenInfo, ReportRow, ReportDetail, Appeal,
-  SelfieQueue, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate } from "./types";
+  SelfieQueue, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate,
+  SettingValue, SettingVersion, Cities, CupidAdmin, AiSpend, Fraud, Health, Team, AuditRow } from "./types";
 
 const FRIENDLY: [RegExp, string][] = [
   [/not allowed/, "You don't have permission for this."],
@@ -115,4 +116,46 @@ export class SupabaseAdmin implements AdminApi {
     const { data } = await this.sb.storage.from("photos").createSignedUrl(path, 600);
     return data?.signedUrl ?? null;
   }
+
+  // ---------------------------------------------------------------- growth and control
+  async settings(keys: string[]) { return this.rpc<Record<string, SettingValue>>("admin_settings", { p_keys: keys }); }
+  async saveSettings(changes: Record<string, unknown>, note: string) { return this.rpc<number>("admin_set_settings", { p_changes: changes, p_note: note }); }
+  async settingHistory(key: string) { return this.rpc<SettingVersion[]>("admin_setting_history", { p_key: key }); }
+  async cities() { return this.rpc<Cities>("admin_cities"); }
+  async saveCity(c: { slug: string; name: string; state: string | null; country: string; lat: number | null; lng: number | null; timezone: string; threshold: number; min_women: number; min_complete: number }) {
+    await this.rpc("admin_save_city", { p_slug: c.slug, p_name: c.name, p_state: c.state, p_country: c.country, p_lat: c.lat, p_lng: c.lng, p_tz: c.timezone,
+      p_threshold: c.threshold, p_min_women: c.min_women, p_min_complete: c.min_complete });
+  }
+  async setCityStatus(slug: string, status: "locked" | "waitlist", reason: string) { await this.rpc("admin_set_city_status", { p_slug: slug, p_status: status, p_reason: reason }); }
+  async scheduleUnlock(slug: string, at: string | null, override: string | null) { await this.rpc("admin_schedule_unlock", { p_slug: slug, p_at: at, p_override: override }); }
+  async unlockNow(slug: string) { return this.rpc<{ notified: number }>("unlock_city", { p_slug: slug }); }
+  async cupidAdmin() { return this.rpc<CupidAdmin>("admin_cupid"); }
+  async decideEarning(id: string, approve: boolean, note: string) { await this.rpc("decide_cupid_earning", { p_earning: id, p_approve: approve, p_note: note }); }
+  async decideKyc(cupid: string, verified: boolean, reason: string | null) { await this.rpc("decide_cupid_kyc", { p_cupid: cupid, p_verified: verified, p_reason: reason }); }
+  async decidePayout(id: string, approve: boolean, reason: string | null) { await this.rpc("approve_cupid_payout", { p_payout: id, p_approve: approve, p_reason: reason }); }
+  async setCupid(user: string, status: "active" | "paused" | "banned", reason: string) { await this.rpc("set_cupid", { p_user: user, p_status: status, p_reason: reason }); }
+  async makePartner(user: string, signupPaise: number | null, firstPaidPaise: number | null, reason: string) {
+    const id = user.startsWith("#") ? (await this.users(user, "all")).rows.find((r) => r.short_id.toLowerCase() === user.toLowerCase())?.id : user;
+    if (!id) throw new Error("No member with that #ID.");
+    await this.rpc("admin_make_partner", { p_user: id, p_signup_paise: signupPaise, p_first_paid_paise: firstPaidPaise, p_reason: reason });
+  }
+  async cupidTds(fy: string) { return this.rpc<Awaited<ReturnType<AdminApi["cupidTds"]>>>("admin_cupid_tds", { p_fy: fy }); }
+  async aiSpend() { return this.rpc<AiSpend>("admin_ai_spend"); }
+  async pauseFreeAi(pause: boolean, reason: string) { await this.rpc("admin_pause_free_ai", { p_pause: pause, p_reason: reason }); }
+  async setAiUserLimit(user: string, daily: number | null, monthly: number | null, blocked: boolean, reason: string) {
+    await this.rpc("set_ai_user_limit", { p_user: user, p_daily_paise: daily, p_monthly_paise: monthly, p_blocked: blocked, p_reason: reason });
+  }
+  async aiCalls(days: number) { return this.rpc<Record<string, unknown>[]>("admin_ai_calls", { p_days: days }); }
+  async fraud() { return this.rpc<Fraud>("admin_fraud"); }
+  async scanFraud() { return this.rpc<number>("admin_scan_fraud"); }
+  async decideFraud(id: string, action: "ban_all" | "keep_oldest" | "remove_bonuses" | "not_fraud", reason: string) { await this.rpc("admin_fraud_decide", { p_case: id, p_action: action, p_reason: reason }); }
+  async health() { return this.rpc<Health>("admin_health"); }
+  async saveIncident(id: string | null, title: string, impact: string, status: "open" | "watching" | "fixed", note: string) {
+    await this.rpc("admin_incident", { p_id: id, p_title: title, p_impact: impact, p_status: status, p_note: note });
+  }
+  async team() { return this.rpc<Team>("admin_team"); }
+  async setMember(user: string, role: string, active: boolean, reason: string) { await this.rpc("admin_set_member", { p_user: user, p_role: role, p_active: active, p_reason: reason }); }
+  async setRolePermission(role: string, perm: string, on: boolean, reason: string) { await this.rpc("admin_set_role_permission", { p_role: role, p_perm: perm, p_on: on, p_reason: reason }); }
+  async inviteMember(email: string, name: string, role: string) { return this.fn<{ ok: boolean; note: string }>({ action: "invite_member", email, name, role }, "admin-ops"); }
+  async audit(query: string, actor: string | null, before: number | null) { return this.rpc<AuditRow[]>("admin_audit", { p_query: query || null, p_actor: actor, p_limit: 100, p_before: before }); }
 }

@@ -63,7 +63,7 @@ Everything here was run and tested on 20 Oct 2026.
 | `cupid-redirect` | public `likha.in/c/*` | Log click, set cookie, redirect |
 | `payout-worker` | cron hourly + RazorpayX webhook | UPI payouts |
 | `create-order` | app (member token) | Razorpay order for a credit pack or one prepaid month of a plan; price from our tables |
-| `admin-ops` | Admin buttons | Re-check a payment with Razorpay (credits land if captured); send an approved bank refund. Team only, MFA, `LIKHA_ADMIN_SITE` for CORS |
+| `admin-ops` | Admin buttons | Re-check a payment with Razorpay (credits land if captured); send an approved bank refund; invite a team member by email. Team only, MFA, `LIKHA_ADMIN_SITE` for CORS |
 | `admin-keys` | Admin buttons | Test a key (one read-only call) or a model (one short answer or one labelled picture). Team only, MFA |
 | `reading-worker` | cron every minute | Writes paid readings still waiting (app closed, gift opened, crush joined, both finished Seven Questions, partner said yes). A 3-minute lease stops double writing; refunds after 5 tries |
 | `safety-worker` | cron every 5 min | Share my date: reminds at check-in time, then SMS-alerts trusted contacts after 15 min (MSG91 DLT template) |
@@ -105,6 +105,8 @@ select cron.schedule('tiers',        '0 0 1 * *',      $$ select private.recompu
 select cron.schedule('readings',     '* * * * *',      $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/reading-worker', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{}'::jsonb) $$);
 select cron.schedule('safety',       '*/5 * * * *',    $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/safety-worker', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{}'::jsonb) $$);
 select cron.schedule('lift-suspensions', '*/30 * * * *', $$ select private.lift_suspensions() $$);
+select cron.schedule('city-unlocks', '*/5 * * * *',    $$ select private.run_city_unlocks() $$);        -- scheduled city unlocks (Admin > Cities)
+select cron.schedule('fraud-scan',   '7 * * * *',      $$ select private.scan_fraud() $$);              -- linked accounts, held messages, invite farming, refund patterns, copied bios
 select cron.schedule('crush-expiry', '0 21 * * *',     $$ select private.expire_crush_checks() $$);      -- 02:30 IST: unclaimed Check With Anyone links refunded
 ```
 

@@ -1,6 +1,8 @@
 // Demo admin: everything lives in this browser. Any team email works, codes are 123456. Mirrors the database rules in part 14.
 import type { AdminApi, Ai, Feature, KeySlot, Keys, Me, MfaState, Model, TestResult, ModAction, Overview, UserList, Payments, Tickets, Grievances, GrievanceReport } from "./types";
 import { candidates, maasiMembers, nextSunday, seedOps, shortId, userDetail, type Ops } from "./demo-ops";
+import { PERMISSIONS, seedGrowth, type Growth } from "./demo-growth";
+import type { AiSpend, Cities, CupidAdmin, Fraud, Health, Team } from "./types";
 
 type Slot = [string, KeySlot["mode"], string, string, string | null, boolean, boolean, boolean, string | null];
 const SLOTS: Slot[] = [
@@ -62,9 +64,10 @@ const OWNER_PERMS = ["ai.approve", "ai.limits", "ai.view", "audit.read", "birth.
   "team.manage", "users.moderate", "users.read"];
 const PROVIDER_KEY: Record<string, string> = { anthropic: "ANTHROPIC_API_KEY", gemini: "GEMINI_API_KEY", openai: "OPENAI_API_KEY", fal: "FAL_KEY" };
 const KEY = "likha-admin-demo";
+const H = 3600e3;
 interface Stored { value: string; set_at: string; tested_at: string | null; test_ok: boolean | null; test_note: string | null }
 interface Db { email?: string; signedIn: boolean; mfaFactor?: string; aal2: boolean; mode: "test" | "live"; vals: Record<string, Stored>;
-  models: Omit<Model, "key_set" | "used_by">[]; features: Feature[]; spent: number; ops?: Ops }
+  models: Omit<Model, "key_set" | "used_by">[]; features: Feature[]; spent: number; ops?: Ops; growth?: Growth }
 const fresh = (): Db => ({ signedIn: false, aal2: false, mode: "test", vals: {}, models: MODELS, features: FEATURES, spent: 0 });
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 
@@ -390,4 +393,178 @@ export class DemoAdmin implements AdminApi {
   }
   async removeMaasiPick(id: string) { await wait(); this.opsEdit((o) => { o.picks = o.picks.filter((p) => p.id !== id || p.response !== null); }); }
   async photoUrl() { return null; }
+
+  // ---------------------------------------------------------------- growth and control (sample data)
+  private g(): Growth { this.owner(); const d = this.load(); if (!d.growth) { d.growth = seedGrowth(); this.save(d); } return d.growth; }
+  private gEdit<T>(fn: (g: Growth) => T): T { this.owner(); const d = this.load(); d.growth ??= seedGrowth(); const r = fn(d.growth); this.save(d); return r; }
+  private log(g: Growth, action: string, target: string, reason: string | null, after: unknown = null) {
+    g.audit.unshift({ id: (g.audit[0]?.id ?? 100) + 1, at: new Date().toISOString(), actor_type: "team", who: "You", action, target_type: null, target_id: target, reason, before: null, after });
+  }
+  async settings(keys: string[]) {
+    await wait(100); const g = this.g();
+    return Object.fromEntries(keys.filter((k) => g.settings[k]).map((k) => [k, { value: g.settings[k].value, version: g.settings[k].version, updated_at: g.settings[k].updated_at, updated_by: null, description: null }]));
+  }
+  async saveSettings(changes: Record<string, unknown>, note: string) {
+    await wait(); if (note.trim().length < 3) throw new Error("Add a note saying why.");
+    return this.gEdit((g) => { let n = 0;
+      for (const [k, v] of Object.entries(changes)) {
+        const s = g.settings[k]; if (!s) throw new Error(`Unknown setting ${k}`);
+        const t = (x: unknown) => Array.isArray(x) ? "array" : typeof x;
+        if (t(s.value) !== t(v)) throw new Error(`${k} must stay a ${t(s.value)}`);
+        const neg = (x: unknown): boolean => typeof x === "number" ? x < 0 : !!x && typeof x === "object" && Object.values(x as object).some((y) => typeof y === "number" && y < 0);
+        if (neg(v)) throw new Error(`${k} cannot be negative`);
+        if (JSON.stringify(s.value) === JSON.stringify(v)) continue;
+        if (!s.history.length) s.history.push({ version: s.version, value: s.value, note: "Before first change", at: s.updated_at, by: null });
+        s.version += 1; s.value = v; s.updated_at = new Date().toISOString(); s.history.unshift({ version: s.version, value: v, note: note.trim(), at: s.updated_at, by: "You" });
+        this.log(g, "setting_changed", k, note.trim(), v); n++;
+      } return n; });
+  }
+  async settingHistory(key: string) { await wait(100); return this.g().settings[key]?.history ?? []; }
+  async cities(): Promise<Cities> {
+    await wait(120); const g = this.g();
+    return { can_edit: true, can_rules: true, cities: g.cities, invites_month: 2310,
+      rules: Object.fromEntries(["waitlist_jump_per_invite", "public_counter_min", "booth_bonus", "crush_links_per_day", "gift_links_per_day", "invite_rewards"].map((k) => [k, g.settings[k].value])) };
+  }
+  async saveCity(c: { slug: string; name: string; state: string | null; country: string; lat: number | null; lng: number | null; timezone: string; threshold: number; min_women: number; min_complete: number }) {
+    await wait();
+    if (!/^[a-z0-9-]{2,40}$/.test(c.slug)) throw new Error("City id: lowercase letters, numbers and dashes.");
+    if (c.threshold < 50 || c.min_women < 0 || c.min_women > 100 || c.min_complete < 0 || c.min_complete > 100) throw new Error("Check the unlock numbers.");
+    this.gEdit((g) => { const x = g.cities.find((y) => y.slug === c.slug);
+      if (x) Object.assign(x, { name: c.name, state: c.state, country: c.country, timezone: c.timezone, threshold: c.threshold, min_women: c.min_women, min_complete: c.min_complete });
+      else g.cities.push({ slug: c.slug, name: c.name, state: c.state, country: c.country, status: "locked", threshold: c.threshold, min_women: c.min_women, min_complete: c.min_complete, unlock_at: null,
+        unlocked_at: null, lat: c.lat, lng: c.lng, timezone: c.timezone, members: 0, women_pct: null, complete_pct: null, waitlist_only: 0, per_day: 0, eta_days: null, ready: false });
+      this.log(g, x ? "city_edited" : "city_added", c.slug, null); });
+  }
+  async setCityStatus(slug: string, status: "locked" | "waitlist", reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Add a reason.");
+    this.gEdit((g) => { const c = g.cities.find((x) => x.slug === slug)!; if (c.status === "live") throw new Error("A live city stays live."); c.status = status; if (status === "locked") c.unlock_at = null; this.log(g, "city_status", slug, reason); });
+  }
+  async scheduleUnlock(slug: string, at: string | null, override: string | null) {
+    await wait();
+    this.gEdit((g) => { const c = g.cities.find((x) => x.slug === slug)!;
+      if (c.status !== "waitlist") throw new Error("Only waitlist cities can be scheduled.");
+      if (at) { if (new Date(at).getTime() < Date.now() + 5 * 60e3) throw new Error("Pick a time at least 5 minutes ahead.");
+        if (!c.ready && !override?.trim()) throw new Error("Not ready yet: give a reason to unlock early."); }
+      c.unlock_at = at; this.log(g, at ? "unlock_scheduled" : "unlock_cancelled", slug, override); });
+  }
+  async unlockNow(slug: string) {
+    await wait(400);
+    return this.gEdit((g) => { const c = g.cities.find((x) => x.slug === slug)!; if (c.status !== "waitlist") throw new Error("City not on waitlist.");
+      c.status = "live"; c.unlocked_at = new Date().toISOString(); c.unlock_at = null; this.log(g, "unlock_city", slug, "Unlocked now", { notified: c.members }); return { notified: c.members }; });
+  }
+  async cupidAdmin(): Promise<CupidAdmin> {
+    await wait(120); const g = this.g();
+    return { ...g.cupid, can_manage: true, can_pay: true, can_rules: true, config: g.settings.cupid.value as CupidAdmin["config"],
+      kpis: { ...g.cupid.kpis, waiting_review: g.cupid.review.length, waiting_kyc: g.cupid.kyc.length, waiting_payouts: g.cupid.payouts.filter((p) => p.status === "requested").length } };
+  }
+  async decideEarning(id: string, approve: boolean, note: string) {
+    await wait(); if (!note.trim()) throw new Error("Add a note.");
+    this.gEdit((g) => { g.cupid.review = g.cupid.review.filter((r) => r.id !== id); this.log(g, approve ? "cupid_earning_ok" : "cupid_earning_reversed", id, note); });
+  }
+  async decideKyc(cupid: string, verified: boolean, reason: string | null) {
+    await wait(); if (!verified && !reason?.trim()) throw new Error("Say what's wrong so they can fix it.");
+    this.gEdit((g) => { g.cupid.kyc = g.cupid.kyc.filter((k) => k.cupid_id !== cupid); const c = g.cupid.cupids.find((x) => x.user_id === cupid); if (c) c.kyc = verified ? "verified" : "rejected";
+      this.log(g, verified ? "cupid_kyc_verified" : "cupid_kyc_rejected", cupid, reason); });
+  }
+  async decidePayout(id: string, approve: boolean, reason: string | null) {
+    await wait();
+    this.gEdit((g) => { const p = g.cupid.payouts.find((x) => x.id === id)!; if (!["requested", "approved"].includes(p.status)) throw new Error("Payout not open.");
+      p.status = approve ? "approved" : "cancelled"; p.reason = reason; this.log(g, approve ? "cupid_payout_approved" : "cupid_payout_cancelled", id, reason); });
+  }
+  async setCupid(user: string, status: "active" | "paused" | "banned", reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    this.gEdit((g) => { const c = g.cupid.cupids.find((x) => x.user_id === user)!; c.status = status; if (status === "banned") c.owed_paise = 0; this.log(g, "cupid_update", user, reason, { status }); });
+  }
+  async makePartner(user: string, signupPaise: number | null, firstPaidPaise: number | null, reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    this.gEdit((g) => { const c = g.cupid.cupids.find((x) => x.user_id === user || x.short_id.toLowerCase() === user.toLowerCase());
+      if (!c) throw new Error("Partner must be a verified member (use their #ID)."); c.kind = "partner"; c.rates = { signup_paise: signupPaise, first_paid_paise: firstPaidPaise }; this.log(g, "cupid_partner", c.user_id, reason); });
+  }
+  async cupidTds(fy: string) {
+    await wait(); this.gEdit((g) => this.log(g, "tds_export", fy, "TDS return"));
+    return [{ legal_name: "Jaipur Weddings Co.", pan: "AAJFJ1234K", quarter: "Q3", gross_paise: 217000, tds_paise: 0, net_paise: 217000, payouts: 1 },
+            { legal_name: "MNIT Dating Club", pan: "AAATM5678L", quarter: "Q3", gross_paise: 2140000, tds_paise: 42800, net_paise: 2097200, payouts: 3 }];
+  }
+  async aiSpend(): Promise<AiSpend> {
+    await wait(120); const g = this.g(); const cfg = g.settings.ai.value as Record<string, number | boolean>;
+    return { can_edit: true, config: cfg as AiSpend["config"], free_paused: !!g.freePaused, today_paise: 128400, month_paise: 2194000, calls_today: 18402, capped_today: 212, check_fail_pct_7d: 0.6, refunded_today: 3,
+      by_feature: [{ feature: "reading", label: "Paid readings", paise: 61200, calls: 412 }, { feature: "saathi", label: "Saathi chat", paise: 23300, calls: 9120 },
+        { feature: "guru", label: "Guru Ji in chat", paise: 17600, calls: 1702 }, { feature: "check_anyone", label: "Check With Anyone", paise: 14800, calls: 96 }, { feature: "daily_kick", label: "Daily Kick (batch)", paise: 11500, calls: 4812 }],
+      top_users: [{ user_id: "u-k4ran0", user: "#K4RAN0 Karan", calls: 1920, paise: 2080, capped: 64, paying: false, limit: g.limits["u-k4ran0"] ?? null },
+        { user_id: "u-simran", user: "#SIMRAN Simran", calls: 640, paise: 1810, capped: 0, paying: true, limit: g.limits["u-simran"] ?? null },
+        { user_id: "u-k0n4l9", user: "#K0N4L9 Kunal", calls: 5410, paise: 2100, capped: 1210, paying: false, limit: g.limits["u-k0n4l9"] ?? null }] };
+  }
+  async pauseFreeAi(pause: boolean, reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    this.gEdit((g) => { if (pause && g.freePaused) throw new Error("Already paused."); g.freePaused = pause ? ["saathi", "daily_kick"] : null; this.log(g, pause ? "free_ai_paused" : "free_ai_resumed", "ai", reason); });
+  }
+  async setAiUserLimit(user: string, daily: number | null, monthly: number | null, blocked: boolean, reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    this.gEdit((g) => { g.limits[user] = { daily, monthly, blocked, reason }; this.log(g, "ai_user_limit", user, reason, { daily, monthly, blocked }); });
+  }
+  async aiCalls() { await wait(); return [{ at: new Date().toISOString(), feature: "saathi", model: "claude-haiku-5-5", user: "#K4RAN0", status: "ok", input_tokens: 820, output_tokens: 140, cost_paise: 2, latency_ms: 940, error: null }]; }
+  async fraud(): Promise<Fraud> {
+    await wait(120); const g = this.g(); const open = g.fraud.filter((c) => c.status === "open");
+    return { kpis: { open: open.length, high: open.filter((c) => c.risk === "high").length, bonuses_held: 7, linked_groups: 3, banned_today: 2 }, cases: g.fraud,
+      rules: { auto_suspend: { reports: 3, days: 7 }, scam_hold_score: 0.8, block_links_first_messages: 10, invite_rewards: g.settings.invite_rewards.value, refunds: { max_per_user_month: 3 } } };
+  }
+  async scanFraud() { await wait(500); return 0; }
+  async decideFraud(id: string, action: "ban_all" | "keep_oldest" | "remove_bonuses" | "not_fraud", reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    this.gEdit((g) => { const c = g.fraud.find((x) => x.id === id)!; if (c.status !== "open") throw new Error("Case is closed.");
+      const oldest = [...c.accounts].sort((a, b) => a.joined.localeCompare(b.joined))[0];
+      for (const a of c.accounts) { if (action === "ban_all" || (action === "keep_oldest" && a.id !== oldest.id)) a.status = "banned"; if (action === "remove_bonuses" && a.id !== oldest.id) a.bonus = false; }
+      c.status = action === "not_fraud" ? "dismissed" : "resolved"; c.decision = `${action}: ${reason}`; c.decided_by = "You"; this.log(g, `fraud_${action}`, id, reason); });
+  }
+  async health(): Promise<Health> {
+    await wait(120); const g = this.g();
+    return { ai_cap_paise: 400000, incidents: g.incidents, jobs: [
+      { job: "kick-submit", schedule: "0 19 * * *", last_start: new Date(Date.now() - 6 * H).toISOString(), last_status: "succeeded", message: null, failed_24h: 0 },
+      { job: "readings", schedule: "* * * * *", last_start: new Date(Date.now() - 40e3).toISOString(), last_status: "succeeded", message: null, failed_24h: 0 },
+      { job: "safety", schedule: "*/5 * * * *", last_start: new Date(Date.now() - 2 * 60e3).toISOString(), last_status: "succeeded", message: null, failed_24h: 0 },
+      { job: "city-unlocks", schedule: "*/5 * * * *", last_start: new Date(Date.now() - 3 * 60e3).toISOString(), last_status: "failed", message: "statement timeout", failed_24h: 2 }],
+      services: [
+        { key: "ai", name: "Readings, Saathi and Guru Ji (AI)", status: "up", calls: 18402, success_pct: 99.7, latency_ms: 3100, spend_paise: 128400, note: null },
+        { key: "payments", name: "Payments (Razorpay)", status: "up", calls: 226, success_pct: 93.4, note: null, mode: "test" },
+        { key: "kundli", name: "Kundli engine", status: "up", calls: 412, success_pct: 100, note: null },
+        { key: "kick", name: "Daily Kick (overnight)", status: "up", calls: 4812, success_pct: 100, note: "4812 of 4812 members have today's Kick" },
+        { key: "selfie", name: "Selfie check", status: "slow", calls: 398, success_pct: 89, note: "11 waiting for a person" },
+        { key: "push", name: "Push notifications", status: "off", note: "Not connected yet (OneSignal). Members see notices in their Inbox." },
+        { key: "db", name: "Database and storage", status: "up", size_mb: 412 }] };
+  }
+  async saveIncident(id: string | null, title: string, impact: string, status: "open" | "watching" | "fixed", note: string) {
+    await wait();
+    this.gEdit((g) => { if (!id) { if (title.trim().length < 3) throw new Error("Give it a short title.");
+        g.incidents.unshift({ id: crypto.randomUUID(), started_at: new Date().toISOString(), title: title.trim(), impact: impact || null, status, fixed_at: status === "fixed" ? new Date().toISOString() : null, notes: [] }); }
+      else { const i = g.incidents.find((x) => x.id === id)!; i.status = status; if (status === "fixed") i.fixed_at ??= new Date().toISOString();
+        if (note.trim()) i.notes.push({ at: new Date().toISOString(), by: "You", note: note.trim() }); }
+      this.log(g, `incident_${status}`, id ?? "new", note || title); });
+  }
+  async team(): Promise<Team> {
+    await wait(120); const g = this.g();
+    return { can_manage: true, me: "t-me", members: g.team, roles: ["owner", "admin", "safety", "support", "finance", "viewer"], permissions: PERMISSIONS, matrix: g.matrix };
+  }
+  async setMember(user: string, role: string, active: boolean, reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    if (user === "t-me") throw new Error("Ask another owner to change your own access.");
+    this.gEdit((g) => { const m = g.team.find((x) => x.user_id === user)!; m.role = role; m.active = active; this.log(g, "team_member", user, reason, { role, active }); });
+  }
+  async setRolePermission(role: string, perm: string, on: boolean, reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    if (role === "owner") throw new Error("The owner role always has everything.");
+    if (on && (perm === "keys.manage" || perm === "team.manage")) throw new Error(`${perm} stays with owners.`);
+    this.gEdit((g) => { const l = new Set(g.matrix[role] ?? []); if (on) l.add(perm); else l.delete(perm); g.matrix[role] = [...l].sort(); this.log(g, "role_permission", role, reason, { permission: perm, on }); });
+  }
+  async inviteMember(email: string, name: string, role: string) {
+    await wait(400);
+    if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email) || name.trim().length < 2) throw new Error("Name and a work email, please.");
+    if (role === "owner") throw new Error("Owners are made by another owner after they join.");
+    this.gEdit((g) => { g.team.push({ user_id: crypto.randomUUID(), name: name.trim(), role, active: true, since: new Date().toISOString(), invited_by: "You", email, last_sign_in: null, mfa: false });
+      this.log(g, "team_invite", email, null, { role }); });
+    return { ok: true, note: `Invited ${name.trim()}. They sign in with their email and set up an authenticator app.` };
+  }
+  async audit(query: string, actor: string | null) {
+    await wait(120); const q = query.trim().toLowerCase();
+    return this.g().audit.filter((a) => (!actor || a.actor_type === actor) && (!q || a.action.includes(q) || (a.reason ?? "").toLowerCase().includes(q) || (a.target_id ?? "").toLowerCase().startsWith(q)));
+  }
 }
