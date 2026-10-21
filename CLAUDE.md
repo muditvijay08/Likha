@@ -49,3 +49,11 @@ cd app && cp .env.example .env.local && npm i && npm run dev
 NEXT_PUBLIC_DEMO=1 npm run build && npm start & npm run test:e2e   # onboarding (23) + member app (36) + chat and companions (25) + wallet and store (33) + account and safety (37) + couples and growth (61)
 node --experimental-strip-types --test tests/unit/*.test.ts         # panchang maths
 ```
+
+
+## Security rules
+- Every migration ends with `select private.lockdown();` (closes new functions to visitors, server-only functions to members).
+- The team changes data only through `admin_*` functions (permission + validation + audit). Never add direct-write RLS policies for the team.
+- Member-writable tables need a guard trigger for any column a member must not set (see part 20).
+- `supabase/test/B0_security.sql` must pass; it runs against a stub with Supabase's real default grants.
+- Read SECURITY.md before changing auth, storage, payments or keys.

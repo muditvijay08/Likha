@@ -133,3 +133,6 @@ Admin > Settings > Verification sets each check (selfie, photos) to **Auto-appro
 - Auto-approved members get in but never get the Verified badge until a real check passes (`profiles.selfie_auto`). Auto-approved photos are marked and listed for spot checks in Selfie and photo review > Photos.
 - API mode needs an https address (saved in the setting) and a key on Keys (`SELFIE_API_KEY`, `PHOTO_API_KEY`). The request and reply format is shown on the Verification page and in `functions/_shared/verify.ts`. "Send a test call" sends one labelled sample with no member data.
 - Starts on auto-approve for both. Switch to API mode when your check service (or an adapter in front of AWS Face Liveness / Sightengine) is ready.
+
+## Security (part 20)
+Part 20 must stay last; any later part ends with `select private.lockdown();`. The test database (`test/00_supabase_stub.sql`) uses Supabase's real default grants, so `test/B0_security.sql` tries every attack as it would happen on the live project. See `../SECURITY.md` for the audit and the launch checklist.

@@ -33,8 +33,19 @@ export function selfieBytes(dataUrl: unknown): Uint8Array {
   return out;
 }
 
+/** Only public https hosts: no IP addresses, localhost or internal names (stops the address being pointed at our own servers). */
+export function safeApiUrl(url: string): boolean {
+  let u: URL; try { u = new URL(url); } catch { return false; }
+  const h = u.hostname.toLowerCase();
+  if (u.protocol !== "https:" || u.username || u.password) return false;
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(h) || h.includes(":") || h.startsWith("[")) return false;             // IPv4 / IPv6 literals
+  if (h === "localhost" || h.endsWith(".localhost") || h.endsWith(".internal") || h.endsWith(".local") || !h.includes(".")) return false;
+  return true;
+}
+
 export async function callVerify(url: string, key: string, body: unknown, timeoutMs = 20_000, f: typeof fetch = fetch): Promise<{ status: number; json: unknown; ms: number }> {
   if (!/^https:\/\//.test(url)) throw new Error("API address must start with https://");
+  if (!safeApiUrl(url)) throw new Error("API address must be a public https name (no IP addresses or internal hosts)");
   const ctl = new AbortController(), t0 = Date.now();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {

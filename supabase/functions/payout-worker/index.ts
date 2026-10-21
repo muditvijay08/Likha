@@ -1,17 +1,13 @@
 // Sends approved Cupid payouts by UPI through RazorpayX, then records the result.
 // Cron hourly (internal secret). RazorpayX webhooks (payout.processed / payout.failed) also land here.
 // Docs: https://razorpay.com/docs/api/x/payouts/
+import { hmacHex, safeEqual } from "../_shared/razorpay.ts";
 import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { admin, isInternal, json, rpc } from "../_shared/db.ts";
 
 const RZP = "https://api.razorpay.com/v1";
 const auth = () => "Basic " + btoa(`${key("RAZORPAYX_KEY_ID")}:${key("RAZORPAYX_KEY_SECRET")}`);
 
-async function hmacHex(secret: string, body: string) {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
-  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 async function send() {
   const due = await rpc<any[]>("svc_cupid_payouts_to_send", { p_limit: 50 });
@@ -45,7 +41,7 @@ Deno.serve(async (req) => {
   const raw = await req.text();
   const sig = req.headers.get("x-razorpay-signature");
   if (sig) {                                                         // webhook from RazorpayX
-    if (sig !== await hmacHex(mustKey("RAZORPAYX_WEBHOOK_SECRET"), raw)) return json({ error: "bad signature" }, 401);
+    if (!safeEqual(await hmacHex(mustKey("RAZORPAYX_WEBHOOK_SECRET"), raw), sig)) return json({ error: "bad signature" }, 401);
     const ev = JSON.parse(raw);
     const p = ev.payload?.payout?.entity;
     if (p?.reference_id && ["payout.processed", "payout.failed", "payout.reversed"].includes(ev.event)) {

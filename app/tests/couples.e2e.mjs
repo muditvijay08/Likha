@@ -34,6 +34,7 @@ const page = await ctx.newPage();
 ctx.on("page", (p) => { p.waitForURL(/wa\.me/, { timeout: 8000 }).then(() => p.close()).catch(() => {}); });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connect|execute|frame)/i.test(m.text())) errors.push("CSP: " + m.text().slice(0, 160)); });
 const shot = (n) => page.screenshot({ path: `${OUT}Couples-${n}.png`, fullPage: true });
 const btn = (name, exact = true) => page.getByRole("button", { name, exact });
 const balance = () => page.evaluate(() => { const d = JSON.parse(localStorage.getItem("likha-demo-db")); return d.bonus + (d.purchased ?? 0) - (d.spent ?? 0); });

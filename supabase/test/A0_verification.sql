@@ -29,6 +29,10 @@ begin
 end $$;
 create or replace function pg_temp.act_as_anon() returns void language plpgsql as $$
 begin execute 'reset role'; perform set_config('request.jwt.claim.sub', '', false); perform set_config('request.jwt.claims', '{"role":"anon"}', false); execute 'set role anon'; end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 
 select pg_temp.act_as_server();
 insert into auth.users (id, email) values ('d5000000-0000-0000-0000-000000000001', 'owner@likha.in'), ('d5000000-0000-0000-0000-000000000002', 'safety@likha.in');
@@ -63,6 +67,8 @@ select pg_temp.check('reviewer sees the selfie next to photo 1', $q$ select (v::
 select pg_temp.step('approve', $q$ select public.admin_selfie_decide((select (v::jsonb -> 'rows' -> 0 ->> 'id')::uuid from seen where k = 'q'), 'approve') $q$);
 select pg_temp.act_as_server();
 select pg_temp.check('approved by a person: verified, not auto', $q$ select selfie_status = 'passed' and not selfie_auto from public.profiles where id = 'f6000000-0000-0000-0000-000000000002' $q$);
+select pg_temp.check('a second manual selfie while one waits is not queued again', $q$ select public.svc_selfie_manual('f6000000-0000-0000-0000-000000000003', 'f6000000/a.jpg') ->> 'status' = 'manual_review'
+  and public.svc_selfie_manual('f6000000-0000-0000-0000-000000000003', 'f6000000/b.jpg') ? 'already_waiting' $q$);
 select pg_temp.check('decided selfie is listed for deletion', $q$ select public.svc_selfies_to_delete() @> '[{"path":"f6000000/s.jpg"}]' $q$);
 select pg_temp.step('worker deletes it', $q$ select public.svc_selfie_deleted(array(select (x ->> 'id')::uuid from jsonb_array_elements(public.svc_selfies_to_delete()) x)) $q$);
 select pg_temp.check('nothing left to delete; path cleared', $q$ select jsonb_array_length(public.svc_selfies_to_delete()) = 0 and not exists (select 1 from public.selfie_checks where selfie_path is not null and status <> 'manual_review') $q$);
@@ -87,6 +93,8 @@ select pg_temp.check('rejected and member told', $q$ select (select moderation_s
 select pg_temp.act_as_team('d5000000-0000-0000-0000-000000000001');
 select pg_temp.denied('api needs an address', $q$ select public.admin_set_verification('photos', 'api', null, 'try') $q$);
 select pg_temp.denied('address must be https', $q$ select public.admin_set_verification('photos', 'api', 'http://x.com/check', 'try') $q$);
+select pg_temp.denied('address cannot be an IP or internal host', $q$ select public.admin_set_verification('photos', 'manual', 'https://169.254.169.254/latest', 'try') $q$);
+select pg_temp.denied('or localhost', $q$ select public.admin_set_verification('photos', 'manual', 'https://localhost:8080/x', 'try') $q$);
 select pg_temp.denied('api needs the key first', $q$ select public.admin_set_verification('photos', 'api', 'https://verify.example.com/photo', 'try') $q$);
 select pg_temp.step('photos to manual review', $q$ select public.admin_set_verification('photos', 'manual', 'https://verify.example.com/photo', 'team checks for now') $q$);
 select pg_temp.act_as_server();

@@ -63,6 +63,7 @@ create or replace function public.svc_selfie_auto(p_user uuid) returns jsonb
 language plpgsql security definer set search_path = public as $$
 begin
   perform private.require_service();
+  if (select selfie_status from public.profiles where id = p_user) = 'passed' then return jsonb_build_object('status', 'passed', 'auto', true); end if;   -- repeat calls do nothing
   insert into public.selfie_checks (user_id, status, flag_reason, try_number) values (p_user, 'passed', 'Auto-approved: no check yet', 1);
   update public.profiles set selfie_status = 'passed', selfie_auto = true where id = p_user;
   perform private.selfie_pass(p_user);
@@ -74,6 +75,10 @@ create or replace function public.svc_selfie_manual(p_user uuid, p_path text, p_
 language plpgsql security definer set search_path = public as $$
 begin
   perform private.require_service();
+  -- one selfie waits per member: repeat calls don't flood the review queue
+  if exists (select 1 from public.selfie_checks where user_id = p_user and status = 'manual_review') then
+    return jsonb_build_object('status', 'manual_review', 'already_waiting', true);
+  end if;
   insert into public.selfie_checks (user_id, status, flag_reason, selfie_path, try_number)
   values (p_user, 'manual_review', coalesce(p_why, 'Manual review (Settings > Verification)'), p_path,
           (select count(*) + 1 from public.selfie_checks where user_id = p_user));
@@ -268,6 +273,9 @@ begin
   if p_check not in ('selfie','photos') then raise exception 'selfie or photos'; end if;
   if p_mode not in ('auto','manual','api') then raise exception 'auto, manual or api'; end if;
   if v_url is not null and v_url !~ '^https://[^\s]+$' then raise exception 'the API address must start with https://'; end if;
+  if v_url is not null and (v_url ~* '^https://(\d+\.\d+\.\d+\.\d+|\[|localhost|[^/.:]+(/|:|$))' or v_url ~* '^https://[^/]*(\.internal|\.local|\.localhost)(/|:|$)' or v_url ~ '^https://[^/]*@') then
+    raise exception 'the API address must be a public https name (no IP addresses or internal hosts)';
+  end if;
   if p_mode = 'api' and v_url is null then raise exception 'add the API address first'; end if;
   if p_mode = 'api' and not exists (select 1 from private.api_key_values where key = case p_check when 'selfie' then 'SELFIE_API_KEY' else 'PHOTO_API_KEY' end) then
     raise exception 'set the % key on Keys and integrations first', case p_check when 'selfie' then 'selfie' else 'photo' end;

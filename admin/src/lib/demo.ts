@@ -790,6 +790,11 @@ export class DemoAdmin implements AdminApi {
     this.vEdit((v) => { v.tests[check] = { at: new Date().toISOString(), ok: "false", note }; });
     return { ok: false, note };
   }
+  async securityAudit() {
+    await wait(150);
+    return { tables_without_rls: [], open_to_visitors: ["city_counters", "crush_landing", "gift_landing", "join_waitlist", "public_settings", "sos_view"],
+      server_only_callable_by_members: [], definer_without_search_path: [], team_without_mfa: 0, checked_at: new Date().toISOString() };
+  }
   async photoQueue(): Promise<PhotoQueue> { await wait(120); const v = this.v(); return { pending: v.pending, auto_recent: v.auto_recent, mode: v.config.photos.mode }; }
   async decidePhoto(id: string, approve: boolean, reason: string | null) {
     await wait(); if (!approve && !reason?.trim()) throw new Error("Say why (the member sees it).");

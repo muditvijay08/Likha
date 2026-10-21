@@ -15,11 +15,18 @@ const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 }, a
 const page = await ctx.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connect|execute|frame)/i.test(m.text())) errors.push("CSP: " + m.text().slice(0, 160)); });
 const shot = (n) => page.screenshot({ path: `${OUT}Verify-${n}.png`, fullPage: true });
 const btn = (name, scope = page) => scope.getByRole("button", { name, exact: true });
 const nav = async (name) => { await page.getByRole("navigation", { name: "Admin" }).getByRole("link", { name, exact: true }).click(); await page.waitForLoadState("networkidle"); };
 const toast = (t) => seen(page.getByRole("status").filter({ hasText: t }));
 
+{
+  const r = await page.request.get(`${BASE}/`);
+  const h = r.headers();
+  ok(/frame-ancestors 'none'/.test(h["content-security-policy"] ?? "") && h["x-frame-options"] === "DENY" && h["x-content-type-options"] === "nosniff"
+     && /max-age=/.test(h["strict-transport-security"] ?? "") && !h["x-powered-by"], "Security headers: CSP, no framing, nosniff, HSTS, no x-powered-by");
+}
 await page.goto(`${BASE}/login`);
 await page.getByLabel("Work email").fill("mudit@likha.in"); await btn("Send code").click();
 await page.getByLabel("Code", { exact: true }).fill("123456"); await btn("Continue").click();
@@ -83,6 +90,12 @@ ok(await toast("the member was told"), "Spot check: photo taken down with a reas
 await autoList.getByRole("button", { name: "Looks fine" }).first().click();
 ok(await toast("Marked as checked"), "Spot check: marked fine");
 await shot("03-photos");
+
+await nav("Security and data");
+const sec = page.getByRole("region", { name: "Security checks" });
+ok(await seen(sec.getByText("Every table has row-level security")) && (await sec.getByText("Pass", { exact: true }).count()) === 5 && (await sec.getByText("Fix", { exact: true }).count()) === 0,
+  "Security checks: all five pass");
+await shot("04-security");
 
 ok(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 await browser.close();

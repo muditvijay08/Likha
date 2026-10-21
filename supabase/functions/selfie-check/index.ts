@@ -21,6 +21,9 @@ Deno.serve(async (req) => {
     let bytes: Uint8Array;
     try { bytes = selfieBytes(body.image); } catch { return json({ status: "failed", message: "We couldn't see your face. Try again in good light." }); }
     const path = `${u.userId}/${crypto.randomUUID()}.jpg`;
+    const { data: me } = await admin.from("profiles").select("selfie_status").eq("id", u.userId).single();
+    if (me?.selfie_status === "manual_review") return json({ status: "manual_review" });     // already waiting for a person: don't upload again
+    if (me?.selfie_status === "passed") return json({ status: "passed" });
     const keep = async (why: string) => {
       const up = await admin.storage.from("selfies").upload(path, bytes, { contentType: "image/jpeg" });
       if (up.error) throw new Error(up.error.message);

@@ -21,6 +21,7 @@ async function person({ name, gender, phone, city, tob, expectLive }) {
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connect|execute|frame)/i.test(m.text())) errors.push("CSP: " + m.text().slice(0, 160)); });
   const shot = async (n) => page.screenshot({ path: `${OUT}${name}-${n}.png`, fullPage: true });
   const click = (text) => page.getByRole("button", { name: text, exact: true }).click();
 

@@ -26,6 +26,7 @@ const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const page = await ctx.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connect|execute|frame)/i.test(m.text())) errors.push("CSP: " + m.text().slice(0, 160)); });
 const shot = (n) => page.screenshot({ path: `${OUT}Store-${n}.png`, fullPage: true });
 const btn = (name, exact = true) => page.getByRole("button", { name, exact });
 const balance = async () => { await page.goto(`${BASE}/wallet`); await page.getByTestId("balance").waitFor(); return Number((await page.getByTestId("balance").textContent()).replace(/\D/g, "")); };

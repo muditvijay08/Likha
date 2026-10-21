@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { AdminApi, Ai, Keys, Me, MfaState, Model, TestResult, Overview, UserList, UserDetail, ModAction, TokenInfo, ReportRow, ReportDetail, Appeal,
   SelfieQueue, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate,
   SettingValue, SettingVersion, Cities, CupidAdmin, AiSpend, Fraud, Health, Team, AuditRow,
-  Pricing, Catalog, Flag, Consents, Content, AppString, Security, AiCeo, Verification, PhotoQueue } from "./types";
+  Pricing, Catalog, Flag, Consents, Content, AppString, Security, AiCeo, Verification, PhotoQueue, SecurityAudit } from "./types";
 
 const FRIENDLY: [RegExp, string][] = [
   [/not allowed/, "You don't have permission for this."],
@@ -193,6 +193,7 @@ export class SupabaseAdmin implements AdminApi {
   async verification() { return this.rpc<Verification>("admin_verification"); }
   async setVerification(check: string, mode: string, url: string | null, note: string) { await this.rpc("admin_set_verification", { p_check: check, p_mode: mode, p_url: url, p_note: note }); }
   async testVerification(check: string) { return this.fn<{ ok: boolean; note: string }>({ action: "test_verify", check }, "admin-ops"); }
+  async securityAudit() { return this.rpc<SecurityAudit>("admin_security_audit"); }
   async photoQueue() { return this.rpc<PhotoQueue>("admin_photo_queue"); }
   async decidePhoto(id: string, approve: boolean, reason: string | null) { await this.rpc("admin_photo_decide", { p_photo: id, p_approve: approve, p_reason: reason }); }
 }

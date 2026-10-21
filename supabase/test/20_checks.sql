@@ -31,6 +31,10 @@ exception when others then raise notice 'FAIL | % -> %', label, sqlerrm; end $$;
 create or replace function pg_temp.denied(label text, q text) returns void language plpgsql as $$
 begin execute q; raise notice 'FAIL | % -> was allowed', label;
 exception when others then raise notice 'PASS | % (blocked: %)', label, left(sqlerrm, 60); end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 
 -- ---------------------------------------------------------------- fixtures
 select pg_temp.act_as_server();
@@ -69,7 +73,7 @@ select pg_temp.step('O3     record the 3 required consents + marketing',
   $q$insert into public.user_consents (user_id, consent_key, version, granted) values
      (auth.uid(),'terms_privacy','1.0',true),(auth.uid(),'birth_matching','1.0',true),(auth.uid(),'selfie','1.0',true),(auth.uid(),'marketing','1.0',false)$q$);
 select pg_temp.step('       link the waitlist sign-up (Founding Member)', $q$select public.link_waitlist()$q$);
-select pg_temp.check('       marked as Founding Member', $q$select is_founding_member from public.profiles where id = auth.uid()$q$);
+select pg_temp.check('       marked as Founding Member', $q$select (public.my_profile() ->> 'is_founding_member')::boolean$q$);
 select pg_temp.step('       use a friend''s invite code', $q$select public.redeem_invite(current_setting('test.rohan_code'))$q$);
 select pg_temp.step('O4-O5  basics and lifestyle',
   $q$update public.profiles set city_id=(select id from public.cities where slug='jaipur'), height_cm=163, profession='CA',
@@ -203,14 +207,21 @@ select pg_temp.step('Finance gives the second approval', $q$select public.approv
 select pg_temp.denied('Finance cannot change prices', $q$update public.price_list set credits = 1 where key = 'boost'; select 1/(select count(*) from public.price_list where key='boost' and credits=1)$q$);
 select pg_temp.act_as('a0000000-0000-0000-0000-000000000014','aal2');
 select pg_temp.step('Admin unlocks Pune', $q$select public.unlock_city('pune')$q$);
-select pg_temp.step('Admin acknowledges a grievance', $q$update public.grievances set acknowledged_at = now(), status='in_progress' where true$q$);
+select pg_temp.denied('Admin cannot edit grievances directly (only through the audited function)', $q$update public.grievances set acknowledged_at = now() where true; select 1/(select count(*) from public.grievances where acknowledged_at is not null)$q$);
+select pg_temp.act_as_server();
+create temp table if not exists g_ids (id uuid); insert into g_ids select id from public.grievances; grant select on g_ids to authenticated;
+select pg_temp.act_as('a0000000-0000-0000-0000-000000000014','aal2');
+select pg_temp.step('Admin acknowledges a grievance', $q$select public.admin_grievance_ack((select id from g_ids limit 1), null, 'We are looking into your payment issue and will reply within 15 days.')$q$);
+select pg_temp.act_as_server();
 select pg_temp.check('Grievance acknowledged', $q$select count(*) = 1 from public.grievances where acknowledged_at is not null$q$);
+select pg_temp.act_as('a0000000-0000-0000-0000-000000000014','aal2');
 select pg_temp.denied('Admin cannot change settings', $q$update public.app_settings set value='{"woman":1}' where key='likes_per_day'; select 1/(select count(*) from public.app_settings where key='likes_per_day' and value->>'woman'='1')$q$);
 select pg_temp.act_as('a0000000-0000-0000-0000-000000000009','aal1');
 select pg_temp.check('Owner without two-step login sees no users', $q$select not exists (select 1 from public.profiles where id <> auth.uid())$q$);
 select pg_temp.act_as('a0000000-0000-0000-0000-000000000009','aal2');
-select pg_temp.step('Owner changes a price', $q$update public.price_list set credits = 31 where key = 'boost'$q$);
-select pg_temp.check('Price change is in the audit log', $q$select exists (select 1 from public.audit_log where action like 'update:price_list')$q$);
+select pg_temp.denied('Owner cannot edit the price table directly', $q$update public.price_list set credits = 31 where key = 'boost'; select 1/(select count(*) from public.price_list where key='boost' and credits=31)$q$);
+select pg_temp.step('Owner changes a price (Pricing page)', $q$select public.admin_save_pricing('{"prices":[{"key":"boost","credits":31,"tier_discount":true,"active":true,"label":"Boost"}]}', 'Weekend test')$q$);
+select pg_temp.check('Price change is in the audit log', $q$select exists (select 1 from public.audit_log where action like 'update:price_list') and exists (select 1 from public.audit_log where action = 'pricing_published')$q$);
 select pg_temp.step('Owner erases a user on request', $q$select public.erase_user('a0000000-0000-0000-0000-000000000004', null)$q$);
 reset role;
 \echo ======================= END =======================

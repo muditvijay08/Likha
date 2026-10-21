@@ -28,6 +28,7 @@ const page = await ctx.newPage();
 ctx.on("page", (p) => { p.waitForURL(/wa\.me/, { timeout: 8000 }).then(() => p.close()).catch(() => {}); });   // WhatsApp popups
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connect|execute|frame)/i.test(m.text())) errors.push("CSP: " + m.text().slice(0, 160)); });
 const shot = (n) => page.screenshot({ path: `${OUT}Account-${n}.png`, fullPage: true });
 const btn = (name, exact = true) => page.getByRole("button", { name, exact });
 

@@ -36,3 +36,10 @@ Deno.test("verification calls send the key, need https, and fail clearly", async
   await rejects(callVerify("https://v.example.com", "k", {}, 50, slow), /longer than/);
   assert(true);
 });
+
+Deno.test("verification addresses must be public https names", async () => {
+  const { safeApiUrl } = await import("../functions/_shared/verify.ts");
+  assertEquals(safeApiUrl("https://verify.example.com/selfie"), true);
+  for (const bad of ["http://verify.example.com", "https://169.254.169.254/latest", "https://10.0.0.5/x", "https://localhost/x", "https://[::1]/x",
+                     "https://db.internal/x", "https://user:pw@verify.example.com", "https://intranet/x", "not a url"]) assertEquals(safeApiUrl(bad), false, bad);
+});

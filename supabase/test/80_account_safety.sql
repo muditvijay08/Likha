@@ -19,6 +19,10 @@ exception when others then raise notice 'FAIL | % -> %', label, sqlerrm; end $$;
 create or replace function pg_temp.denied(label text, q text) returns void language plpgsql as $$
 begin execute q; raise notice 'FAIL | % -> was allowed', label;
 exception when others then raise notice 'PASS | % (blocked: %)', label, left(sqlerrm, 60); end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 
 select pg_temp.act_as_server();
 create or replace function pg_temp.act_with_otp(p uuid, mins int) returns void language plpgsql as $$
@@ -28,6 +32,10 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', p, 'role', 'authenticated', 'aal', 'aal1',
     'amr', json_build_array(json_build_object('method', 'otp', 'timestamp', extract(epoch from now() - make_interval(mins => mins))::bigint)))::text, false);
   execute 'set role authenticated';
+end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
 end $$;
 
 -- Isha (woman) and Varun (man) matched in Jaipur; Tara (woman) waits for selfie review.
@@ -66,7 +74,7 @@ select pg_temp.check('L6 account state shows the review', $q$select s ->> 'selfi
 select pg_temp.act_as('a1000000-0000-0000-0000-000000000002');
 select pg_temp.step('notification prefs', $q$update public.notification_prefs set offers = true, kick_time = '08:00' where user_id = 'a1000000-0000-0000-0000-000000000002'$q$);
 select pg_temp.step('privacy toggles and pause', $q$update public.profiles set incognito = true, hide_company = true, read_receipts = false, paused = true, language_pref = 'hi' where id = 'a1000000-0000-0000-0000-000000000002'$q$);
-select pg_temp.check('saved', $q$select incognito and paused and language_pref = 'hi' from public.profiles where id = 'a1000000-0000-0000-0000-000000000002'$q$);
+select pg_temp.check('saved', $q$select (p ->> 'incognito')::boolean and (p ->> 'paused')::boolean and p ->> 'language_pref' = 'hi' from (select public.my_profile() p) x$q$);
 select pg_temp.step('trusted contact', $q$insert into public.trusted_contacts (user_id, name, phone, relation) values ('a1000000-0000-0000-0000-000000000002','Priya','+919414055302','sister')$q$);
 select pg_temp.step('block Tara', $q$select public.block_user('a1000000-0000-0000-0000-000000000003')$q$);
 select pg_temp.check('my_blocks shows Tara by name', $q$select public.my_blocks() -> 0 ->> 'first_name' = 'Tara'$q$);

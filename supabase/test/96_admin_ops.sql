@@ -29,6 +29,10 @@ begin
 end $$;
 create or replace function pg_temp.act_as_anon() returns void language plpgsql as $$
 begin execute 'reset role'; perform set_config('request.jwt.claim.sub', '', false); perform set_config('request.jwt.claims', '{"role":"anon"}', false); execute 'set role anon'; end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 
 select pg_temp.act_as_server();
 insert into auth.users (id, phone, email) values
@@ -170,7 +174,7 @@ select pg_temp.check('server gets what to send to Razorpay', $q$ select (public.
 select pg_temp.step('Razorpay accepted', $q$ select public.svc_refund_sent((select id from public.refunds limit 1), 'rfnd_1') $q$);
 select pg_temp.check('refund processed', $q$ select status = 'processed' and razorpay_refund_id = 'rfnd_1' from public.refunds limit 1 $q$);
 select pg_temp.act_as('e1000000-0000-0000-0000-000000000003');
-select pg_temp.check('members get nothing from the refund lookup', $q$ select public.svc_refund_to_send((select id from public.refunds limit 1)) is null $q$);
+select pg_temp.denied('members get nothing from the refund lookup', $q$ select public.svc_refund_to_send((select id from public.refunds limit 1)) is null $q$);
 
 -- ---------------------------------------------------------------- readings
 select pg_temp.act_as_team('d1000000-0000-0000-0000-000000000003');

@@ -20,7 +20,11 @@ export async function asUser(req: Request): Promise<{ client: SupabaseClient; us
 /** Cron and database webhooks send the shared secret instead of a member token. */
 export function isInternal(req: Request): boolean {
   const s = Deno.env.get("LIKHA_INTERNAL_SECRET");
-  return !!s && req.headers.get("x-likha-internal") === s;
+  const got = req.headers.get("x-likha-internal");
+  if (!s || s.length < 32 || !got || got.length !== s.length) return false;      // a short secret is treated as not set
+  let d = 0;                                                                     // constant time: no hint how much matched
+  for (let i = 0; i < s.length; i++) d |= s.charCodeAt(i) ^ got.charCodeAt(i);
+  return d === 0;
 }
 
 export async function rpc<T = any>(fn: string, args: Record<string, unknown>): Promise<T> {

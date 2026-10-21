@@ -40,6 +40,10 @@ begin
   from public.cities c where c.slug = 'jaipur';
   insert into public.preferences (user_id) values (p_id);
 end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 
 -- ---------------------------------------------------------------- fixtures
 select pg_temp.act_as_server();

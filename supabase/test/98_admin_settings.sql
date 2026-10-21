@@ -29,6 +29,10 @@ begin
 end $$;
 create or replace function pg_temp.act_as_anon() returns void language plpgsql as $$
 begin execute 'reset role'; perform set_config('request.jwt.claim.sub', '', false); perform set_config('request.jwt.claims', '{"role":"anon"}', false); execute 'set role anon'; end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 
 select pg_temp.act_as_server();
 insert into auth.users (id, email) values ('d3000000-0000-0000-0000-000000000001', 'owner@likha.in'), ('d3000000-0000-0000-0000-000000000004', 'view@likha.in');

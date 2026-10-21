@@ -226,7 +226,10 @@ export interface AdminApi {
   testVerification(check: "selfie" | "photos"): Promise<{ ok: boolean; note: string }>;
   photoQueue(): Promise<PhotoQueue>;
   decidePhoto(id: string, approve: boolean, reason: string | null): Promise<void>;
+  /** Live checks of the database's protections (Security and data). */
+  securityAudit(): Promise<SecurityAudit>;
 }
+export interface SecurityAudit { tables_without_rls: string[]; open_to_visitors: string[]; server_only_callable_by_members: string[]; definer_without_search_path: string[]; team_without_mfa: number; checked_at: string }
 
 export type VerifyMode = "auto" | "manual" | "api";
 export interface Verification {

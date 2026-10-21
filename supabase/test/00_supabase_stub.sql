@@ -40,6 +40,11 @@ create or replace function storage.foldername(name text) returns text[] language
 $$ select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'),1)-1] $$;
 
 grant usage on schema auth, storage, extensions, public to anon, authenticated, service_role;
+-- Same default privileges as a real Supabase project: every new table, function and sequence in public is granted to
+-- anon and authenticated. RLS and explicit revokes are what actually protect data.
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 grant select on auth.users to service_role;
 grant all on storage.objects to authenticated, service_role;
 grant execute on all functions in schema auth to anon, authenticated, service_role;

@@ -4,7 +4,11 @@
 set client_min_messages = warning;
 
 -- Test identities
--- Aarav (man) 1111..., Riya (woman) 2222..., Kabir (man) 3333..., Meera (woman) 4444..., Mudit (owner) 9999..., Demo 5555...
+-- Aarav (man) 1111..., Riya (woman) 2222..., Kabir (man) 3333..., Meera (woman) 4444..., Mudit (owner) 9999..., Demo 5555...-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
+
 insert into auth.users (id, phone) values
  ('11111111-1111-1111-1111-111111111111','+919800000001'),('22222222-2222-2222-2222-222222222222','+919800000002'),
  ('33333333-3333-3333-3333-333333333333','+919800000003'),('44444444-4444-4444-4444-444444444444','+919800000004'),
@@ -16,16 +20,27 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', p, 'role', 'authenticated', 'aal', aal)::text, false);
   execute 'set role authenticated';
 end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 create or replace function pg_temp.act_as_service() returns void language plpgsql as $$
 begin
   execute 'reset role';
   perform set_config('request.jwt.claim.sub', '', false);
   perform set_config('request.jwt.claims', '{"role":"service_role"}', false);
 end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 create or replace function pg_temp.ok(cond boolean, label text) returns void language plpgsql as $$
 begin
   if cond is distinct from true then raise exception 'FAIL: %', label; end if;
   raise notice 'PASS: %', label;
+end $$;
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
 end $$;
 set client_min_messages = notice;
 
@@ -222,8 +237,8 @@ select pg_temp.act_as('99999999-9999-9999-9999-999999999999', 'aal2');
 select pg_temp.ok(public.reveal_birth_details('11111111-1111-1111-1111-111111111111','Correction request DR-219') ->> 'birth_place' = 'Jaipur, Rajasthan',
   'owner can reveal birth details with a reason');
 select pg_temp.ok(exists (select 1 from public.audit_log where action = 'reveal_birth_details' and reason like 'Correction%'), 'the reveal is in the audit log');
-update public.app_settings set value = '{"woman":60,"man":30,"other":60}' where key = 'likes_per_day';
-select pg_temp.ok((select version from public.app_settings where key='likes_per_day') = 2
+select public.admin_set_settings('{"likes_per_day":{"woman":60,"man":30,"other":60}}', 'Weekend test');   -- the team changes settings only through the audited function
+select pg_temp.ok((select version from public.app_settings where key='likes_per_day') >= 2
   and exists (select 1 from public.settings_versions where key='likes_per_day'), 'settings changes are versioned');
 select public.moderate_user('33333333-3333-3333-3333-333333333333','suspend','Harassment reports',7);
 select pg_temp.ok((select status from public.profiles where id='33333333-3333-3333-3333-333333333333') = 'suspended', 'owner can suspend a user');
@@ -284,6 +299,10 @@ do $$ begin
   perform public.setting('blocked_phrases');
   raise exception 'should have failed';
 exception when insufficient_privilege then perform pg_temp.ok(true, 'internal settings (blocked phrases, AI caps) are not readable by users'); end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 select pg_temp.ok(public.public_settings() ? 'welcome_bonus' and not (public.public_settings() ? 'blocked_phrases'), 'app can read public settings only');
 reset role;
 

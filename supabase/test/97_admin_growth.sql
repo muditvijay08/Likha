@@ -29,6 +29,10 @@ begin
 end $$;
 create or replace function pg_temp.act_as_anon() returns void language plpgsql as $$
 begin execute 'reset role'; perform set_config('request.jwt.claim.sub', '', false); perform set_config('request.jwt.claims', '{"role":"anon"}', false); execute 'set role anon'; end $$;
+-- test helpers live in pg_temp; new functions aren't granted to anyone by default (part 20), so open these to the test roles
+do $$ declare f regprocedure; begin
+  for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
+end $$;
 
 select pg_temp.act_as_server();
 insert into auth.users (id, email) values ('d2000000-0000-0000-0000-000000000001', 'owner@likha.in'), ('d2000000-0000-0000-0000-000000000002', 'admin@likha.in'),
@@ -142,13 +146,13 @@ insert into seen select 'fraud', public.admin_fraud()::text;
 select pg_temp.check('cases list accounts, bonus state and risk', $q$ select (v::jsonb -> 'kpis' ->> 'open')::int = 3 and (v::jsonb -> 'kpis' ->> 'high')::int = 1
   and (v::jsonb -> 'cases' -> 0 ->> 'pattern') = 'Same face, 2 accounts' and jsonb_array_length(v::jsonb -> 'cases' -> 0 -> 'accounts') = 2
   and (v::jsonb -> 'cases' -> 0 -> 'accounts' -> 0 ->> 'bonus')::boolean from seen where k = 'fraud' $q$);
-select pg_temp.denied('decisions need a reason', $q$ select public.admin_fraud_decide((select id from public.fraud_cases where pattern like 'Same face%'), 'remove_bonuses', '') $q$);
-select pg_temp.step('remove the second account''s bonus', $q$ select public.admin_fraud_decide((select id from public.fraud_cases where pattern like 'Same face%'), 'remove_bonuses', 'Sisters, but one bonus per face') $q$);
+select pg_temp.denied('decisions need a reason', $q$ select public.admin_fraud_decide((select (x ->> 'id')::uuid from seen, jsonb_array_elements(v::jsonb -> 'cases') x where k = 'fraud' and x ->> 'pattern' like 'Same face%'), 'remove_bonuses', '') $q$);
+select pg_temp.step('remove the second account''s bonus', $q$ select public.admin_fraud_decide((select (x ->> 'id')::uuid from seen, jsonb_array_elements(v::jsonb -> 'cases') x where k = 'fraud' and x ->> 'pattern' like 'Same face%'), 'remove_bonuses', 'Sisters, but one bonus per face') $q$);
 select pg_temp.act_as_server();
 select pg_temp.check('first account keeps it, the second loses it', $q$ select private.balance_of('f3000000-0000-0000-0000-000000000004') = 150 and private.balance_of('f3000000-0000-0000-0000-000000000005') = 0 $q$);
 select pg_temp.act_as_team('d2000000-0000-0000-0000-000000000002');
-select pg_temp.step('ban the scammer', $q$ select public.admin_fraud_decide((select id from public.fraud_cases where pattern like 'Held messages%'), 'ban_all', 'Asked three matches for money') $q$);
-select pg_temp.step('copied bio is fine', $q$ select public.admin_fraud_decide((select id from public.fraud_cases where pattern = 'Copied bio text'), 'not_fraud', 'Popular quote') $q$);
+select pg_temp.step('ban the scammer', $q$ select public.admin_fraud_decide((select (x ->> 'id')::uuid from seen, jsonb_array_elements(v::jsonb -> 'cases') x where k = 'fraud' and x ->> 'pattern' like 'Held messages%'), 'ban_all', 'Asked three matches for money') $q$);
+select pg_temp.step('copied bio is fine', $q$ select public.admin_fraud_decide((select (x ->> 'id')::uuid from seen, jsonb_array_elements(v::jsonb -> 'cases') x where k = 'fraud' and x ->> 'pattern' = 'Copied bio text'), 'not_fraud', 'Popular quote') $q$);
 select pg_temp.act_as_server();
 select pg_temp.check('banned, and the dismissed bio case is not reopened by the next scan', $q$ select (select status from public.profiles where id = 'f3000000-0000-0000-0000-000000000005') = 'banned'
   and private.scan_fraud() = 0 $q$);

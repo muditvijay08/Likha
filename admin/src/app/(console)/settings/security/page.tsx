@@ -4,12 +4,15 @@ import Link from "next/link";
 import { useAdmin } from "@/components/shell";
 import { SettingsForm } from "@/components/settings-form";
 import { Kpi, Page, label, useLoad } from "@/components/ui";
+import { when } from "@/components/shell";
 import { api } from "@/lib/api";
 
 export default function SecurityPage() {
   const { me } = useAdmin();
   const can = me.perms.includes("settings.write");
   const { data } = useLoad(() => api().security());
+  const audit = useLoad(() => (can ? api().securityAudit() : Promise.resolve(null)), [can]);
+  const OPEN = ["city_counters", "crush_landing", "gift_landing", "join_waitlist", "public_settings", "sos_view"];
   return (
     <Page title="Security and data" sub="Every view of birth details or a reported chat is in the audit log. Admin always needs a second step (MFA).">
       {!data ? <div className="skel" style={{ height: 120 }} /> : <>
@@ -36,6 +39,20 @@ export default function SecurityPage() {
             { key: "retention", path: "app_logs_days", label: "Keep app logs for", unit: "days" },
             { key: "admin_session_minutes", label: "Sign team members out after", unit: "minutes", hint: "of no activity" }]} />
         </div>
+        {audit.data && <section className="card stack" aria-label="Security checks">
+          <div className="row"><h2 className="grow">Security checks</h2><span className="small">Checked {when(audit.data.checked_at)}</span>
+            <button type="button" className="btn ghost sm" onClick={audit.reload}>Check again</button></div>
+          {([
+            ["Every table has row-level security", audit.data.tables_without_rls.length === 0, audit.data.tables_without_rls.join(", ")],
+            ["Signed-out visitors can only use the public website", audit.data.open_to_visitors.every((f) => OPEN.includes(f)), audit.data.open_to_visitors.filter((f) => !OPEN.includes(f)).join(", ")],
+            ["Server-only functions are closed to members", audit.data.server_only_callable_by_members.length === 0, audit.data.server_only_callable_by_members.join(", ")],
+            ["Privileged functions pin their search path", audit.data.definer_without_search_path.length === 0, audit.data.definer_without_search_path.join(", ")],
+            ["Everyone on the team uses two-step sign-in", audit.data.team_without_mfa === 0, `${audit.data.team_without_mfa} without`],
+          ] as [string, boolean, string][]).map(([t, ok, extra]) => (
+            <div key={t} className="row" style={{ borderTop: "1px solid var(--line-soft)", paddingTop: 8 }}>
+              <span className={`pill ${ok ? "ok" : "bad"}`}>{ok ? "Pass" : "Fix"}</span><span className="grow">{t}</span>{!ok && <span className="small mono">{extra}</span>}</div>))}
+          <span className="small">These read the live database. A Fix here means a change opened something it shouldn&apos;t: run <span className="mono">select private.lockdown();</span> and check the last migration.</span>
+        </section>}
         <section className="card stack" aria-label="Consent records">
           <h2>Consent records</h2>
           <table className="t"><thead><tr><th>Document</th><th>Version</th><th>Members agreed</th></tr></thead><tbody>

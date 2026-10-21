@@ -25,9 +25,16 @@ const browser = await chromium.launch();
 const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connect|execute|frame)/i.test(m.text())) errors.push("CSP: " + m.text().slice(0, 160)); });
 const shot = (n) => page.screenshot({ path: `${OUT}Gates-${n}.png`, fullPage: true });
 const admin = (v) => page.evaluate((x) => localStorage.setItem("likha-demo-admin", JSON.stringify(x)), v);
 
+{
+  const r = await page.request.get(`${BASE}/`);
+  const h = r.headers();
+  ok(/frame-ancestors 'none'/.test(h["content-security-policy"] ?? "") && h["x-frame-options"] === "DENY" && h["x-content-type-options"] === "nosniff"
+     && /max-age=/.test(h["strict-transport-security"] ?? "") && !h["x-powered-by"], "Security headers: CSP, no framing, nosniff, HSTS, no x-powered-by");
+}
 await page.goto(`${BASE}/offline`);
 await page.evaluate((s) => localStorage.setItem("likha-demo-db", JSON.stringify(s)), SEED);
 await admin({ announcement: { id: "a1", text: "Diwali: 20% more credits on every pack", link: "/store" }, features: { imagine_us: false, saathi: false } });
