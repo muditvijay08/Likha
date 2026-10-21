@@ -17,7 +17,8 @@
 | **Admin: sign-in with authenticator (MFA), Keys & live mode (all provider keys, encrypted, write-only, test buttons, test/live payments switch), AI models (10 picture models for Imagine Us across Google, OpenAI and fal.ai; text feature routing; model list and prices)** | **Done, 36 end-to-end checks** |
 | **Admin batch A, daily work: Dashboard, Users (search by phone/#ID/name, credits, tier override, suspend/ban, birth-details reveal), Moderation + appeals (reported chat, logged), Selfie review (keyboard), Payments and refunds (Razorpay re-check, two-person bank refunds), Readings (rewrite/refund), Support inbox (agent drafts sent by a person), Grievances (24 h / 15 day, monthly report), Data requests (export, erase with proof), Rishta Maasi picks, crush/gift link lookup** | **Done, 43 end-to-end checks** |
 | **Admin batch B: Cities and waitlist (readiness, scheduled unlock, members told in the app), Be a Cupid (review signals, KYC, payouts, partners, rates, TDS export), AI spend and limits (caps, pause free AI, member limits, call log), Fraud (hourly scan, decide cases), System health (measured from own records, jobs, incidents), Team and roles (invite, role changes, permission matrix, audit log); settings publish with a note and version history** | **Done, 41 end-to-end checks** |
-| Admin batch C: settings pages (pricing, features, comms, general, onboarding, content, payments and tax, security), AI CEO console and rules | Next |
+| **Admin batch C: Pricing (whole catalog published with a note, versions, restore), Features (switches by city and rollout; the app hides switched-off screens), matching (chart rules locked), safety (report priority, test a message), Notifications, Saathi and AI (AI emergency stop), Onboarding (step credits must add up to the bonus), Content (Home banner, Kick templates, feature of the day, prompts, interests, app text), Payments and tax, General and legal (maintenance, new document versions that members re-accept), Security and data, AI CEO console (approvals, undo, pause) and rules. Settings nothing reads yet are tagged "Not used by the app yet"** | **Done, 39 admin + 13 member end-to-end checks** |
+| AI agent service (does the work behind the AI CEO console) | Not started: rules, approvals and undo are ready in the database |
 | Razorpay payments (create-order + signed webhook) | Built and tested; paste live keys in Admin > Keys, test, then Go live |
 | Selfie liveness (AWS), OneSignal push | Not started |
 
@@ -27,7 +28,7 @@
 3. Make yourself Owner. The command is at the bottom of `parts/04_seed.sql`.
 4. Deploy the kundli service from `kundli/Dockerfile` to a Mumbai host. Set `LIKHA_KUNDLI_KEY`.
 5. Deploy the Edge Functions and set the four function secrets listed in `supabase/README.md`.
-6. Deploy `admin/` (e.g. admin.likha.in), sign in, set up your authenticator, then paste every provider key in **Keys & live mode** and press Test on each.
+6. Deploy `admin/` (e.g. admin.likha.in), sign in, set up your authenticator, then paste every provider key in **Keys and integrations** and press Test on each.
 7. Set up the app: copy `app/.env.example` to `.env.local`, fill in the Supabase URL and anon key (the Maps key comes from Admin). Then run `npm run dev`.
 
 ## Week-by-week plan (2 developers)

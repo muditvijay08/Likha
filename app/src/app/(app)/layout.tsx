@@ -1,9 +1,10 @@
 "use client";
 // Shell for every screen with the bottom navigation. Only active members get here; everyone else goes back to onboarding.
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { AppProvider, BottomNav, useApp } from "@/components/app";
+import { AppProvider, BottomNav, FeatureGate, useApp } from "@/components/app";
 import { api } from "@/lib/api";
+import { ConsentGate } from "@/components/gates";
 import { resumePath } from "@/lib/flow";
 import { useGuard } from "@/lib/guard";
 import { takeClaim } from "@/lib/referral";
@@ -23,6 +24,7 @@ function PendingClaim() {
 export default function AppLayout({ children }: { children: ReactNode }) {
   const s = useGuard();
   const router = useRouter();
+  const path = usePathname();
   const ready = s?.status === "active";
   useEffect(() => {
     if (!s || ready) return;
@@ -36,7 +38,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <PendingClaim />
       <div className="app">
         {api().demo && <div className="demo-bar" role="note">Demo mode · sample profiles, not real people</div>}
-        {children}
+        <ConsentGate><FeatureGate path={path}>{children}</FeatureGate></ConsentGate>
       </div>
       <BottomNav />
     </AppProvider>

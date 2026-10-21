@@ -6,14 +6,36 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { api, type HomeData, type Prices } from "@/lib/api";
 
 // ---------------------------------------------------------------- app data (Home summary + prices, loaded once)
-interface AppData { home: HomeData | null; prices: Prices; reload(): Promise<void>; toast(msg: string): void }
-const Ctx = createContext<AppData>({ home: null, prices: {}, reload: async () => {}, toast: () => {} });
+interface AppData { home: HomeData | null; prices: Prices; reload(): Promise<void>; toast(msg: string): void   /** Feature switches from Admin. A key that is missing counts as on. */
+  features: Record<string, boolean>;
+}
+const Ctx = createContext<AppData>({ home: null, prices: {}, features: {}, reload: async () => {}, toast: () => {} });
 export const useApp = () => useContext(Ctx);
+/** Screen → feature switch. Screens not listed are always on. */
+export const FEATURE_OF: Record<string, string> = {
+  "/kick": "daily_kick", "/saathi": "saathi", "/maasi": "rishta_maasi", "/imagine": "imagine_us", "/couple": "couple_mode",
+  "/travel": "travel_mode", "/check": "check_anyone", "/matches": "golden_hours",
+};
+export function FeatureGate({ path, children }: { path: string; children: ReactNode }) {
+  const { features } = useApp();
+  const top = "/" + (path.split("/")[1] ?? "");
+  if (top === "/matches" || featureOn(features, top)) return <>{children}</>;
+  return (
+    <div className="app-body" style={{ textAlign: "center", justifyContent: "center", gap: 10 }} role="status">
+      <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 24, fontWeight: 600 }}>Not available right now</h1>
+      <p style={{ margin: 0, color: "var(--muted)" }}>This feature is switched off in your city for now. Everything else works as usual.</p>
+      <a href="/home" className="pillbtn" style={{ alignSelf: "center" }}>Back to Home</a>
+    </div>
+  );
+}
+export const featureOn = (f: Record<string, boolean>, href: string) => FEATURE_OF[href] ? f[FEATURE_OF[href]] !== false : true;
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [home, setHome] = useState<HomeData | null>(null);
   const [prices, setPrices] = useState<Prices>({});
   const [msg, setMsg] = useState<string | null>(null);
+  const [features, setFeatures] = useState<Record<string, boolean>>({});
+  useEffect(() => { api().myFeatures().then(setFeatures).catch(() => {}); }, []);
   const reload = useCallback(async () => {
     const [h, p] = await Promise.all([api().home(), api().prices()]);
     setHome(h); setPrices(p);
@@ -21,7 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { reload().catch(() => {}); }, [reload]);
   const toast = useCallback((m: string) => { setMsg(m); setTimeout(() => setMsg(null), 2600); }, []);
   return (
-    <Ctx.Provider value={{ home, prices, reload, toast }}>
+    <Ctx.Provider value={{ home, prices, features, reload, toast }}>
       {children}
       {msg && <div className="toast" role="status">{msg}</div>}
     </Ctx.Provider>

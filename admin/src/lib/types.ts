@@ -195,4 +195,54 @@ export interface AdminApi {
   setRolePermission(role: string, perm: string, on: boolean, reason: string): Promise<void>;
   inviteMember(email: string, name: string, role: string): Promise<{ ok: boolean; note: string }>;
   audit(query: string, actor: string | null, before: number | null): Promise<AuditRow[]>;
+  // settings and AI CEO (batch C)
+  unusedSettings(): Promise<string[]>;
+  restoreSetting(key: string, version: number, note: string): Promise<void>;
+  clearPolicyReview(doc: string): Promise<void>;
+  pricing(): Promise<Pricing>;
+  savePricing(catalog: Catalog, note: string): Promise<void>;
+  restorePricing(id: number, note: string): Promise<void>;
+  flags(): Promise<Flag[]>;
+  saveFlag(key: string, enabled: boolean, rollout: number, cities: string[], note: string): Promise<void>;
+  testMessage(text: string, early: boolean): Promise<{ held: boolean; reason: string }>;
+  consents(): Promise<Consents>;
+  publishConsent(key: string, version: string, title: string, body: string, required: boolean, note: string): Promise<void>;
+  content(): Promise<Content>;
+  strings(query: string, missingHindi: boolean): Promise<AppString[]>;
+  saveStrings(strings: Record<string, { en: string; hi?: string | null }>, note: string): Promise<number>;
+  saveContent(kind: "kick_template" | "prompt" | "interest" | "schedule" | "announcement", row: Record<string, unknown>, note: string): Promise<void>;
+  security(): Promise<Security>;
+  aiCeo(): Promise<AiCeo>;
+  decideApproval(id: string, approve: boolean): Promise<void>;
+  undoAgentAction(id: number, reason: string): Promise<void>;
+  saveAgent(key: string, acting: boolean, canDo: string[], needs: string[], never: string[], limits: Record<string, number>, note: string): Promise<void>;
+  agentsControl(mode: "pause" | "resume" | "read_only", reason: string): Promise<void>;
+  aiEmergency(stop: boolean, reason: string): Promise<void>;
 }
+
+// ---------------------------------------------------------------- batch C
+export interface Pack { id: string; label: string; price_paise: number; credits: number; bonus_pct: number; active: boolean; sort: number }
+export interface PriceRow { key: string; label: string; credits: number; tier_discount: boolean; active: boolean }
+export interface Plan { key: string; label: string; price_paise: number; interval: string; trial_note: string | null; active: boolean }
+export interface TierRow { key: string; label: string; discount_pct: number; min_conversations: number; min_streak_days: number }
+export interface Catalog { packs: Pack[]; prices: PriceRow[]; plans: Plan[]; tiers: TierRow[] }
+export interface Pricing extends Catalog { can_edit: boolean; history: { id: number; note: string; at: string; by: string | null }[] }
+export interface Flag { key: string; enabled: boolean; rollout: number; cities: string[]; label: string; updated_at?: string; by?: string | null }
+export interface ConsentRow { key: string; version: string; title: string; required: boolean; published_at: string; latest: boolean; members: number }
+export interface Consents { policy_review: string[]; rows: ConsentRow[] }
+export interface KickTemplate { key: string; label: string; used_for: string; tone: string; template: string; active: boolean; updated_at?: string }
+export interface PromptRow { key: string; label: string; active: boolean; sort: number }
+export interface ScheduleRow { sort: number; trigger: string; feature_key: string; title: string; body: string; link: string; reward_credits: number; active: boolean }
+export interface AnnouncementRow { id: string; text: string; link: string | null; city_slugs: string[]; starts_at: string; ends_at: string; active: boolean }
+export interface Content {
+  can_edit: boolean; strings: { total: number; hindi_done: number }; kick_templates: KickTemplate[]; prompts: PromptRow[];
+  interests: { slug: string; label: string }[]; schedule: ScheduleRow[]; announcements: AnnouncementRow[];
+}
+export interface AppString { key: string; en: string; hi: string | null; updated_at: string }
+export interface Security {
+  reveal_roles: string[]; chat_roles: string[]; reveals_30d: number; chat_reads_30d: number; team_without_mfa: number; data_request_days: number; consents: ConsentRow[];
+}
+export interface Agent { key: string; label: string; acting: boolean; can_do: string[]; needs_approval: string[]; never: string[]; limits: Record<string, number>; last_action: string | null }
+export interface Approval { id: string; agent: string; title: string; detail: string | null; amount_paise: number | null; status: "pending" | "approved" | "declined" | "expired"; at: string; expires_at: string; decided_by: string | null }
+export interface AgentAction { id: number; at: string; agent: string; action: string; target: string | null; reason: string | null; after: Record<string, unknown> | null; undone: boolean; undoable: boolean }
+export interface AiCeo { can_decide: boolean; paused: boolean; limits: Record<string, unknown>; agents: Agent[]; approvals: Approval[]; actions: AgentAction[] }

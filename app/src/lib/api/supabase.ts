@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
-  BoostState, ConsentReq, CoupleState, CrushLanding, CupidState, DueCheckin, GiftLanding, Invites, SevenState, Story, TravelCity, TravelState, Universe,
+  Announcement, BoostState, ConsentNeeded, ConsentReq, CoupleState, CrushLanding, CupidState, DueCheckin, GiftLanding, Invites, SevenState, Story, TravelCity, TravelState, Universe,
   AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
@@ -86,6 +86,11 @@ export class SupabaseApi implements Api {
     fail(error, "Settings");
     return data as PublicSettings;
   }
+
+  async myFeatures() { return this.rpc<Record<string, boolean>>("my_features"); }
+  async myAnnouncement() { return (await this.rpc<Announcement | null>("my_announcement")) ?? null; }
+  async consentsNeeded() { return this.rpc<ConsentNeeded[]>("my_consents_needed"); }
+  async acceptConsents(items: { key: string; version: string }[]) { await this.rpc("accept_consents", { p_items: items }); }
 
   async state(): Promise<OnboardingState> {
     const { data, error } = await this.sb.rpc("onboarding_state");

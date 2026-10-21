@@ -3,6 +3,8 @@ import type { AdminApi, Ai, Feature, KeySlot, Keys, Me, MfaState, Model, TestRes
 import { candidates, maasiMembers, nextSunday, seedOps, shortId, userDetail, type Ops } from "./demo-ops";
 import { PERMISSIONS, seedGrowth, type Growth } from "./demo-growth";
 import type { AiSpend, Cities, CupidAdmin, Fraud, Health, Team } from "./types";
+import type { AiCeo, AppString, Catalog, Consents, Content, Flag, Pricing, Security } from "./types";
+import { CONSENT_MEMBERS, SEED, UNUSED, seedConf, type Conf } from "./demo-settings";
 
 type Slot = [string, KeySlot["mode"], string, string, string | null, boolean, boolean, boolean, string | null];
 const SLOTS: Slot[] = [
@@ -67,7 +69,7 @@ const KEY = "likha-admin-demo";
 const H = 3600e3;
 interface Stored { value: string; set_at: string; tested_at: string | null; test_ok: boolean | null; test_note: string | null }
 interface Db { email?: string; signedIn: boolean; mfaFactor?: string; aal2: boolean; mode: "test" | "live"; vals: Record<string, Stored>;
-  models: Omit<Model, "key_set" | "used_by">[]; features: Feature[]; spent: number; ops?: Ops; growth?: Growth }
+  models: Omit<Model, "key_set" | "used_by">[]; features: Feature[]; spent: number; ops?: Ops; growth?: Growth; conf?: Conf }
 const fresh = (): Db => ({ signedIn: false, aal2: false, mode: "test", vals: {}, models: MODELS, features: FEATURES, spent: 0 });
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 
@@ -395,8 +397,14 @@ export class DemoAdmin implements AdminApi {
   async photoUrl() { return null; }
 
   // ---------------------------------------------------------------- growth and control (sample data)
-  private g(): Growth { this.owner(); const d = this.load(); if (!d.growth) { d.growth = seedGrowth(); this.save(d); } return d.growth; }
-  private gEdit<T>(fn: (g: Growth) => T): T { this.owner(); const d = this.load(); d.growth ??= seedGrowth(); const r = fn(d.growth); this.save(d); return r; }
+  private g(): Growth { this.owner(); const d = this.load(); if (!d.growth || this.fill(d.growth)) { d.growth ??= seedGrowth(); this.fill(d.growth); this.save(d); } return d.growth; }
+  private gEdit<T>(fn: (g: Growth) => T): T { this.owner(); const d = this.load(); d.growth ??= seedGrowth(); this.fill(d.growth); const r = fn(d.growth); this.save(d); return r; }
+  /** Every setting the real database has (batch C pages need them all). Returns true if any were added. */
+  private fill(g: Growth) {
+    let added = false;
+    for (const [k, v] of Object.entries(SEED.settings)) if (!g.settings[k]) { g.settings[k] = { value: v, version: 1, updated_at: new Date(Date.now() - 10 * 864e5).toISOString(), history: [] }; added = true; }
+    return added;
+  }
   private log(g: Growth, action: string, target: string, reason: string | null, after: unknown = null) {
     g.audit.unshift({ id: (g.audit[0]?.id ?? 100) + 1, at: new Date().toISOString(), actor_type: "team", who: "You", action, target_type: null, target_id: target, reason, before: null, after });
   }
@@ -406,7 +414,8 @@ export class DemoAdmin implements AdminApi {
   }
   async saveSettings(changes: Record<string, unknown>, note: string) {
     await wait(); if (note.trim().length < 3) throw new Error("Add a note saying why.");
-    return this.gEdit((g) => { let n = 0;
+    this.checkSettings(changes); let review = false;
+    const n = this.gEdit((g) => { let n = 0;
       for (const [k, v] of Object.entries(changes)) {
         const s = g.settings[k]; if (!s) throw new Error(`Unknown setting ${k}`);
         const t = (x: unknown) => Array.isArray(x) ? "array" : typeof x;
@@ -417,7 +426,10 @@ export class DemoAdmin implements AdminApi {
         if (!s.history.length) s.history.push({ version: s.version, value: s.value, note: "Before first change", at: s.updated_at, by: null });
         s.version += 1; s.value = v; s.updated_at = new Date().toISOString(); s.history.unshift({ version: s.version, value: v, note: note.trim(), at: s.updated_at, by: "You" });
         this.log(g, "setting_changed", k, note.trim(), v); n++;
+        if (k === "refunds" || k === "subscriptions") review = true;
       } return n; });
+    if (review) this.cEdit((c) => { if (!c.policyReview.includes("refunds")) c.policyReview.push("refunds"); });
+    return n;
   }
   async settingHistory(key: string) { await wait(100); return this.g().settings[key]?.history ?? []; }
   async cities(): Promise<Cities> {
@@ -566,5 +578,177 @@ export class DemoAdmin implements AdminApi {
   async audit(query: string, actor: string | null) {
     await wait(120); const q = query.trim().toLowerCase();
     return this.g().audit.filter((a) => (!actor || a.actor_type === actor) && (!q || a.action.includes(q) || (a.reason ?? "").toLowerCase().includes(q) || (a.target_id ?? "").toLowerCase().startsWith(q)));
+  }
+
+  // ---------------------------------------------------------------- settings and AI CEO (sample data; rules mirror database part 17)
+  private c(): Conf { this.owner(); const d = this.load(); if (!d.conf) { d.conf = seedConf(); this.save(d); } return d.conf; }
+  private cEdit<T>(fn: (c: Conf, g: Growth) => T): T {
+    this.owner(); const d = this.load(); d.conf ??= seedConf(); d.growth ??= seedGrowth(); this.fill(d.growth);
+    const r = fn(d.conf, d.growth); this.save(d); return r;
+  }
+  private needNote(note: string) { if (!note || note.trim().length < 3) throw new Error("Add a note saying why."); }
+  private checkSettings(changes: Record<string, unknown>) {
+    const g = this.g();
+    if ("min_age" in changes) throw new Error("Minimum age is locked at 18.");
+    if ("payments_mode" in changes) throw new Error("payments_mode is changed on its own page.");
+    const m = changes.matching as Record<string, unknown> | undefined, mo = g.settings.matching.value as Record<string, unknown>;
+    if (m) for (const k of ["ayanamsa", "node", "system", "rules_version"]) if (JSON.stringify(m[k]) !== JSON.stringify(mo[k])) throw new Error(`${k} changes every chart: it needs a code release and the accuracy test set.`);
+    if ("onboarding_step_credits" in changes || "welcome_bonus" in changes) {
+      const steps = (changes.onboarding_step_credits ?? g.settings.onboarding_step_credits.value) as Record<string, number[]>;
+      const bonus = (changes.welcome_bonus ?? g.settings.welcome_bonus.value) as Record<string, number>;
+      for (const gen of ["woman", "man"]) { const sum = steps[gen].reduce((a, b) => a + Number(b), 0); if (sum !== Number(bonus[gen])) throw new Error(`Step credits for ${gen} add up to ${sum}, but the welcome bonus is ${bonus[gen]}.`); }
+    }
+    const bp = changes.blocked_phrases; if (Array.isArray(bp) && bp.some((w) => String(w).trim().length < 3)) throw new Error("Blocked phrases need at least 3 letters each.");
+  }
+  async unusedSettings() { return UNUSED; }
+  async restoreSetting(key: string, version: number, note: string) {
+    const h = this.g().settings[key]?.history.find((x) => x.version === version); if (!h) throw new Error("No such version.");
+    await this.saveSettings({ [key]: h.value }, `Restored v${version}: ${note}`);
+  }
+  async clearPolicyReview(doc: string) { await wait(); this.cEdit((c) => { c.policyReview = c.policyReview.filter((x) => x !== doc); }); }
+  async pricing(): Promise<Pricing> {
+    await wait(120); const c = this.c();
+    return { ...structuredClone(c.catalog), can_edit: true, history: c.catalogHistory.map(({ id, note, at, by }) => ({ id, note, at, by })).reverse().slice(0, 20) };
+  }
+  async savePricing(cat: Catalog, note: string) {
+    await wait(); this.needNote(note);
+    this.cEdit((c) => {
+      const next = structuredClone(c.catalog);
+      for (const p of cat.packs ?? []) { const t = next.packs.find((x) => x.id === p.id); if (!t) throw new Error(`Unknown pack ${p.id}`);
+        if (p.price_paise < 100 || p.credits < 1 || p.bonus_pct < 0 || p.bonus_pct > 100) throw new Error(`Check pack ${p.label}.`); Object.assign(t, p); }
+      for (const p of cat.prices ?? []) { const t = next.prices.find((x) => x.key === p.key); if (!t) throw new Error(`Unknown price ${p.key}`);
+        if (p.credits < 0 || p.credits > 5000) throw new Error(`Check the price of ${p.label}.`); Object.assign(t, { credits: p.credits, tier_discount: p.tier_discount, active: p.active }); }
+      for (const p of cat.plans ?? []) { const t = next.plans.find((x) => x.key === p.key); if (!t) throw new Error(`Unknown plan ${p.key}`);
+        if (p.price_paise < 100) throw new Error(`Check plan ${p.label}.`); Object.assign(t, { label: p.label, price_paise: p.price_paise, trial_note: p.trial_note || null, active: p.active }); }
+      for (const p of cat.tiers ?? []) { const t = next.tiers.find((x) => x.key === p.key)!; if (p.discount_pct < 0 || p.discount_pct > 50) throw new Error("Tier discounts are 0 to 50%.");
+        Object.assign(t, { discount_pct: t.key === "none" ? 0 : p.discount_pct, min_conversations: p.min_conversations, min_streak_days: p.min_streak_days }); }
+      if (next.tiers.some((t, i) => i > 0 && t.discount_pct < next.tiers[i - 1].discount_pct)) throw new Error("Higher tiers must not get a smaller discount.");
+      if (!c.catalogHistory.length) c.catalogHistory.push({ id: 1, note: "Before first change", at: new Date(Date.now() - 864e5).toISOString(), by: null, snapshot: structuredClone(c.catalog) });
+      c.catalog = next;
+      c.catalogHistory.push({ id: c.catalogHistory[c.catalogHistory.length - 1].id + 1, note: note.trim(), at: new Date().toISOString(), by: "You", snapshot: structuredClone(next) });
+    });
+  }
+  async restorePricing(id: number, note: string) {
+    const v = this.c().catalogHistory.find((h) => h.id === id); if (!v) throw new Error("No such version.");
+    await this.savePricing(v.snapshot, `Restored version ${id}: ${note}`);
+  }
+  async flags(): Promise<Flag[]> { await wait(100); return this.c().flags; }
+  async saveFlag(key: string, enabled: boolean, rollout: number, cities: string[], note: string) {
+    await wait(); this.needNote(note);
+    if (rollout < 0 || rollout > 100) throw new Error("Rollout is 0 to 100%.");
+    const known = this.g().cities.map((x) => x.slug); if (cities.some((x) => !known.includes(x))) throw new Error("Unknown city in the list.");
+    this.cEdit((c, g) => { const f = c.flags.find((x) => x.key === key); if (!f) throw new Error("Unknown feature.");
+      Object.assign(f, { enabled, rollout, cities, updated_at: new Date().toISOString(), by: "You" }); this.log(g, "feature_switch", key, note.trim(), { enabled, rollout, cities }); });
+  }
+  async testMessage(text: string, early: boolean) {
+    await wait(100);
+    for (const w of (this.g().settings.blocked_phrases?.value as string[]) ?? []) if (text.toLowerCase().includes(w.toLowerCase())) return { held: true, reason: `Blocked phrase: "${w}"` };
+    if (early && (/(https?:\/\/|www\.|\.com\b|\.in\b)/i.test(text) || /(\+?91[\s-]?)?[6-9][0-9]{9}/.test(text)))
+      return { held: true, reason: `Link or phone number in the first ${this.g().settings.block_links_first_messages?.value ?? 10} messages` };
+    return { held: false, reason: "Would be delivered" };
+  }
+  async consents(): Promise<Consents> {
+    await wait(100); const c = this.c();
+    return { policy_review: c.policyReview, rows: [...c.consents].sort((a, b) => a.key.localeCompare(b.key) || b.published_at.localeCompare(a.published_at)).map((v) => ({
+      key: v.key, version: v.version, title: v.title, required: v.required, published_at: v.published_at,
+      latest: v === c.consents.filter((x) => x.key === v.key).sort((a, b) => b.published_at.localeCompare(a.published_at))[0],
+      members: CONSENT_MEMBERS[`${v.key}@${v.version}`] ?? 0 })) };
+  }
+  async publishConsent(key: string, version: string, title: string, body: string, required: boolean, note: string) {
+    await wait(); if (!note || note.trim().length < 3) throw new Error("Add a note saying what changed.");
+    if (body.trim().length < 20) throw new Error("Paste the text members will agree to.");
+    this.cEdit((c, g) => {
+      if (!c.consents.some((x) => x.key === key)) throw new Error("Unknown document.");
+      if (c.consents.some((x) => x.key === key && x.version === version.trim())) throw new Error(`Version ${version} already exists.`);
+      c.consents.push({ key, version: version.trim(), title: title.trim(), body: body.trim(), required, published_at: new Date().toISOString() });
+      c.policyReview = c.policyReview.filter((x) => x !== (key === "terms_privacy" ? "refunds" : key));
+      this.log(g, "consent_published", `${key}:${version}`, note.trim(), { required });
+    });
+  }
+  async content(): Promise<Content> {
+    await wait(120); const c = this.c();
+    return { can_edit: true, strings: { total: c.strings.length, hindi_done: c.strings.filter((x) => x.hi).length }, ...structuredClone(c.content) };
+  }
+  async strings(q: string, missing: boolean): Promise<AppString[]> {
+    await wait(100); const ql = q.toLowerCase();
+    return this.c().strings.filter((x) => (!q || x.key.includes(ql) || x.en.toLowerCase().includes(ql)) && (!missing || !x.hi)).sort((a, b) => a.key.localeCompare(b.key));
+  }
+  async saveStrings(map: Record<string, { en: string; hi?: string | null }>, note: string) {
+    await wait(); this.needNote(note);
+    return this.cEdit((c) => { let n = 0;
+      for (const [k, v] of Object.entries(map)) {
+        if (!/^[a-z0-9_.]{3,80}$/.test(k)) throw new Error(`Bad string key ${k}`); if (!v.en?.trim()) throw new Error(`${k} needs English text.`);
+        const row = c.strings.find((x) => x.key === k), hi = v.hi?.trim() || null, at = new Date().toISOString();
+        if (row) Object.assign(row, { en: v.en, hi: hi ?? row.hi, updated_at: at }); else c.strings.push({ key: k, en: v.en, hi, updated_at: at }); n++;
+      } return n; });
+  }
+  async saveContent(kind: string, row: Record<string, unknown>, note: string) {
+    await wait(); this.needNote(note);
+    const txt = ["text", "template", "label", "body"].map((k) => String(row[k] ?? "")).join(" ");
+    if (/\b(guarantee[ds]?|marriage fixed|death|divorce)\b|100%/i.test(txt)) throw new Error("No promises or doom in member-facing text.");
+    if (/\bAI\b/.test(txt) && (kind === "announcement" || kind === "schedule")) throw new Error('Member copy never says "AI".');
+    this.cEdit((c, g) => {
+      const ct = c.content;
+      if (kind === "kick_template") { const t = ct.kick_templates.find((x) => x.key === row.key); if (!t) throw new Error("Unknown template.");
+        Object.assign(t, { template: row.template, tone: row.tone, active: row.active, updated_at: new Date().toISOString() }); }
+      else if (kind === "prompt") { const t = ct.prompts.find((x) => x.key === row.key);
+        if (t) Object.assign(t, { label: row.label, active: row.active ?? true, sort: row.sort ?? t.sort });
+        else ct.prompts.push({ key: String(row.key), label: String(row.label), active: (row.active as boolean) ?? true, sort: Number(row.sort ?? 99) });
+        ct.prompts.sort((a, b) => a.sort - b.sort); }
+      else if (kind === "interest") { const slug = row.slug ? String(row.slug) : String(row.label).replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase();
+        if (row.delete) { if (["travel", "chai", "cricket", "movies"].includes(slug)) throw new Error("Members have picked this interest, so it stays.");
+          ct.interests = ct.interests.filter((x) => x.slug !== slug); }
+        else if (!ct.interests.some((x) => x.slug === slug)) ct.interests.push({ slug, label: String(row.label).trim() });
+        ct.interests.sort((a, b) => a.label.localeCompare(b.label)); }
+      else if (kind === "schedule") { const t = ct.schedule.find((x) => x.sort === Number(row.sort)); if (!t) throw new Error("Unknown schedule row.");
+        Object.assign(t, { title: row.title, body: row.body, reward_credits: Number(row.reward_credits), active: row.active }); }
+      else if (kind === "announcement") {
+        if (!row.id) {
+          if (String(row.text ?? "").trim().length < 5) throw new Error("Write the banner text.");
+          if (row.link && !/^\/[a-z0-9/_-]*$/.test(String(row.link))) throw new Error("Links go to a screen in the app, like /store.");
+          ct.announcements.unshift({ id: crypto.randomUUID(), text: String(row.text).trim(), link: (row.link as string) || null, city_slugs: (row.cities as string[]) ?? [],
+            starts_at: (row.starts_at as string) || new Date().toISOString(), ends_at: (row.ends_at as string) || new Date(Date.now() + 7 * 864e5).toISOString(), active: true });
+        } else { const a = ct.announcements.find((x) => x.id === row.id); if (a) a.active = Boolean(row.active); }
+      } else throw new Error("Unknown content kind.");
+      this.log(g, "content_saved", String(row.key ?? row.id ?? row.slug ?? row.sort ?? ""), note.trim(), row);
+    });
+  }
+  async security(): Promise<Security> {
+    await wait(120); const g = this.g();
+    return { reveal_roles: ["owner"], chat_roles: Object.entries(g.matrix).filter(([, p]) => p.includes("reports.read_chats")).map(([r]) => r),
+      reveals_30d: 3, chat_reads_30d: 11, team_without_mfa: 0, data_request_days: Number(g.settings.data_request_days.value), consents: (await this.consents()).rows };
+  }
+  async aiCeo(): Promise<AiCeo> {
+    await wait(120); const c = this.c(); const g = this.g();
+    return { can_decide: true, paused: c.paused, limits: g.settings.ai_ceo.value as Record<string, unknown>, agents: c.agents,
+      approvals: c.approvals.map((a) => ({ ...a, status: a.status === "pending" && a.expires_at < new Date().toISOString() ? "expired" : a.status })), actions: c.actions };
+  }
+  async decideApproval(id: string, approve: boolean) {
+    await wait(); this.cEdit((c, g) => { const a = c.approvals.find((x) => x.id === id && x.status === "pending"); if (!a) throw new Error("Approval not pending.");
+      a.status = approve ? "approved" : "declined"; a.decided_by = "You"; this.log(g, approve ? "approval_approved" : "approval_declined", id, a.title); });
+  }
+  async undoAgentAction(id: number, reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    this.cEdit((c, g) => { const a = c.actions.find((x) => x.id === id); if (!a) throw new Error("Not an agent action.");
+      if (a.undone) throw new Error("Already undone."); if (!a.undoable) throw new Error("This action can't be undone here.");
+      a.undone = true; this.log(g, "agent_undo", String(id), reason.trim(), { action: a.action, agent: a.agent }); });
+  }
+  async saveAgent(key: string, acting: boolean, canDo: string[], needs: string[], never: string[], limits: Record<string, number>, note: string) {
+    await wait(); this.needNote(note);
+    this.cEdit((c, g) => { const r = c.agents.find((x) => x.key === key); if (!r) throw new Error("Unknown agent.");
+      if (r.never.some((x) => !never.includes(x))) throw new Error('The "never allowed" list can only grow.');
+      if (["ceo", "investor", "engineering"].includes(key) && acting) throw new Error(`${r.label} stays read-only.`);
+      if ((limits.refund_per_case_paise ?? 0) > 50000) throw new Error("Agents may refund at most ₹500 a case alone.");
+      Object.assign(r, { acting, can_do: canDo, needs_approval: needs, never, limits }); this.log(g, "agent_rules", key, note.trim(), { acting, limits }); });
+  }
+  async agentsControl(mode: "pause" | "resume" | "read_only", reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    this.cEdit((c, g) => { if (mode === "pause") c.paused = true; else if (mode === "resume") c.paused = false; else c.agents.forEach((a) => { a.acting = false; });
+      this.log(g, `agents_${mode}`, "all", reason.trim()); });
+  }
+  async aiEmergency(stop: boolean, reason: string) {
+    await wait(); if (!reason.trim()) throw new Error("Reason required.");
+    this.cEdit((_c, g) => { const s = g.settings.ai; s.value = { ...(s.value as object), enabled: !stop }; s.updated_at = new Date().toISOString();
+      this.log(g, stop ? "ai_emergency_stop" : "ai_restarted", "ai", reason.trim()); });
   }
 }

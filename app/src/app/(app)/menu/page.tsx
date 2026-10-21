@@ -1,7 +1,7 @@
 "use client";
 // N1 Menu: profile, wallet, tier, every feature, and the account links.
 import Link from "next/link";
-import { Avatar, Chevron, TIER_LABEL, useApp } from "@/components/app";
+import { Avatar, Chevron, TIER_LABEL, featureOn, useApp } from "@/components/app";
 import { api } from "@/lib/api";
 
 const TILES: [string, string, string, string][] = [
@@ -16,7 +16,7 @@ const LINKS: [string, string, string?][] = [
 ];
 
 export default function Menu() {
-  const { home } = useApp();
+  const { home, features } = useApp();
   const signOut = async () => { await api().signOut(); location.href = "/start"; };
   return (
     <div className="app-body" style={{ gap: 14 }}>
@@ -35,7 +35,7 @@ export default function Menu() {
           <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700 }}>YOUR TIER</span><strong style={{ fontSize: 17 }}>{home && TIER_LABEL[home.tier] ? TIER_LABEL[home.tier] : "No tier yet"}</strong></Link>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
-        {TILES.map(([href, t, s, bg]) => (
+        {TILES.filter(([href]) => featureOn(features, href)).map(([href, t, s, bg]) => (
           <Link key={t} href={href} style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 8, padding: 12, borderRadius: 18, background: bg, color: "var(--ink)", textDecoration: "none", minHeight: 92 }}>
             <span className="stack" style={{ gap: 1 }}><strong style={{ fontSize: 13 }}>{t}</strong><span style={{ fontSize: 11, color: "var(--muted)" }}>{s}</span></span>
           </Link>

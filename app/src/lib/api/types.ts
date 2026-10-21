@@ -29,7 +29,13 @@ export interface PublicSettings {
   company?: { legal_name: string; gstin: string; cin: string; address: string };
   /** Browser-safe keys set in Admin > Keys (Maps browser key, Razorpay key id in use). */
   public_keys?: { google_maps_browser_key?: string; razorpay_key_id?: string };
+  /** Admin > Settings > General. When maintenance is on the app shows maintenance_message instead of screens. */
+  app?: { maintenance?: boolean; maintenance_message?: string; support_email?: string };
 }
+
+/** A required document (Terms, birth details…) republished in Admin that this member hasn't agreed to yet. */
+export interface ConsentNeeded { key: string; version: string; title: string; body: string }
+export interface Announcement { id: string; text: string; link: string | null }
 
 export interface Place {
   name: string;          // "Jaipur"
@@ -239,6 +245,11 @@ export interface Api {
   signedIn(): Promise<boolean>;
   signOut(): Promise<void>;
   settings(): Promise<PublicSettings>;
+  /** Feature switches from Admin > Settings > Features, for this member's city. Missing key = on. */
+  myFeatures(): Promise<Record<string, boolean>>;
+  myAnnouncement(): Promise<Announcement | null>;
+  consentsNeeded(): Promise<ConsentNeeded[]>;
+  acceptConsents(items: { key: string; version: string }[]): Promise<void>;
   state(): Promise<OnboardingState>;
   createProfile(firstName: string, gender: Gender, consents: string[]): Promise<void>;
   saveBasics(b: Basics): Promise<void>;

@@ -1,7 +1,7 @@
 // Demo backend: everything lives in this browser. Used for design reviews and automated tests.
 // OTP code is always 123456. Selfie always passes. The kundli is a fixed sample chart.
 import type {
-  BoostState, ConsentReq, CoupleKind, CoupleState, CrushLanding, CupidLink, CupidState, DueCheckin, GiftLanding, Invites, SevenState, Story, StoryEvent,
+  Announcement, BoostState, ConsentNeeded, ConsentReq, CoupleKind, CoupleState, CrushLanding, CupidLink, CupidState, DueCheckin, GiftLanding, Invites, SevenState, Story, StoryEvent,
   TravelCity, TravelState, Universe,
   AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
@@ -14,6 +14,10 @@ import { dayPlan, range } from "../panchang";
 import { SEVEN } from "../seven";
 
 const KEY = "likha-demo-db";
+/** Optional overrides a reviewer (or a test) can set to see what Admin changes look like in the app. */
+const ADMIN_KEY = "likha-demo-admin";
+interface DemoAdminView { maintenance?: string; features?: Record<string, boolean>; announcement?: Announcement; consent?: ConsentNeeded }
+const adminView = (): DemoAdminView => { try { return JSON.parse(localStorage.getItem(ADMIN_KEY) ?? "{}"); } catch { return {}; } };
 const CITIES: City[] = [
   { id: "c-jaipur", slug: "jaipur", name: "Jaipur", status: "live" },
   { id: "c-pune", slug: "pune", name: "Pune", status: "waitlist" },
@@ -102,7 +106,18 @@ export class DemoApi implements Api {
     return { onboarding_step_credits: { woman: [19, 19, 18, 19, 19, 18, 19, 19], man: [9, 9, 8, 9, 9, 8, 9, 9] },
              welcome_bonus: { woman: 150, man: 70, expiry_days: 90 },
              grievance_officer: { name: "[NAME]", email: "grievance@likha.in", phone: "[NUMBER]", ack_hours: 24, resolve_days: 15 },
-             company: { legal_name: "[COMPANY NAME] Private Limited", gstin: "[GSTIN]", cin: "[CIN]", address: "[ADDRESS], Jaipur, Rajasthan" } };
+             company: { legal_name: "[COMPANY NAME] Private Limited", gstin: "[GSTIN]", cin: "[CIN]", address: "[ADDRESS], Jaipur, Rajasthan" },
+             app: { maintenance: !!adminView().maintenance, maintenance_message: adminView().maintenance, support_email: "support@likha.in" } };
+  }
+
+  async myFeatures() { return { love_stories: false, hindi: false, porutham: false, ...(adminView().features ?? {}) }; }
+  async myAnnouncement() { return adminView().announcement ?? null; }
+  async consentsNeeded() {
+    const c = adminView().consent; const db = this.load();
+    return c && db.profile && !db.consents.includes(`${c.key}@${c.version}`) ? [c] : [];
+  }
+  async acceptConsents(items: { key: string; version: string }[]) {
+    await wait(); this.edit((d) => { d.consents = [...d.consents, ...items.map((i) => `${i.key}@${i.version}`)]; });
   }
 
   async state(): Promise<OnboardingState> {

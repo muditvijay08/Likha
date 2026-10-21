@@ -1,7 +1,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { AdminApi, Ai, Keys, Me, MfaState, Model, TestResult, Overview, UserList, UserDetail, ModAction, TokenInfo, ReportRow, ReportDetail, Appeal,
   SelfieQueue, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate,
-  SettingValue, SettingVersion, Cities, CupidAdmin, AiSpend, Fraud, Health, Team, AuditRow } from "./types";
+  SettingValue, SettingVersion, Cities, CupidAdmin, AiSpend, Fraud, Health, Team, AuditRow,
+  Pricing, Catalog, Flag, Consents, Content, AppString, Security, AiCeo } from "./types";
 
 const FRIENDLY: [RegExp, string][] = [
   [/not allowed/, "You don't have permission for this."],
@@ -158,4 +159,34 @@ export class SupabaseAdmin implements AdminApi {
   async setRolePermission(role: string, perm: string, on: boolean, reason: string) { await this.rpc("admin_set_role_permission", { p_role: role, p_perm: perm, p_on: on, p_reason: reason }); }
   async inviteMember(email: string, name: string, role: string) { return this.fn<{ ok: boolean; note: string }>({ action: "invite_member", email, name, role }, "admin-ops"); }
   async audit(query: string, actor: string | null, before: number | null) { return this.rpc<AuditRow[]>("admin_audit", { p_query: query || null, p_actor: actor, p_limit: 100, p_before: before }); }
+
+  // ---------------------------------------------------------------- settings and AI CEO
+  async unusedSettings() { return this.rpc<string[]>("admin_unused_settings"); }
+  async restoreSetting(key: string, version: number, note: string) { await this.rpc("admin_restore_setting", { p_key: key, p_version: version, p_note: note }); }
+  async clearPolicyReview(doc: string) { await this.rpc("admin_clear_policy_review", { p_doc: doc }); }
+  async pricing() { return this.rpc<Pricing>("admin_pricing"); }
+  async savePricing(catalog: Catalog, note: string) { await this.rpc("admin_save_pricing", { p_catalog: catalog, p_note: note }); }
+  async restorePricing(id: number, note: string) { await this.rpc("admin_restore_pricing", { p_version: id, p_note: note }); }
+  async flags() { return this.rpc<Flag[]>("admin_flags"); }
+  async saveFlag(key: string, enabled: boolean, rollout: number, cities: string[], note: string) {
+    await this.rpc("admin_save_flag", { p_key: key, p_enabled: enabled, p_rollout: rollout, p_cities: cities, p_note: note });
+  }
+  async testMessage(text: string, early: boolean) { return this.rpc<{ held: boolean; reason: string }>("admin_test_message", { p_text: text, p_early: early }); }
+  async consents() { return this.rpc<Consents>("admin_consents"); }
+  async publishConsent(key: string, version: string, title: string, body: string, required: boolean, note: string) {
+    await this.rpc("admin_publish_consent", { p_key: key, p_version: version, p_title: title, p_body: body, p_required: required, p_note: note });
+  }
+  async content() { return this.rpc<Content>("admin_content"); }
+  async strings(query: string, missingHindi: boolean) { return this.rpc<AppString[]>("admin_strings", { p_query: query || null, p_missing_hindi: missingHindi }); }
+  async saveStrings(strings: Record<string, { en: string; hi?: string | null }>, note: string) { return this.rpc<number>("admin_save_strings", { p_strings: strings, p_note: note }); }
+  async saveContent(kind: string, row: Record<string, unknown>, note: string) { await this.rpc("admin_save_content", { p_kind: kind, p_row: row, p_note: note }); }
+  async security() { return this.rpc<Security>("admin_security"); }
+  async aiCeo() { return this.rpc<AiCeo>("admin_ai_ceo"); }
+  async decideApproval(id: string, approve: boolean) { await this.rpc("decide_approval", { p_id: id, p_approve: approve }); }
+  async undoAgentAction(id: number, reason: string) { await this.rpc("admin_undo_agent_action", { p_audit: id, p_reason: reason }); }
+  async saveAgent(key: string, acting: boolean, canDo: string[], needs: string[], never: string[], limits: Record<string, number>, note: string) {
+    await this.rpc("admin_save_agent", { p_key: key, p_acting: acting, p_can_do: canDo, p_needs: needs, p_never: never, p_limits: limits, p_note: note });
+  }
+  async agentsControl(mode: string, reason: string) { await this.rpc("admin_agents_control", { p_mode: mode, p_reason: reason }); }
+  async aiEmergency(stop: boolean, reason: string) { await this.rpc("admin_ai_emergency", { p_stop: stop, p_reason: reason }); }
 }

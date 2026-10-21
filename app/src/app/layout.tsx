@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { RegisterSW } from "@/components/RegisterSW";
+import { MaintenanceGate } from "@/components/gates";
 import { FlowProvider } from "@/lib/flow";
 import "./globals.css";
 
@@ -22,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" />
       </head>
-      <body><FlowProvider>{children}</FlowProvider><RegisterSW /></body>
+      <body><FlowProvider><MaintenanceGate>{children}</MaintenanceGate></FlowProvider><RegisterSW /></body>
     </html>
   );
 }

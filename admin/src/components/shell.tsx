@@ -10,13 +10,16 @@ export const useAdmin = () => useContext(Ctx)!;
 
 type Item = [string, string, string[]];
 const NAV: [string, Item[]][] = [
-  ["Overview", [["/dashboard", "Dashboard", []]]],
+  ["Overview", [["/dashboard", "Dashboard", []], ["/ai-ceo", "AI CEO", []]]],
   ["People", [["/users", "Users", ["users.read"]], ["/moderation", "Moderation", ["users.moderate"]], ["/selfies", "Selfie review", ["users.moderate"]],
     ["/support", "Support inbox", ["support.reply"]], ["/grievances", "Grievances", ["grievances.manage"]], ["/data-requests", "Data requests", ["data.manage"]]]],
   ["Money", [["/payments", "Payments and refunds", ["payments.read"]], ["/readings", "Readings", ["users.read"]], ["/ai-spend", "AI spend and limits", ["ai.view"]]]],
   ["Growth", [["/cities", "Cities and waitlist", []], ["/cupid", "Be a Cupid", ["cupid.manage", "payouts.manage"]], ["/maasi", "Rishta Maasi picks", ["users.moderate"]]]],
   ["Trust", [["/fraud", "Fraud and abuse", ["fraud.manage"]], ["/health", "System health", []]]],
-  ["Settings", [["/keys", "Keys & live mode", ["keys.manage"]], ["/ai", "AI models", ["ai.view", "settings.write"]], ["/team", "Team and audit", []]]],
+  ["Settings", [["/settings/pricing", "Pricing and credits", []], ["/settings/features", "Features, matching, safety", []], ["/settings/comms", "Notifications, Saathi, AI", []],
+    ["/settings/onboarding", "Onboarding", []], ["/settings/content", "Content", []], ["/settings/payments", "Payments and tax", []], ["/settings/general", "General and legal", []],
+    ["/settings/security", "Security and data", []], ["/ai-ceo/rules", "AI CEO rules", []], ["/keys", "Keys and integrations", ["keys.manage"]], ["/ai", "AI models", ["ai.view", "settings.write"]],
+    ["/team", "Team and audit", []]]],
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -29,6 +32,7 @@ export function Shell({ children }: { children: ReactNode }) {
   }, [router]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((m: string) => { setMsg(m); if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => setMsg(null), 3200); }, []);
+  const active = NAV.flatMap(([, items]) => items.map(([h]) => h)).filter((h) => path === h || path.startsWith(h + "/")).sort((a, b) => b.length - a.length)[0];
   if (!me) return <div className="center"><div className="skel" style={{ width: 320, height: 120 }} /></div>;
   return (
     <Ctx.Provider value={{ me, toast }}>
@@ -39,7 +43,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {NAV.map(([group, items]) => {
             const mine = items.filter(([, , p]) => !p.length || p.some((x) => me.perms.includes(x)));
             return mine.length ? <div key={group} className="navgroup"><span className="navlabel">{group}</span>
-              {mine.map(([href, label]) => <Link key={href} href={href} aria-current={path.startsWith(href) ? "page" : undefined}>{label}</Link>)}</div> : null;
+              {mine.map(([href, label]) => <Link key={href} href={href} aria-current={href === active ? "page" : undefined}>{label}</Link>)}</div> : null;
           })}
           <div className="who"><strong>{me.name}</strong>{me.role}
             <div><button type="button" onClick={async () => { await api().signOut(); router.replace("/login"); }}>Sign out</button></div></div>

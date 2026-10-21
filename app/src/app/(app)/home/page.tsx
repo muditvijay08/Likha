@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Avatar, Chevron, Coin, Info, price, useApp } from "@/components/app";
-import { api, type ConsentReq, type DueCheckin, type MatchRow } from "@/lib/api";
+import { api, type Announcement, type ConsentReq, type DueCheckin, type MatchRow } from "@/lib/api";
 import { KIND_TITLE } from "@/components/couple";
 import { clock, dayPlan, fmt, goldenHours, localParts, range } from "@/lib/panchang";
 
@@ -15,6 +15,11 @@ export default function Home() {
   const [now, setNow] = useState(() => new Date());
   const [asks, setAsks] = useState<ConsentReq[]>([]);
   const [due, setDue] = useState<DueCheckin[]>([]);
+  const [notice, setNotice] = useState<Announcement | null>(null);
+  useEffect(() => {
+    api().myAnnouncement().then((a) => { let seen = ""; try { seen = localStorage.getItem("likha-banner-closed") ?? ""; } catch {} if (a && a.id !== seen) setNotice(a); }).catch(() => {});
+  }, []);
+  const closeNotice = () => { try { if (notice) localStorage.setItem("likha-banner-closed", notice.id); } catch {} setNotice(null); };
   useEffect(() => { api().consentRequests().then(setAsks).catch(() => {}); api().dueCheckins().then(setDue).catch(() => {}); }, []);
   useEffect(() => { api().matches().then(setMatches).catch(() => {}); const t = setInterval(() => setNow(new Date()), 60000); return () => clearInterval(t); }, []);
 
@@ -44,6 +49,13 @@ export default function Home() {
         </div>
       </header>
 
+      {notice && (
+        <div className="row" role="note" aria-label="Announcement" style={{ gap: 10, padding: "12px 14px", borderRadius: 18, background: "#FFF3D6" }}>
+          {notice.link ? <Link href={notice.link} style={{ flex: 1, color: "var(--ink)", fontWeight: 600, fontSize: 14, textDecoration: "none" }}>{notice.text}</Link>
+            : <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{notice.text}</span>}
+          <button type="button" onClick={closeNotice} aria-label="Close announcement" style={{ background: "none", border: 0, fontSize: 18, color: "var(--muted)" }}>×</button>
+        </div>
+      )}
       {asks.map((q) => (
         <Link key={q.id} href={`/ask/${q.id}`} className="rowlink" style={{ background: "#EDE6FF" }}>
           <span className="t"><strong>{q.from_name} wants to read {KIND_TITLE[q.kind] ?? "a reading"} with you</strong><span>Your say. They&apos;re only charged if you agree.</span></span><Chevron /></Link>
