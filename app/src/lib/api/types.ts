@@ -30,7 +30,14 @@ export interface PublicSettings {
   /** Browser-safe keys set in Admin > Keys (Maps browser key, Razorpay key id in use). */
   public_keys?: { google_maps_browser_key?: string; razorpay_key_id?: string };
   /** Admin > Settings > General. When maintenance is on the app shows maintenance_message instead of screens. */
-  app?: { maintenance?: boolean; maintenance_message?: string; support_email?: string };
+  app?: { maintenance?: boolean; maintenance_message?: string; support_email?: string; min_app_version?: string };
+  // Admin > Onboarding and Matching
+  max_age_filter?: number;
+  gender_options?: Gender[];
+  gender_theme?: Partial<Record<Gender, string>>;
+  photos?: { min: number; max: number };
+  prompts?: { required: number; max_length: number; interests_min: number; interests_max: number };
+  saathi?: { max_session_minutes?: number };
 }
 
 /** A required document (Terms, birth details…) republished in Admin that this member hasn't agreed to yet. */

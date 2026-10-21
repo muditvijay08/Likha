@@ -124,6 +124,20 @@ export function numberCheck(answer: string, allowed: Allowed, opts: { otherNumbe
   return { ok: problems.length === 0, problems: [...new Set(problems)] };
 }
 
+/** Admin > Notifications, Saathi, AI > Longest reading. A little slack, so a good answer isn't thrown away for a few words. */
+export const wordCount = (t: string) => (t.trim().match(/\S+/g) ?? []).length;
+export function lengthCheck(answer: string, maxWords: number): CheckResult {
+  const n = wordCount(answer), limit = Math.ceil(maxWords * 1.15);
+  return n <= limit ? { ok: true, problems: [] } : { ok: false, problems: [`answer is ${n} words, keep it under ${maxWords}`] };
+}
+
+/** Daily Kick start time (Admin, IST "HH:MM"): true during the first `windowMin` minutes after it. The cron calls every 15 minutes. */
+export function kickDue(nowMs: number, hhmm: string, windowMin = 15): boolean {
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm); if (!m) return false;
+  const ist = new Date(nowMs + 5.5 * 3600e3), mins = ist.getUTCHours() * 60 + ist.getUTCMinutes(), start = Number(m[1]) * 60 + Number(m[2]);
+  return mins >= start && mins < start + windowMin;
+}
+
 export function styleCheck(answer: string): CheckResult {
   const problems = BANNED.filter(([re]) => re.test(answer)).map(([, why]) => why);
   return { ok: problems.length === 0, problems: [...new Set(problems)] };

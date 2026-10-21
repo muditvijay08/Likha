@@ -64,7 +64,7 @@ select pg_temp.act_as_server();
 select pg_temp.check('restored value is live', $q$ select public.setting_int('refunds', 'pack_refund_days') = 7 $q$);
 select pg_temp.check('flag cleared', $q$ select not public.setting('policy_review') ? 'refunds' $q$);
 select pg_temp.act_as_team('d3000000-0000-0000-0000-000000000001');
-select pg_temp.check('unused settings listed honestly', $q$ select 'hide_inactive_days' = any(public.admin_unused_settings()) $q$);
+select pg_temp.check('unused settings listed honestly', $q$ select 'booth_bonus' = any(public.admin_unused_settings()) and not 'hide_inactive_days' = any(public.admin_unused_settings()) $q$);
 
 -- ---- pricing
 insert into seen select 'pricing', public.admin_pricing()::text;

@@ -116,7 +116,7 @@ export default function Profile() {
           <button type="button" className="btn mid" disabled>Liked. Fingers crossed</button>
         ) : <>
           <button type="button" className="btn outline" style={{ flex: 1, fontSize: 14 }} onClick={pass} disabled={busy}>Pass</button>
-          <button type="button" className="btn rose" style={{ flex: 1.2 }} onClick={() => like("cosmic_like")} disabled={busy}>Cosmic Like · {price(prices, "cosmic_like", 9)}</button>
+          <button type="button" className="btn rose" style={{ flex: 1.2 }} onClick={() => like("cosmic_like")} disabled={busy}>Cosmic Like · {price(prices, "cosmic_like", 9) === 0 ? "free this week" : price(prices, "cosmic_like", 9)}</button>
           <button type="button" className="btn mid" style={{ flex: 1.2, fontSize: 14 }} onClick={() => like("like")} disabled={busy}>Like</button>
         </>}
       </div>

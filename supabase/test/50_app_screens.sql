@@ -93,7 +93,7 @@ select pg_temp.check('Kabir sees a city pulse with no names: 1 match, top 82', $
 select pg_temp.act_as('d0000000-0000-0000-0000-000000000001');
 select pg_temp.check('Riya does not count her own match in the pulse', $q$select public.city_pulse() is null$q$);
 
-select pg_temp.check('my_prices: Cosmic Like 9, report 29, Golden Hours 19, Kick 10', $q$select (p ->> 'cosmic_like')::int = 9 and (p ->> 'full_report')::int = 29
+select pg_temp.check('my_prices: Cosmic Like free (1 a week), report 29, Golden Hours 19, Kick 10', $q$select (p ->> 'cosmic_like')::int = 0 and (p ->> 'full_report')::int = 29
   and (p ->> 'golden_hours')::int = 19 and (p ->> 'daily_kick')::int = 10 from (select public.my_prices() p) x$q$);
 \echo ======================= Daily Kick =======================
 select pg_temp.denied('H2 no Kick yet: unlocking refuses and charges nothing', $q$select public.unlock_kick()$q$);

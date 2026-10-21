@@ -48,7 +48,7 @@ export default function Matches() {
         </div>
         <div className="stack" style={{ gap: 10 }}>
           {(home?.pct ?? 100) < 100 && <Link href="/bonus" className="rowlink"><span className="t"><strong>Finish your profile <span style={{ fontWeight: 500, color: "var(--muted)" }}>· {home?.pct}% done</span></strong></span><span style={{ fontSize: 12, fontWeight: 700, color: "#1F5E49" }}>Earn credits</span></Link>}
-          <Link href="/discover" className="rowlink"><span className="t"><strong>Send a Cosmic Like with a note</strong></span><span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{price(prices, "cosmic_like", 9)} cr</span></Link>
+          <Link href="/discover" className="rowlink"><span className="t"><strong>Send a Cosmic Like with a note</strong></span><span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{price(prices, "cosmic_like", 9) === 0 ? "Free this week" : `${price(prices, "cosmic_like", 9)} cr`}</span></Link>
           <Link href="/likes" className="rowlink"><span className="t"><strong>See who already likes you</strong></span><span style={{ fontSize: 12, fontWeight: 700, color: "#1F5E49" }}>Free</span></Link>
         </div>
         {SaathiRow}

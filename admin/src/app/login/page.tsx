@@ -24,6 +24,8 @@ export default function Login() {
   };
   useEffect(() => { api().mfaState().then((s) => { if (s.level) run(afterSignIn); }).catch(() => {}); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [idleOut, setIdleOut] = useState(false);
+  useEffect(() => { setIdleOut(location.search.includes("idle=1")); }, []);
   return (
     <div className="center">
       <form className="login card" onSubmit={(e) => { e.preventDefault();
@@ -33,6 +35,7 @@ export default function Login() {
       }}>
         <div style={{ font: "600 26px var(--serif)" }}>Likha<span style={{ color: "var(--saffron)" }}>.</span> <span className="small" style={{ fontFamily: "var(--sans)", fontWeight: 700, letterSpacing: ".1em" }}>ADMIN</span></div>
         {api().demo && <div className="note">Demo admin: any email, codes are 123456.</div>}
+        {idleOut && <div className="note warn" role="status">You were signed out after a while with no activity.</div>}
         {step === "email" && <>
           <label className="f">Work email<input className="input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
           <button className="btn big" disabled={busy || !email.includes("@")}>Send code</button>

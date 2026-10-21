@@ -599,6 +599,9 @@ export class DemoAdmin implements AdminApi {
       for (const gen of ["woman", "man"]) { const sum = steps[gen].reduce((a, b) => a + Number(b), 0); if (sum !== Number(bonus[gen])) throw new Error(`Step credits for ${gen} add up to ${sum}, but the welcome bonus is ${bonus[gen]}.`); }
     }
     const bp = changes.blocked_phrases; if (Array.isArray(bp) && bp.some((w) => String(w).trim().length < 3)) throw new Error("Blocked phrases need at least 3 letters each.");
+    const go = changes.gender_options; if (go !== undefined && (!Array.isArray(go) || !go.length || go.some((x) => !["woman", "man"].includes(String(x))))) throw new Error("First-screen options can be woman and man.");
+    const ph = changes.photos as { min: number; max: number } | undefined; if (ph && (ph.min < 1 || ph.max > 6 || ph.min > ph.max)) throw new Error("Photos: at least 1, at most 6, and the minimum no more than the maximum.");
+    const inv = changes.invoice as { prices_include_gst?: boolean } | undefined; if (inv && inv.prices_include_gst === false) throw new Error("Prices shown to members must include GST.");
   }
   async unusedSettings() { return UNUSED; }
   async restoreSetting(key: string, version: number, note: string) {
@@ -746,6 +749,7 @@ export class DemoAdmin implements AdminApi {
     this.cEdit((c, g) => { if (mode === "pause") c.paused = true; else if (mode === "resume") c.paused = false; else c.agents.forEach((a) => { a.acting = false; });
       this.log(g, `agents_${mode}`, "all", reason.trim()); });
   }
+  async session() { return { idle_minutes: Number(this.g().settings.admin_session_minutes?.value ?? 30) }; }
   async aiEmergency(stop: boolean, reason: string) {
     await wait(); if (!reason.trim()) throw new Error("Reason required.");
     this.cEdit((_c, g) => { const s = g.settings.ai; s.value = { ...(s.value as object), enabled: !stop }; s.updated_at = new Date().toISOString();

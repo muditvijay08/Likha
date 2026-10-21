@@ -16,7 +16,7 @@ import { SEVEN } from "../seven";
 const KEY = "likha-demo-db";
 /** Optional overrides a reviewer (or a test) can set to see what Admin changes look like in the app. */
 const ADMIN_KEY = "likha-demo-admin";
-interface DemoAdminView { maintenance?: string; features?: Record<string, boolean>; announcement?: Announcement; consent?: ConsentNeeded }
+interface DemoAdminView { maintenance?: string; minVersion?: string; features?: Record<string, boolean>; announcement?: Announcement; consent?: ConsentNeeded }
 const adminView = (): DemoAdminView => { try { return JSON.parse(localStorage.getItem(ADMIN_KEY) ?? "{}"); } catch { return {}; } };
 const CITIES: City[] = [
   { id: "c-jaipur", slug: "jaipur", name: "Jaipur", status: "live" },
@@ -107,7 +107,9 @@ export class DemoApi implements Api {
              welcome_bonus: { woman: 150, man: 70, expiry_days: 90 },
              grievance_officer: { name: "[NAME]", email: "grievance@likha.in", phone: "[NUMBER]", ack_hours: 24, resolve_days: 15 },
              company: { legal_name: "[COMPANY NAME] Private Limited", gstin: "[GSTIN]", cin: "[CIN]", address: "[ADDRESS], Jaipur, Rajasthan" },
-             app: { maintenance: !!adminView().maintenance, maintenance_message: adminView().maintenance, support_email: "support@likha.in" } };
+             app: { maintenance: !!adminView().maintenance, maintenance_message: adminView().maintenance, support_email: "support@likha.in", min_app_version: adminView().minVersion ?? "1.0.0" },
+             max_age_filter: 60, gender_options: ["woman", "man"], gender_theme: { woman: "#E0457B", man: "#2F6FE0" },
+             photos: { min: 2, max: 6 }, prompts: { required: 2, max_length: 300, interests_min: 3, interests_max: 10 }, saathi: { max_session_minutes: 45 } };
   }
 
   async myFeatures() { return { love_stories: false, hindi: false, porutham: false, ...(adminView().features ?? {}) }; }
@@ -268,7 +270,13 @@ export class DemoApi implements Api {
       unread: 0,
     };
   }
-  async prices() { return PRICES; }
+  /** Like the database: the first Cosmic Like each IST week is free (Admin > Pricing > free Cosmic Likes). */
+  private cosmicFree() {
+    const wk = Math.floor((Date.now() + 5.5 * 3600e3 - 4 * 864e5) / (7 * 864e5));       // weeks start Monday, IST
+    const c = (this.load() as unknown as { cosmicWeek?: { wk: number; n: number } }).cosmicWeek;
+    return { wk, left: Math.max(0, 1 - (c && c.wk === wk ? c.n : 0)) };
+  }
+  async prices() { return this.cosmicFree().left > 0 ? { ...PRICES, cosmic_like: 0 } : PRICES; }
   async unlockKick() {
     const db = this.load();
     if (db.kickOpen !== today()) { if (!((db.subs?.kick_pass ?? 0) > Date.now())) this.spend("daily_kick"); this.edit((d) => { d.kickOpen = today(); }); }
@@ -296,7 +304,11 @@ export class DemoApi implements Api {
     await wait(200);
     const db = this.load();
     if ((db.likes ?? []).includes(id)) return { matched: false, already_liked: true };
-    if (kind === "cosmic_like") this.spend("cosmic_like");
+    if (kind === "cosmic_like") {
+      const { wk, left } = this.cosmicFree();
+      if (left <= 0) this.spend("cosmic_like");
+      this.edit((d) => { const x = d as unknown as { cosmicWeek?: { wk: number; n: number } }; x.cosmicWeek = { wk, n: (x.cosmicWeek?.wk === wk ? x.cosmicWeek.n : 0) + 1 }; });
+    }
     this.edit((d) => { d.likes = [...(d.likes ?? []), id]; });
     if (this.likers(db).some((x) => x.id === id)) {
       const mid = `m-${id}`;

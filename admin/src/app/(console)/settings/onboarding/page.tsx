@@ -55,11 +55,11 @@ export default function OnboardingPage() {
             { key: "max_age_filter", label: "Oldest age in filters", unit: "number" },
             { key: "gender_options", label: "Options on the first screen", unit: "list" }]} />
           <SettingsForm title="Profile rules" canEdit={can} fields={[
-            { key: "photos", path: "min", label: "Photos needed", unit: "number" }, { key: "photos", path: "max", label: "Most photos", unit: "number" },
+            { key: "photos", path: "min", label: "Photos needed", unit: "number" }, { key: "photos", path: "max", label: "Most photos", unit: "number", hint: "Up to 6" },
             { key: "prompts", path: "required", label: "Prompts to answer", unit: "number" }, { key: "prompts", path: "max_length", label: "Longest answer", unit: "number", hint: "letters" },
             { key: "prompts", path: "interests_min", label: "Interests to pick (fewest)", unit: "number" }, { key: "prompts", path: "interests_max", label: "Interests to pick (most)", unit: "number" },
-            { key: "selfie", path: "pass_score", label: "Selfie match score to pass", unit: "number" }, { key: "selfie", path: "max_tries", label: "Selfie tries", unit: "number" },
-            { key: "birth_corrections_free", label: "Free birth-detail corrections", unit: "number" }]} />
+            { key: "selfie", path: "pass_score", label: "Selfie match score to pass", unit: "number", hint: "Applies once the selfie check (AWS) is connected." }, { key: "selfie", path: "max_tries", label: "Selfie tries before a person reviews it", unit: "number" },
+            { key: "birth_corrections_free", label: "Free birth-detail corrections", unit: "number", hint: "After these, only the owner can change a chart." }]} />
         </div>
       </div>
     </Page>

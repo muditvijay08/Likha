@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
 import { price, useApp, useTried } from "@/components/app";
 import { api, type SaathiChar, type SaathiState } from "@/lib/api";
+import { useFlow } from "@/lib/flow";
 
 const CHARS: { v: SaathiChar; name: string; line: string }[] = [
   { v: "chandni", name: "Chandni", line: "Warm, playful, remembers your day" }, { v: "dhruv", name: "Dhruv", line: "Calm, witty, steady advice" }];
@@ -28,6 +29,11 @@ export default function Saathi() {
   const end = useRef<HTMLDivElement | null>(null);
   const { busy, error, run, setError } = useAction();
   const tried = useTried();
+  // Admin > Saathi > suggest a break: counted from the first message sent on this visit
+  const breakAfter = useFlow().settings?.saathi?.max_session_minutes ?? 45;
+  const started = useRef<number | null>(null);
+  const [longChat, setLongChat] = useState(false);
+  const [breakClosed, setBreakClosed] = useState(false);
 
   useEffect(() => {
     api().saathi().then((x) => { setS(x); setChar(x.character); setStyles(x.styles); setView(!x.setup ? "setup" : x.paused ? "paused" : "chat"); }).catch(() => setView("chat"));
@@ -42,6 +48,8 @@ export default function Saathi() {
   const send = (msg: string) => run(async () => {
     if (!msg.trim() || !s) return;
     setText(""); setTyping(true);
+    started.current ??= Date.now();
+    if (Date.now() - started.current >= breakAfter * 60e3) setLongChat(true);
     setS({ ...s, history: [...s.history, { role: "user", body: msg.trim() }] });
     try {
       const r = await api().saathiSend(s.character, msg.trim());
@@ -151,6 +159,11 @@ export default function Saathi() {
               <strong style={{ fontSize: 12, color: "var(--ink)" }}>{t}</strong>{sub}</button>
           ))}
         </div>
+        {longChat && !breakClosed && (
+          <div className="row" role="note" aria-label="Take a break" style={{ gap: 8, margin: "0 16px 10px", padding: "10px 12px", borderRadius: 12, background: "#FFF3D6", fontSize: 13 }}>
+            <span style={{ flex: 1 }}>You&apos;ve been chatting with {name} for a while. Maybe a short break, or a hello to one of <Link href="/matches">your matches</Link>?</span>
+            <button type="button" aria-label="Close" onClick={() => setBreakClosed(true)} style={{ background: "none", border: 0, fontSize: 18 }}>×</button>
+          </div>)}
         <ErrorNote error={error} />
         {s.left > 0 ? (
           <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="row" style={{ gap: 8, padding: "10px 12px", background: "#fff", borderTop: "1px solid #ECE6FA" }}>

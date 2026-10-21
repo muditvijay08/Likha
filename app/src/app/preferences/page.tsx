@@ -5,6 +5,7 @@ import { ErrorNote, Primary, Screen, StepHeader, useAction } from "@/components/
 import { api } from "@/lib/api";
 import { useGuard } from "@/lib/guard";
 import { usePersisted } from "@/lib/persist";
+import { useFlow } from "@/lib/flow";
 
 const DIETS = [{ v: "vegetarian", label: "Vegetarian" }, { v: "jain", label: "Jain" }, { v: "eggetarian", label: "Eggetarian" }, { v: "non_veg", label: "Non-veg" }];
 
@@ -13,10 +14,11 @@ export default function Preferences() {
   const router = useRouter();
   const [f, setF] = usePersisted("prefs", { min: 24, max: 31, distance: "same_city" as "same_city" | "any_city", diets: [] as string[] });
   const { busy, error, run } = useAction();
+  const { settings } = useFlow();
   const city = s?.city?.name ?? "your city";
   const live = s?.city?.status === "live";
 
-  const lo = 18, hi = 60;
+  const lo = 18, hi = settings?.max_age_filter ?? 60;
   const left = ((f.min - lo) / (hi - lo)) * 100, right = ((f.max - lo) / (hi - lo)) * 100;
 
   const submit = () => run(async () => {

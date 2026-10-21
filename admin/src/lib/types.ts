@@ -218,6 +218,8 @@ export interface AdminApi {
   saveAgent(key: string, acting: boolean, canDo: string[], needs: string[], never: string[], limits: Record<string, number>, note: string): Promise<void>;
   agentsControl(mode: "pause" | "resume" | "read_only", reason: string): Promise<void>;
   aiEmergency(stop: boolean, reason: string): Promise<void>;
+  /** Admin > Security > sign team members out after this many idle minutes. */
+  session(): Promise<{ idle_minutes: number }>;
 }
 
 // ---------------------------------------------------------------- batch C

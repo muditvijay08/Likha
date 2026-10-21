@@ -1,6 +1,7 @@
 import { deepStrictEqual as assertEquals, ok as assert } from "node:assert";
 import {
   allowedFrom, cleanName, isCrisis, numberCheck, pairFacts, parseJson, personFacts, readingPrompt, styleCheck,
+  kickDue, lengthCheck, wordCount,
 } from "../functions/_shared/core.ts";
 
 const me = { first_name: "Rohan", summary: { lagna: "Leo", moon_sign: "Aries", nakshatra: "Ashwini", pada: 1, manglik: false,
@@ -91,4 +92,20 @@ Deno.test("Seven Questions: question text and both names go to the writer", () =
   const t = JSON.parse(sevenText({ "2": { a: "Need a little space first", b: "Want to talk it out right away" }, "1": { a: "Saver", b: "Saver" } }, "Riya", "Kabir"));
   if (SEVEN_QUESTIONS.length !== 7) throw new Error("seven");
   if (t[0].question !== SEVEN_QUESTIONS[0] || t[1].Kabir !== "Want to talk it out right away" || t[1].Riya !== "Need a little space first") throw new Error(JSON.stringify(t));
+});
+
+Deno.test("reading length follows Admin's longest reading (with 15% slack)", () => {
+  assertEquals(lengthCheck("word ".repeat(400), 350).ok, true);
+  assertEquals(lengthCheck("word ".repeat(410), 350).ok, false);
+  assertEquals(wordCount("  two words "), 2);
+});
+
+Deno.test("Daily Kick runs in the 15 minutes after the IST time set in Admin", () => {
+  const at = (istHHMM: string) => Date.parse(`2026-10-21T${istHHMM}:00+05:30`);
+  assertEquals(kickDue(at("05:00"), "05:00"), true);
+  assertEquals(kickDue(at("05:14"), "05:00"), true);
+  assertEquals(kickDue(at("05:15"), "05:00"), false);
+  assertEquals(kickDue(at("04:59"), "05:00"), false);
+  assertEquals(kickDue(at("00:35"), "00:30"), true);
+  assertEquals(kickDue(at("05:00"), "5am"), false);
 });

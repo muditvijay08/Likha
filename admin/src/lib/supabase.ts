@@ -189,4 +189,5 @@ export class SupabaseAdmin implements AdminApi {
   }
   async agentsControl(mode: string, reason: string) { await this.rpc("admin_agents_control", { p_mode: mode, p_reason: reason }); }
   async aiEmergency(stop: boolean, reason: string) { await this.rpc("admin_ai_emergency", { p_stop: stop, p_reason: reason }); }
+  async session() { return this.rpc<{ idle_minutes: number }>("admin_session"); }
 }

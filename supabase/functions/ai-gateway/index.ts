@@ -12,7 +12,8 @@ import type { ClaudeRequest } from "../_shared/anthropic.ts";
 import { callLLM } from "../_shared/llm.ts";
 import {
   allowedFrom, CAP_MESSAGES, cleanName, CRISIS_REPLY, estimateTokens, guruSystem, isCrisis, numberCheck, openerPrompt,
-  pairFacts, parseJson, personFacts, readableText, readingPrompt, saathiSystem, sevenText, styleCheck, NAKSHATRAS, SIGNS
+  pairFacts, parseJson, personFacts, readableText, readingPrompt, saathiSystem, sevenText, styleCheck, NAKSHATRAS, SIGNS,
+  lengthCheck,
 } from "../_shared/core.ts";
 import { admin, asUser, isInternal, json, rpc, preflight } from "../_shared/db.ts";
 import { generateImage, imaginePrompt, stampImagined, type Ref } from "../_shared/image.ts";
@@ -90,12 +91,13 @@ async function reading(readingId: string) {
     if (subject.time_known === false) facts.note = "Their birth time is not known; their Moon nakshatra may be off by one. Say so gently.";
   }
   const allowed = allowedFrom(facts);
+  const rules = await rpc<{ max_words: number; max_regenerations: number }>("svc_ai_rules", {}).catch(() => ({ max_words: 350, max_regenerations: 1 }));
   const check = (text: string) => {
     const parsed = parseJson(text);
     if (!parsed?.sections) return { ok: false, problems: ["answer was not the JSON shape we asked for"] };
     const t = readableText(parsed);
-    const a = numberCheck(t, allowed), b = styleCheck(t);
-    return { ok: a.ok && b.ok, problems: [...a.problems, ...b.problems] };
+    const a = numberCheck(t, allowed), b = styleCheck(t), c = lengthCheck(t, rules.max_words);
+    return { ok: a.ok && b.ok && c.ok, problems: [...a.problems, ...b.problems, ...c.problems] };
   };
 
   let userText: string | undefined;
@@ -108,7 +110,7 @@ async function reading(readingId: string) {
     userText = sevenText(subject.answers, ownerIsA ? me : them, ownerIsA ? them : me);
   }
   const p = readingPrompt(kind, facts, userText);
-  const maxTries = 1 + Number(Deno.env.get("AI_MAX_REGENERATIONS") ?? 1);
+  const maxTries = 1 + rules.max_regenerations;                     // Admin > Notifications, Saathi, AI
   let lastProblems: string[] = [];
   for (let attempt = 1; attempt <= maxTries; attempt++) {
     const user = attempt === 1 ? p.user

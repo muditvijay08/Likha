@@ -30,6 +30,19 @@ export function Shell({ children }: { children: ReactNode }) {
   useEffect(() => {
     api().me().then((m) => { if (!m || !m.mfa) router.replace("/login"); else setMe(m); }).catch(() => router.replace("/login"));
   }, [router]);
+  // Sign out after the idle minutes set on Security and data. Any click, key or scroll counts as activity.
+  useEffect(() => {
+    if (!me) return;
+    let idle = 30, last = Date.now();
+    api().session().then((s) => { idle = s.idle_minutes; }).catch(() => {});
+    const touch = () => { last = Date.now(); };
+    const evts = ["pointerdown", "keydown", "scroll", "pointermove"] as const;
+    evts.forEach((e) => window.addEventListener(e, touch, { passive: true }));
+    const t = setInterval(() => {
+      if (Date.now() - last > idle * 60e3) { clearInterval(t); api().signOut().finally(() => router.replace("/login?idle=1")); }
+    }, 20e3);
+    return () => { clearInterval(t); evts.forEach((e) => window.removeEventListener(e, touch)); };
+  }, [me, router]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((m: string) => { setMsg(m); if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => setMsg(null), 3200); }, []);
   const active = NAV.flatMap(([, items]) => items.map(([h]) => h)).filter((h) => path === h || path.startsWith(h + "/")).sort((a, b) => b.length - a.length)[0];

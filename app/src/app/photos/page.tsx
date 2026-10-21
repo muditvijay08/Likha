@@ -1,10 +1,11 @@
 "use client";
-// O7 Photos (step 4). 2 to 6 photos, first one needs a clear face. Resized in the browser before upload.
+// O7 Photos (step 4). Min and max photos come from Admin > Onboarding (default 2 to 6), first one needs a clear face. Resized in the browser before upload.
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ErrorNote, Primary, Screen, StepHeader, useAction } from "@/components/ui";
 import { api, type Photo } from "@/lib/api";
 import { useGuard } from "@/lib/guard";
+import { useFlow } from "@/lib/flow";
 
 async function shrink(file: File, max = 1600): Promise<Blob> {
   if (!file.type.startsWith("image/")) throw new Error("Please pick a photo.");
@@ -26,6 +27,9 @@ export default function Photos() {
   const picker = useRef<HTMLInputElement>(null);
   const target = useRef(1);
   const { busy, error, run, setError } = useAction();
+  const { settings } = useFlow();
+  const min = settings?.photos?.min ?? 2, max = Math.min(6, settings?.photos?.max ?? 6);
+  const slots = Array.from({ length: max }, (_, i) => i + 1);
 
   useEffect(() => { api().photos().then(setPhotos).catch(() => {}); }, []);
 
@@ -50,10 +54,10 @@ export default function Photos() {
     setPhotos((old) => old.filter((x) => x.id !== p.id));
   }
 
-  const firstFree = [1, 2, 3, 4, 5, 6].find((n) => !at(n)) ?? 6;
+  const firstFree = slots.find((n) => !at(n)) ?? max;
 
   const submit = () => run(async () => {
-    if (good < 2) throw new Error("Add at least 2 photos.");
+    if (good < min) throw new Error(`Add at least ${min} photo${min === 1 ? "" : "s"}.`);
     if (!at(1)) throw new Error("Your first photo needs your face, clearly.");
     await api().setStep(5);
     await api().refresh();
@@ -65,12 +69,12 @@ export default function Photos() {
       <StepHeader step={4} back="/birth" />
       <div className="stack">
         <h1 className="h1">Add your photos</h1>
-        <p className="sub">2 to 6 photos. Your first photo needs your face, clearly.</p>
+        <p className="sub">{min} to {max} photos. Your first photo needs your face, clearly.</p>
       </div>
 
       <input ref={picker} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
       <div className="photos">
-        {[1, 2, 3, 4, 5, 6].map((pos) => {
+        {slots.map((pos) => {
           const p = at(pos);
           if (p) return (
             <div key={pos} className={`slot filled${p.status === "rejected" ? " bad" : ""}`}>
@@ -103,7 +107,7 @@ export default function Photos() {
 
       <div className="grow" />
       <ErrorNote error={error} />
-      <Primary onClick={submit} busy={busy} disabled={good < 2}>{good < 2 ? `Add ${2 - good} more photo${2 - good === 1 ? "" : "s"}` : `Continue with ${good} photos`}</Primary>
+      <Primary onClick={submit} busy={busy} disabled={good < min}>{good < min ? `Add ${min - good} more photo${min - good === 1 ? "" : "s"}` : `Continue with ${good} photo${good === 1 ? "" : "s"}`}</Primary>
     </Screen>
   );
 }

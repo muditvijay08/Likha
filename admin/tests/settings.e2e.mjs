@@ -49,7 +49,7 @@ const imagine = page.getByRole("row", { name: /Imagine Us/ });
 await imagine.getByLabel("Imagine Us on").uncheck(); await imagine.getByLabel("Imagine Us note").fill("Cost check"); await imagine.getByRole("button", { name: "Save" }).click();
 ok(await toast("Imagine Us saved") && await seen(imagine.getByText("You ·")), "Features: Imagine Us switched off with a note");
 ok(await page.getByRole("textbox", { name: /^Ayanamsa/ }).isDisabled() && await page.getByRole("checkbox", { name: /^Manglik as a filter/ }).isDisabled(), "Matching: chart rules and Manglik filter locked");
-ok(await seen(page.getByRole("region", { name: "Matching" }).getByText("Not used by the app yet")), "Matching: unused settings labelled honestly");
+ok(await seen(page.getByRole("region", { name: "Safety rules" }).getByText("Not used by the app yet")) && (await page.getByRole("region", { name: "Matching" }).getByText("Not used by the app yet").count()) === 0, "Safety: scam score honestly not used yet; matching all live");
 await page.getByLabel("Fake profile priority").selectOption("high");
 await page.getByLabel("Priority note").fill("More fakes this week"); await page.getByRole("region", { name: "Report priority" }).getByRole("button", { name: "Publish" }).click();
 ok(await toast("Report priorities published"), "Safety: report priority changed");

@@ -92,7 +92,7 @@ select pg_temp.act_as_server();
 select pg_temp.check('       Rohan (inviter) also got 20', $q$select private.balance_of('a0000000-0000-0000-0000-000000000002') = 20$q$);
 select pg_temp.act_as('a0000000-0000-0000-0000-000000000001');
 select pg_temp.check('D1     Discover shows Rohan', $q$select exists (select 1 from public.discover() where id='a0000000-0000-0000-0000-000000000002')$q$);
-select pg_temp.step('D2     Cosmic Like with a note (9 cr)', $q$select public.send_like('a0000000-0000-0000-0000-000000000002','cosmic_like','Window seat?')$q$);
+select pg_temp.step('D2     Cosmic Like with a note (first one this week is free)', $q$select public.send_like('a0000000-0000-0000-0000-000000000002','cosmic_like','Window seat?')$q$);
 select pg_temp.act_as('a0000000-0000-0000-0000-000000000002');
 select pg_temp.check('D5     Rohan sees the like for free', $q$select exists (select 1 from public.likes where to_user = auth.uid())$q$);
 select pg_temp.check('M1     like back = match', $q$select (public.send_like('a0000000-0000-0000-0000-000000000001')->>'matched')::boolean$q$);
@@ -123,7 +123,7 @@ select pg_temp.step('L2     Priya opens her gift',
   $q$insert into public.profiles (id, first_name, gender, show_me) values (auth.uid(),'Priya','woman','{man}');
      select public.open_gift(current_setting('test.gift_token'))$q$);
 select pg_temp.act_as('a0000000-0000-0000-0000-000000000001');
-select pg_temp.check('       Ishita''s wallet adds up', $q$select public.credit_balance() = 170 - 9 - 19 + 600 - 29 - 99$q$);
+select pg_temp.check('       Ishita''s wallet adds up', $q$select public.credit_balance() = 170 - 0 - 19 + 600 - 29 - 99$q$);
 select pg_temp.step('L5     file a grievance', $q$insert into public.grievances (user_id, category, description) values (auth.uid(),'payments','Test')$q$);
 select pg_temp.step('L5     open a support ticket', $q$insert into public.support_tickets (user_id, subject) values (auth.uid(),'Question')$q$);
 select pg_temp.step('P4     request my data', $q$select public.request_data('export')$q$);
@@ -145,7 +145,7 @@ select pg_temp.step('Log an AI call with cost', $q$insert into public.ai_calls (
 select pg_temp.step('Gift reading for Priya marked ready',
   $q$update public.readings set status='ready', content='{"text":"Your year ahead"}', ready_at=now() where kind='gift'$q$);
 select pg_temp.step('Crush reading fails to generate', $q$select private.fail_reading((select id from public.readings where kind='check_anyone'))$q$);
-select pg_temp.check('Failed reading refunds Ishita''s 29 credits', $q$select private.balance_of('a0000000-0000-0000-0000-000000000001') = 643$q$);
+select pg_temp.check('Failed reading refunds Ishita''s 29 credits', $q$select private.balance_of('a0000000-0000-0000-0000-000000000001') = 652$q$);
 select pg_temp.step('Saathi reply saved; crisis flagged for a human',
   $q$insert into public.saathi_messages (user_id, character, role, body, crisis, flagged) values ('a0000000-0000-0000-0000-000000000001','chandni','assistant','Here is help: Tele-MANAS 14416',true,true)$q$);
 select pg_temp.step('Guru Ji answers in the couple chat',

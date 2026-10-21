@@ -5,10 +5,27 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Primary } from "@/components/ui";
 import { api, type ConsentNeeded } from "@/lib/api";
+import { APP_VERSION, compareVersions } from "@/lib/version";
 
 export function MaintenanceGate({ children }: { children: ReactNode }) {
   const [msg, setMsg] = useState<string | null>(null);
-  useEffect(() => { api().settings().then((s) => setMsg(s.app?.maintenance ? (s.app.maintenance_message || "Back soon.") : null)).catch(() => {}); }, []);
+  const [old, setOld] = useState(false);
+  useEffect(() => {
+    api().settings().then((s) => {
+      setMsg(s.app?.maintenance ? (s.app.maintenance_message || "Back soon.") : null);
+      setOld(!!s.app?.min_app_version && compareVersions(APP_VERSION, s.app.min_app_version) < 0);
+    }).catch(() => {});
+  }, []);
+  if (old && msg === null) return (
+    <main className="screen" style={{ justifyContent: "center", textAlign: "center", gap: 14 }} role="status">
+      <h1 className="h1">A new version of Likha is ready</h1>
+      <p className="sub">Refresh to get it. Nothing you&apos;ve done is lost.</p>
+      <Primary onClick={async () => {
+        try { const r = await navigator.serviceWorker?.getRegistration(); await r?.update(); } catch { /* no service worker */ }
+        location.reload();
+      }}>Refresh</Primary>
+    </main>
+  );
   if (msg === null) return <>{children}</>;
   return (
     <main className="screen" style={{ justifyContent: "center", textAlign: "center", gap: 14 }} role="status">

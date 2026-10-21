@@ -66,6 +66,13 @@ await admin({});
 await page.goto(`${BASE}/home`);
 ok(await seen(page.getByRole("heading", { name: /Hey Aarav/ })), "Maintenance off: app back");
 
+await admin({ minVersion: "9.0.0" });
+await page.goto(`${BASE}/home`);
+ok(await seen(page.getByRole("heading", { name: "A new version of Likha is ready" })) && await seen(page.getByRole("button", { name: "Refresh" })), "Old app version asks to refresh");
+await admin({});
+await page.goto(`${BASE}/profile/s-tanvi`);
+ok(await seen(page.getByRole("button", { name: "Cosmic Like · free this week" })), "Cosmic Like: first one this week shown as free");
+
 ok(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 await browser.close();
 console.log(`\n${pass} passed, ${fail} failed`);

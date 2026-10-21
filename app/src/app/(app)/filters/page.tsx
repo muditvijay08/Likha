@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BackButton, ErrorNote } from "@/components/ui";
 import { api, type Filters, type Goal } from "@/lib/api";
+import { useFlow } from "@/lib/flow";
 
 const DEFAULTS: Filters = { age_min: 21, age_max: 35, distance: "same_city", diets: [], goals: ["dating", "matchmaking"], languages: [],
   height_min_cm: null, height_max_cm: null, active_this_week: true, has_voice_intro: false };
@@ -14,6 +15,7 @@ const row = { display: "flex", justifyContent: "space-between", alignItems: "cen
 const toggle = <T,>(xs: T[], x: T) => xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x];
 
 export default function FiltersPage() {
+  const { settings } = useFlow();
   const [f, setF] = useState<Filters | null>(null);
   const [count, setCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export default function FiltersPage() {
 
   if (!f) return <div className="app-body pad"><div className="skel" style={{ height: 400 }} /></div>;
   const set = (x: Partial<Filters>) => setF({ ...f, ...x });
-  const lo = 18, hi = 60, left = ((f.age_min - lo) / (hi - lo)) * 100, right = ((f.age_max - lo) / (hi - lo)) * 100;
+  const lo = 18, hi = settings?.max_age_filter ?? 60, left = ((f.age_min - lo) / (hi - lo)) * 100, right = ((f.age_max - lo) / (hi - lo)) * 100;
 
   return (
     <div className="app-body pad" style={{ gap: 14 }}>

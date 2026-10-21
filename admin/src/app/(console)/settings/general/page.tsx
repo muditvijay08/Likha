@@ -42,7 +42,7 @@ export default function GeneralPage() {
           { key: "app", path: "maintenance_message", label: "Maintenance message", unit: "text" },
           { key: "app", path: "name", label: "App name", unit: "text" }, { key: "app", path: "tagline", label: "Tagline", unit: "text" },
           { key: "app", path: "support_email", label: "Support email", unit: "text" }, { key: "app", path: "support_whatsapp", label: "Support WhatsApp", unit: "text" },
-          { key: "app", path: "min_app_version", label: "Oldest app version allowed", unit: "text", unused: true }]} />
+          { key: "app", path: "min_app_version", label: "Oldest app version allowed", unit: "text", hint: "Older copies of the app ask members to refresh." }]} />
         <div className="stack" style={{ gap: 16 }}>
           <SettingsForm title="Company (shown on invoices and legal pages)" canEdit={can} fields={[
             { key: "company", path: "legal_name", label: "Legal name", unit: "text" }, { key: "company", path: "gstin", label: "GSTIN", unit: "text" },

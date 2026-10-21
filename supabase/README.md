@@ -59,14 +59,15 @@ Everything here was run and tested on 20 Oct 2026.
 |---|---|---|
 | `ai-gateway` | app (member token) / internal | Readings, Saathi, Guru Ji, Cupid openers |
 | `kundli-worker` | cron, every minute | Build queued kundlis |
-| `kick-batch` | cron: `submit` 00:30 IST, `collect` every 15 min | Daily Kicks: scores and times computed (kundli `/v1/day` + panchang), words via Batches API (half price) |
+| `kick-batch` | cron every 15 min: `tick` (submits at the time set in Admin, `ai.kick_batch_ist`, then collects) | Daily Kicks: scores and times computed (kundli `/v1/day` + panchang), words via Batches API (half price) |
 | `cupid-redirect` | public `likha.in/c/*` | Log click, set cookie, redirect |
 | `payout-worker` | cron hourly + RazorpayX webhook | UPI payouts |
 | `create-order` | app (member token) | Razorpay order for a credit pack or one prepaid month of a plan; price from our tables |
 | `admin-ops` | Admin buttons | Re-check a payment with Razorpay (credits land if captured); send an approved bank refund; invite a team member by email. Team only, MFA, `LIKHA_ADMIN_SITE` for CORS |
 | `admin-keys` | Admin buttons | Test a key (one read-only call) or a model (one short answer or one labelled picture). Team only, MFA |
 | `reading-worker` | cron every minute | Writes paid readings still waiting (app closed, gift opened, crush joined, both finished Seven Questions, partner said yes). A 3-minute lease stops double writing; refunds after 5 tries |
-| `safety-worker` | cron every 5 min | Share my date: reminds at check-in time, then SMS-alerts trusted contacts after 15 min (MSG91 DLT template) |
+| `safety-worker` | cron every 5 min | Share my date: reminds at check-in time, then SMS-alerts trusted contacts after the minutes set in Admin (`date_checkin_alert_minutes`, MSG91 DLT template) |
+| `payment-recheck` | cron every 15 min | Orders still unpaid after the hours set in Admin (`refunds.auto_credit_after_hours`) get one automatic look at Razorpay; captured ones are credited like the webhook would |
 | `razorpay-webhook` | Razorpay (deploy with `--no-verify-jwt`) | Checks the signature, records the payment, credits the wallet once (`svc_record_payment`) |
 
 **Payments:** plans (Kick Pass, Rishta Maasi, Couple Mode) are sold as prepaid months for now; they don't auto-renew. UPI autopay needs Razorpay Subscriptions with an e-mandate, which is a later step. In the Razorpay dashboard add the webhook URL with events `payment.captured`, `payment.failed`, `order.paid`, `refund.processed`.
@@ -98,8 +99,8 @@ select cron.schedule('kundli-worker', '* * * * *', $$
   select net.http_post(url := 'https://<project>.supabase.co/functions/v1/kundli-worker',
     headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')),
     body := '{}'::jsonb) $$);
-select cron.schedule('kick-submit',  '0 19 * * *',     $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/kick-batch', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{"step":"submit"}'::jsonb) $$);
-select cron.schedule('kick-collect', '*/15 19-23 * * *', $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/kick-batch', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{"step":"collect"}'::jsonb) $$);
+select cron.schedule('kick-tick',    '*/15 * * * *',   $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/kick-batch', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{"step":"tick"}'::jsonb) $$);   -- writes Daily Kicks at the time set in Admin
+select cron.schedule('payment-recheck', '*/15 * * * *', $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/payment-recheck', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{}'::jsonb) $$);
 select cron.schedule('payouts',      '0 * * * *',      $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/payout-worker', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{}'::jsonb) $$);
 select cron.schedule('tiers',        '0 0 1 * *',      $$ select private.recompute_tiers() $$);          -- 1st of the month, 05:30 IST
 select cron.schedule('readings',     '* * * * *',      $$ select net.http_post(url := 'https://<project>.supabase.co/functions/v1/reading-worker', headers := jsonb_build_object('x-likha-internal', (select decrypted_secret from vault.decrypted_secrets where name = 'likha_internal')), body := '{}'::jsonb) $$);
@@ -108,6 +109,8 @@ select cron.schedule('lift-suspensions', '*/30 * * * *', $$ select private.lift_
 select cron.schedule('city-unlocks', '*/5 * * * *',    $$ select private.run_city_unlocks() $$);        -- scheduled city unlocks (Admin > Cities)
 select cron.schedule('fraud-scan',   '7 * * * *',      $$ select private.scan_fraud() $$);              -- linked accounts, held messages, invite farming, refund patterns, copied bios
 select cron.schedule('crush-expiry', '0 21 * * *',     $$ select private.expire_crush_checks() $$);      -- 02:30 IST: unclaimed Check With Anyone links refunded
+select cron.schedule('plan-reminders', '20 * * * *',   $$ select private.run_plan_reminders() $$);      -- "your plan ends soon" (Admin: subscriptions.reminder_hours)
+select cron.schedule('retention',    '30 21 * * *',    $$ select private.run_retention() $$);           -- 03:00 IST: erase deleted accounts, drop old logs (Admin: retention)
 ```
 
 ## 4. Before launch (needs people, not code)
@@ -115,3 +118,10 @@ select cron.schedule('crush-expiry', '0 21 * * *',     $$ select private.expire_
 2. CA: confirm Cupid payments are commission under section 393 (TDS, quarterly returns, certificates). Also confirm that GST does not apply to individual Cupids.
 3. Lawyer: Cupid terms (the draft is in `consent_versions.cupid_terms`). ASCI requires Cupids to label posts as referral or ad.
 4. Turn on RazorpayX and complete its business KYC.
+
+## Settings that take effect (part 18)
+Every setting in Admin is read by the database, the functions or the apps, except two that are tagged "Not used by the app yet":
+`booth_bonus` (no booth sign-up flow) and `scam_hold_score` (no AI scam check). Two more are ready and wait for their provider:
+- **Selfie** (`selfie.pass_score`, `max_tries`): the selfie-check function calls `svc_selfie_result(user, score, liveness)`; the database decides pass, retry or manual review.
+- **Push** (`push`, `push_types`, member notification settings): the push sender takes `svc_push_outbox()` (quiet hours, offers opt-in, one offer a day, switched-off types held) and marks sent with `svc_push_sent(ids)`.
+Retention erases database rows; photo files in Storage are removed by the same job once Storage cleanup is added.

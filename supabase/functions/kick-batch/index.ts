@@ -3,10 +3,11 @@
 //    sunrise, Rahu Kaal and planetary hours (panchang.ts). Scores and times are never written by the model.
 // 2. Words: the model adds a headline, a line, three small fixes and a first-date answer.
 // Claude: Message Batches API (half price). Gemini / GPT: live calls, 300 members per run.
-// Cron (internal secret):  {"step":"submit"} at 00:30 IST   ->  {"step":"collect"} every 15 min 01:00-05:00 IST
+// Cron (internal secret) every 15 min: {"step":"tick"} submits at the time set in Admin (ai.kick_batch_ist), then collects.
+// {"step":"submit"} and {"step":"collect"} still work for a manual run.
 import { key, loadKeys, mustKey } from "../_shared/keys.ts";
 import { batchResults, batchStatus, createBatch, type ClaudeRequest } from "../_shared/anthropic.ts";
-import { cleanName, estimateTokens, kickPrompt, parseJson, readableText, styleCheck } from "../_shared/core.ts";
+import { cleanName, estimateTokens, kickDue, kickPrompt, parseJson, readableText, styleCheck } from "../_shared/core.ts";
 import { admin, isInternal, json, rpc } from "../_shared/db.ts";
 import { callLLM } from "../_shared/llm.ts";
 import { dayPlan, range } from "../_shared/panchang.ts";
@@ -158,6 +159,15 @@ Deno.serve(async (req) => {
   if (!isInternal(req)) return json({ error: "internal only" }, 401);
   const { step, date } = await req.json().catch(() => ({}));
   try {
+    if (step === "tick") {                                        // Admin decides the time; submit once in that window
+      const rules = await rpc<{ kick_batch_ist: string }>("svc_ai_rules", {});
+      const today = date ?? istToday();
+      const { data: already } = await admin.from("ai_batches").select("id").eq("feature", "daily_kick").eq("for_date", today).limit(1);
+      const out: Record<string, unknown> = { due: kickDue(Date.now(), rules.kick_batch_ist) };
+      if (out.due && !already?.length) out.submit = await submit(today);
+      out.collect = await collect();
+      return json(out);
+    }
     if (step === "submit") return json(await submit(date ?? istToday()));
     if (step === "collect") {
       const done = await collect();                                 // finish any Claude batches still open

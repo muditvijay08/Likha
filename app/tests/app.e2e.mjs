@@ -91,9 +91,9 @@ await page.getByRole("link", { name: /Meera, 25/ }).click();
 await page.waitForURL("**/profile/s-meera");
 ok(await seen(page.getByRole("heading", { name: "Meera, 25" })) && await seen(page.getByText("Nakshatra")), "Profile: name, chart basics");
 await shot("07-profile");
-await btn("Cosmic Like · 9").click();
+await btn("Cosmic Like · free this week").click();
 await page.waitForURL("**/match/**");
-ok(true, "Cosmic Like on Meera matched");
+ok(true, "Cosmic Like on Meera matched (first one this week is free)");
 
 // D4 Report
 await page.goto(`${BASE}/report/s-nidhi`);
@@ -120,8 +120,13 @@ ok(await seen(page.getByText("You've seen every star in Jaipur tonight")), "Empt
 await shot("11-empty");
 
 // Not enough credits
-ok(await credits() === 8, "Spends add up: 70 − 10 + 5 − 19 − 9 − 29 = 8");
+ok(await credits() === 17, "Spends add up: 70 − 10 + 5 − 19 − 0 (free Cosmic Like) − 29 = 17");
 await page.goto(`${BASE}/profile/s-tanvi`);
+await btn("Cosmic Like · 9").click();
+await page.waitForTimeout(800);
+await page.goto(`${BASE}/home`);
+ok(await credits() === 8, "Second Cosmic Like this week costs 9");
+await page.goto(`${BASE}/profile/s-nidhi`);
 await btn("Cosmic Like · 9").click();
 ok(await seen(page.getByText("Not enough credits. Top up your wallet to continue.")), "Not enough credits is explained, nothing charged");
 

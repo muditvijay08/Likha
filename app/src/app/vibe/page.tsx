@@ -6,6 +6,7 @@ import { ErrorNote, Primary, Screen, StepHeader, useAction } from "@/components/
 import { api, type Interest } from "@/lib/api";
 import { useGuard } from "@/lib/guard";
 import { usePersisted } from "@/lib/persist";
+import { useFlow } from "@/lib/flow";
 
 export default function Vibe() {
   useGuard();
@@ -14,6 +15,9 @@ export default function Vibe() {
   const [showAll, setShowAll] = useState(false);
   const [f, setF] = usePersisted("vibe", { about: "", fond: "", picked: [] as number[] });
   const { busy, error, run } = useAction();
+  const { settings } = useFlow();
+  const maxLen = settings?.prompts?.max_length ?? 300, need = settings?.prompts?.required ?? 2;
+  const iMin = settings?.prompts?.interests_min ?? 3, iMax = settings?.prompts?.interests_max ?? 10;
 
   useEffect(() => { api().interests().then(setAll).catch(() => {}); }, []);
 
@@ -38,12 +42,13 @@ export default function Vibe() {
   }
 
   function toggle(id: number) {
-    setF((o) => ({ ...o, picked: o.picked.includes(id) ? o.picked.filter((x) => x !== id) : o.picked.length >= 10 ? o.picked : [...o.picked, id] }));
+    setF((o) => ({ ...o, picked: o.picked.includes(id) ? o.picked.filter((x) => x !== id) : o.picked.length >= iMax ? o.picked : [...o.picked, id] }));
   }
 
   const submit = () => run(async () => {
-    if (f.about.trim().length < 10 || f.fond.trim().length < 10) throw new Error("Answer both, at least a line each.");
-    if (f.picked.length < 3) throw new Error("Pick at least 3 interests.");
+    const answered = [f.about, f.fond].filter((x) => x.trim().length >= 10).length;
+    if (answered < need) throw new Error(need === 2 ? "Answer both, at least a line each." : "Answer at least one, a line or more.");
+    if (f.picked.length < iMin) throw new Error(`Pick at least ${iMin} interests.`);
     await api().saveVibe([{ key: "about_you", answer: f.about }, { key: "fond_of", answer: f.fond }], f.picked);
     await api().setStep(7);
     await api().refresh();
@@ -54,9 +59,9 @@ export default function Vibe() {
   const box = (id: string, label: string, value: string, set: (v: string) => void, ph: string) => (
     <div className="card" style={{ display: "flex", flexDirection: "column", gap: 6, padding: "12px 14px" }}>
       <label htmlFor={id} style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{label}</label>
-      <textarea id={id} className="input" style={{ border: 0, padding: 0, minHeight: 64, boxShadow: "none" }} maxLength={300} placeholder={ph}
+      <textarea id={id} className="input" style={{ border: 0, padding: 0, minHeight: 64, boxShadow: "none" }} maxLength={maxLen} placeholder={ph}
         value={value} onChange={(e) => set(e.target.value)} />
-      <span className="small" style={{ alignSelf: "flex-end" }}>{value.length}/300</span>
+      <span className="small" style={{ alignSelf: "flex-end" }}>{value.length}/{maxLen}</span>
     </div>
   );
 
@@ -84,7 +89,7 @@ export default function Vibe() {
       </div>
 
       <div className="stack">
-        <span className="label">Interests <span style={{ color: "var(--muted)", fontWeight: 500 }}>· {f.picked.length} of 10</span></span>
+        <span className="label">Interests <span style={{ color: "var(--muted)", fontWeight: 500 }}>· {f.picked.length} of {iMax}</span></span>
         <div className="chips">
           {shown.map((i) => <button key={i.id} type="button" className="chip sm" aria-pressed={f.picked.includes(i.id)} onClick={() => toggle(i.id)}>{i.label}</button>)}
           {!showAll && all.length > 7 && <button type="button" className="chip sm" onClick={() => setShowAll(true)}>+ More</button>}

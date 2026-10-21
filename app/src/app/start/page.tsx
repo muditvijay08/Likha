@@ -9,7 +9,8 @@ import { api, type Gender } from "@/lib/api";
 
 export default function Start() {
   const router = useRouter();
-  const { setDraft, draft } = useFlow();
+  const { setDraft, draft, settings } = useFlow();
+  const options = settings?.gender_options ?? ["woman", "man"];          // Admin > Onboarding
   const [invite, setInvite] = useState(false);
   const [code, setCode] = useState(draft.inviteCode ?? "");
 
@@ -37,9 +38,9 @@ export default function Start() {
       <div className="grow" />
       <div className="stack" style={{ gap: 10 }}>
         <span className="label" style={{ fontWeight: 700 }}>I am a</span>
-        <div className="grid2" style={{ gap: 10 }}>
-          {card("woman", "Woman", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="9" r="5" /><path d="M12 14v7M9 18h6" /></svg>, "#FFF0F4", "#E0457B", "#A3164C")}
-          {card("man", "Man", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10" cy="14" r="5" /><path d="M14 10l6-6M15 4h5v5" /></svg>, "#EAF1FF", "#2F6FE0", "#1F4FA8")}
+        <div className={options.length > 1 ? "grid2" : "stack"} style={{ gap: 10 }}>
+          {options.includes("woman") && card("woman", "Woman", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="9" r="5" /><path d="M12 14v7M9 18h6" /></svg>, "#FFF0F4", "#E0457B", "#A3164C")}
+          {options.includes("man") && card("man", "Man", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10" cy="14" r="5" /><path d="M14 10l6-6M15 4h5v5" /></svg>, "#EAF1FF", "#2F6FE0", "#1F4FA8")}
         </div>
         <span className="small" style={{ textAlign: "center" }}>Your pick sets the app&apos;s colours: rose for women, blue for men.</span>
         {invite ? (

@@ -18,7 +18,7 @@ function PushTypes({ can }: { can: boolean }) {
   const dirty = JSON.stringify(v) !== JSON.stringify(data.push_types.value);
   return (
     <section className="card stack" aria-label="Push notification types">
-      <div className="row"><h2 className="grow">Notification types</h2><span className="pill warn">Not used by the app yet</span></div>
+      <div className="row"><h2 className="grow">Notification types</h2><span className="pill info">Applies once push is connected</span></div>
       <table className="t"><thead><tr><th>Notification</th><th>Kind</th><th>On</th><th>Time</th></tr></thead><tbody>
         {Object.entries(v).map(([k, t]) => <tr key={k}><td>{label(k)}</td><td><span className={`pill ${t.kind === "core" ? "ok" : t.kind === "nudge" ? "info" : "off"}`}>{t.kind}</span></td>
           <td><input type="checkbox" aria-label={`${label(k)} on`} checked={t.on} disabled={!can || t.kind === "core"} onChange={(e) => setV({ ...v, [k]: { ...t, on: e.target.checked } })} /></td>
@@ -60,15 +60,15 @@ export default function CommsPage() {
       <div className="split">
         <SettingsForm title="Saathi (virtual companion)" canEdit={can} fields={[
           { key: "saathi", path: "free_messages_per_day", label: "Free messages a day", unit: "number" },
-          { key: "saathi", path: "topup_messages", label: "Top-up gives", unit: "number", hint: "messages" }, { key: "saathi", path: "topup_credits", label: "Top-up costs", unit: "credits", unused: true },
-          { key: "saathi", path: "max_session_minutes", label: "Suggest a break after", unit: "minutes", unused: true },
+          { key: "saathi", path: "topup_messages", label: "Top-up gives", unit: "number", hint: "messages" },
+          { key: "saathi", path: "max_session_minutes", label: "Suggest a break after", unit: "minutes", hint: "of chatting in one visit" },
           { key: "saathi", path: "step_back_after_days", label: "Step back once a member has a match chatting for", unit: "days" },
           { key: "guru", path: "free_questions", label: "Guru Ji free questions", unit: "number" }, { key: "guru", path: "pack_questions", label: "Guru Ji questions in a pack", unit: "number" }]} />
         <SettingsForm title="Reading quality" canEdit={can} onSaved={ai.reload} fields={[
-          { key: "ai", path: "max_words", label: "Longest reading", unit: "number", unused: true, hint: "words" },
+          { key: "ai", path: "max_words", label: "Longest reading", unit: "number", hint: "words (a little over is allowed; longer is rewritten)" },
           { key: "ai", path: "number_check", label: "Check every number in a reading against the chart", unit: "bool" },
-          { key: "ai", path: "max_regenerations", label: "Rewrite a failed reading this many times", unit: "number", unused: true, hint: "Fixed in code today: one rewrite, then a refund." },
-          { key: "ai", path: "kick_batch_ist", label: "Write tomorrow's Daily Kicks at (IST)", unit: "time", unused: true }]} />
+          { key: "ai", path: "max_regenerations", label: "Rewrite a failed reading this many times", unit: "number", hint: "Then the member is refunded automatically." },
+          { key: "ai", path: "kick_batch_ist", label: "Write today's Daily Kicks at (IST)", unit: "time", hint: "Ready before the morning reminder." }]} />
       </div>
     </Page>
   );

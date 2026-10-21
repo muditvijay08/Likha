@@ -66,7 +66,18 @@ export function FlowProvider({ children }: { children: ReactNode }) {
 
   const gender: Gender = state?.gender ?? draft.gender ?? "woman";
 
-  useEffect(() => { document.documentElement.dataset.gender = gender; }, [gender]);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.gender = gender;
+    // Admin > Onboarding > accent colour. Darker and lighter shades are mixed from it.
+    const c = settings?.gender_theme?.[gender];
+    const standard = { woman: "#e0457b", man: "#2f6fe0" }[gender];          // the hand-tuned shades in globals.css
+    if (c && /^#[0-9a-f]{6}$/i.test(c) && c.toLowerCase() !== standard) {
+      root.style.setProperty("--g", c);
+      root.style.setProperty("--g-ink", `color-mix(in srgb, ${c} 72%, #000)`);
+      root.style.setProperty("--g-soft", `color-mix(in srgb, ${c} 9%, #fff)`);
+    } else { ["--g", "--g-ink", "--g-soft"].forEach((v) => root.style.removeProperty(v)); }
+  }, [gender, settings]);
 
   const value = useMemo<Flow>(() => ({
     draft, setDraft, gender, settings, state, reload,
