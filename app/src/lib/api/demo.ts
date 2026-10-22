@@ -220,6 +220,7 @@ export class DemoApi implements Api {
     };
   }
   async savePushToken(t: string) { this.edit((d) => { d.pushTokens.push(t); }); }
+  async releasePushToken(token: string) { this.edit((d) => { d.pushTokens = d.pushTokens.filter((t) => t !== token); }); }
 
   // ---------------------------------------------------------------- member app (sample profiles, clearly labelled)
   private pool(db: Db): Card[] {

@@ -1,0 +1,12 @@
+{$KUNDLI_DOMAIN} {
+	encode gzip
+	request_body {
+		max_size 64KB
+	}
+	reverse_proxy kundli:8080
+	header {
+		-Server
+		Strict-Transport-Security "max-age=63072000"
+		X-Content-Type-Options nosniff
+	}
+}

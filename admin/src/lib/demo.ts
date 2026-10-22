@@ -33,6 +33,9 @@ const SLOTS: Slot[] = [
   ["KUNDLI_URL", "any", "Kundli", "Kundli service address", "kundli", false, false, false, "e.g. https://kundli.likha.in"],
   ["KUNDLI_KEY", "any", "Kundli", "Kundli service key", "kundli", false, true, true, "Same as LIKHA_KUNDLI_KEY on the kundli server"],
   ["GOOGLE_MAPS_BROWSER_KEY", "any", "Maps", "Google Maps browser key", "google", true, false, false, "Places API (New). Restrict to likha.in in Google Cloud"],
+  ["MSG91_OTP_TEMPLATE_ID", "any", "SMS", "MSG91 login code template id (DLT)", "msg91", false, false, false, "The DLT-approved OTP template with an ##otp## variable"],
+  ["ONESIGNAL_APP_ID", "any", "Push", "OneSignal app id", "onesignal", true, false, false, "OneSignal > Settings > Keys & IDs. Safe to show: the app uses it to subscribe browsers."],
+  ["ONESIGNAL_REST_API_KEY", "any", "Push", "OneSignal REST API key", "onesignal", false, true, true, "OneSignal > Settings > Keys & IDs > REST API key. Tested with the app id."],
   ["LIKHA_ALERT_WEBHOOK", "any", "Alerts", "Team alert webhook (Slack / Google Chat)", null, false, true, true, "AI spend and safety alerts"],
 ];
 const M = (model: string, provider: Model["provider"], kind: Model["kind"], label: string, input: number, output: number, per_image: number | null, note: string | null, active = true) =>
@@ -147,6 +150,7 @@ export class DemoAdmin implements AdminApi {
     let r: TestResult;
     if (!v) r = { ok: false, note: "Not set" };
     else if (key === "RAZORPAY_KEY_SECRET" && !d.vals[`RAZORPAY_KEY_ID:${mode}`]) r = { ok: false, note: "Set the key id for this mode first" };
+    else if (key === "ONESIGNAL_REST_API_KEY" && !d.vals["ONESIGNAL_APP_ID:any"]) r = { ok: false, note: "Set the OneSignal app id first" };
     else if (/bad|wrong/i.test(v.value)) r = { ok: false, note: "Provider refused the key (401) · demo" };
     else r = { ok: true, note: "Provider answered 200 · demo" };
     this.edit((x) => { const s = x.vals[`${key}:${mode}`]; if (s) { s.tested_at = new Date().toISOString(); s.test_ok = r.ok; s.test_note = r.note; } });
@@ -789,6 +793,14 @@ export class DemoAdmin implements AdminApi {
     const note = "Demo admin: no calls leave this browser. On the live admin this sends one labelled sample request and shows the answer.";
     this.vEdit((v) => { v.tests[check] = { at: new Date().toISOString(), ok: "false", note }; });
     return { ok: false, note };
+  }
+  async pushStats() {
+    await wait(120); const d = this.load();
+    const configured = !!d.vals["ONESIGNAL_APP_ID:any"] && !!d.vals["ONESIGNAL_REST_API_KEY:any"];
+    return configured
+      ? { configured, devices: 3120, members_with_device: 2874, waiting: 4, sent_24h: 9412, no_device_24h: 1180, failed_24h: 6, skipped_24h: 212,
+          health: { status: "up", success_pct: 99.9, latency_ms: 840, checked_at: new Date(Date.now() - 40e3).toISOString() } }
+      : { configured, devices: 0, members_with_device: 0, waiting: 0, sent_24h: 0, no_device_24h: 0, failed_24h: 0, skipped_24h: 0, health: null };
   }
   async securityAudit() {
     await wait(150);

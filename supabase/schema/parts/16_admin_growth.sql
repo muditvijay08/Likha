@@ -513,7 +513,14 @@ begin
         'success_pct', (select round(100.0 * count(*) filter (where status = 'passed') / nullif(count(*), 0), 1) from public.selfie_checks where created_at > h24),
         'status', case when (select count(*) from public.selfie_checks where status = 'manual_review' and created_at < now() - interval '24 hours') > 0 then 'slow' else 'up' end,
         'note', (select count(*) || ' waiting for a person' from public.selfie_checks where status = 'manual_review')),
-      jsonb_build_object('key', 'push', 'name', 'Push notifications', 'status', 'off', 'note', 'Not connected yet (OneSignal). Members see notices in their Inbox.'),
+      case when not (exists (select 1 from private.api_key_values where key = 'ONESIGNAL_APP_ID') and exists (select 1 from private.api_key_values where key = 'ONESIGNAL_REST_API_KEY'))
+        then jsonb_build_object('key', 'push', 'name', 'Push notifications', 'status', 'off', 'note', 'Not connected yet (OneSignal keys not set). Members see notices in their Inbox.')
+        else jsonb_build_object('key', 'push', 'name', 'Push notifications (OneSignal)',
+          'calls', (select count(*) from public.notifications where data ->> 'push' in ('sent','failed') and sent_at > h24),
+          'success_pct', (select h.success_pct from public.integration_health h where h.service = 'push'),
+          'status', coalesce((select case when h.checked_at < now() - interval '2 hours' and exists (select 1 from public.notifications n where n.channel = 'push' and n.sent_at is null
+                     and n.created_at < now() - interval '10 minutes') then 'slow' else h.status end from public.integration_health h where h.service = 'push'), 'idle'),
+          'note', (select count(*) || ' waiting to send' from public.notifications where channel = 'push' and sent_at is null)) end,
       jsonb_build_object('key', 'db', 'name', 'Database and storage', 'status', 'up', 'size_mb', round(pg_database_size(current_database()) / 1048576.0))),
     'jobs', private.cron_jobs(),
     'incidents', coalesce((select jsonb_agg(to_jsonb(i) order by i.started_at desc) from (select * from public.incidents order by started_at desc limit 20) i), '[]'),

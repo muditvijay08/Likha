@@ -34,7 +34,7 @@ export default function Install() {
     setBusy(true);
     try {
       if (bip) { await bip.prompt(); setBip(null); }
-      const r = await enablePush();
+      const r = await enablePush().catch(() => "unsupported" as const);
       if (r === "denied") setMsg("Notifications are blocked. You can turn them on later in your browser settings.");
       if (r === "ios-needs-install") { setMsg("On iPhone, add Likha to your Home Screen first, then open it from there."); return; }
       await finish();

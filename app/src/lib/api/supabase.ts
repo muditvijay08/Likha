@@ -79,7 +79,7 @@ export class SupabaseApi implements Api {
     return !!data.session;
   }
 
-  async signOut() { await this.sb.auth.signOut(); }
+  async signOut() { const { releasePush } = await import("../push"); await releasePush(); await this.sb.auth.signOut(); }
 
   async settings(): Promise<PublicSettings> {
     const { data, error } = await this.sb.rpc("public_settings");
@@ -248,10 +248,8 @@ export class SupabaseApi implements Api {
     return (data as MyChart) ?? null;
   }
 
-  async savePushToken(token: string) {
-    const id = await this.uid();
-    await this.sb.from("push_tokens").upsert({ user_id: id, token, platform: "web" }, { onConflict: "token" });
-  }
+  async savePushToken(token: string) { await this.rpc("claim_push_token", { p_token: token }); }
+  async releasePushToken(token: string) { await this.rpc("release_push_token", { p_token: token }); }
 
   // ---------------------------------------------------------------- member app
   private async rpc<T>(fn: string, args: Record<string, unknown> = {}, what = "Loading"): Promise<T> {

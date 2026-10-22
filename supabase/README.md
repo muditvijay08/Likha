@@ -70,6 +70,8 @@ Everything here was run and tested on 20 Oct 2026.
 | `payment-recheck` | cron every 15 min | Orders still unpaid after the hours set in Admin (`refunds.auto_credit_after_hours`) get one automatic look at Razorpay; captured ones are credited like the webhook would |
 | `selfie-check` | app (member token) | Selfie step. Follows Admin > Settings > Verification: auto (let in, no Verified badge), team review (the frame is kept in the private `selfies` bucket until someone decides, then the safety worker deletes it), or the selfie API you set (any failure goes to the team) |
 | `photo-check` | app after each upload | Photos: auto-approved or waiting for the team is decided in the database; in API mode the photo service answers here. Failures wait for the team |
+| `push-worker` | cron every minute | Push notifications through OneSignal: takes what the database allows now (quiet hours, opt-ins, one offer a day, switched-off types), sends to each member's devices, retries outages 3 times, removes dead devices |
+| `sms-hook` | Supabase Auth Send SMS hook | Login codes by SMS through MSG91 (DLT template `MSG91_OTP_TEMPLATE_ID`); Standard Webhooks signature with `SEND_SMS_HOOK_SECRET` |
 | `razorpay-webhook` | Razorpay (deploy with `--no-verify-jwt`) | Checks the signature, records the payment, credits the wallet once (`svc_record_payment`) |
 
 **Payments:** plans (Kick Pass, Rishta Maasi, Couple Mode) are sold as prepaid months for now; they don't auto-renew. UPI autopay needs Razorpay Subscriptions with an e-mandate, which is a later step. In the Razorpay dashboard add the webhook URL with events `payment.captured`, `payment.failed`, `order.paid`, `refund.processed`.
@@ -89,13 +91,13 @@ Everything here was run and tested on 20 Oct 2026.
 
 **Keys.** Provider keys are set in **Admin > Keys** (encrypted in Supabase Vault, write-only, owner only, every change audited). Functions read them through `_shared/keys.ts` (cached one minute). Razorpay and RazorpayX keys have test and live slots; the payments switch on the same page picks which pair is used, and going live needs every live key set, a passing test of the live secret and "LIVE" typed in.
 
-In Admin > Keys: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `FAL_KEY`, `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` (test and live), `RAZORPAYX_KEY_ID` / `RAZORPAYX_KEY_SECRET` / `RAZORPAYX_ACCOUNT_NUMBER` / `RAZORPAYX_WEBHOOK_SECRET` (test and live), `MSG91_AUTH_KEY`, `MSG91_SAFETY_TEMPLATE_ID`, `KUNDLI_URL`, `KUNDLI_KEY`, `GOOGLE_MAPS_BROWSER_KEY` (served to the app through `public_settings`), `LIKHA_ALERT_WEBHOOK`.
+In Admin > Keys: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `FAL_KEY`, `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` (test and live), `RAZORPAYX_KEY_ID` / `RAZORPAYX_KEY_SECRET` / `RAZORPAYX_ACCOUNT_NUMBER` / `RAZORPAYX_WEBHOOK_SECRET` (test and live), `MSG91_AUTH_KEY`, `MSG91_OTP_TEMPLATE_ID`, `MSG91_SAFETY_TEMPLATE_ID`, `ONESIGNAL_APP_ID` (public), `ONESIGNAL_REST_API_KEY`, `KUNDLI_URL`, `KUNDLI_KEY`, `GOOGLE_MAPS_BROWSER_KEY` (served to the app through `public_settings`), `LIKHA_ALERT_WEBHOOK`.
 
-**Function secrets** (Supabase > Edge Functions > Secrets), the few the functions need before they can read Admin: `LIKHA_INTERNAL_SECRET`, `LIKHA_HASH_SALT` (never change after launch: it would break saved phone hashes), `LIKHA_SITE` (member app address, CORS) and `LIKHA_ADMIN_SITE` (admin address, CORS for `admin-keys`). `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase. Any provider key also set here acts only as a fallback while Admin is empty.
+**Function secrets** (Supabase > Edge Functions > Secrets), the few the functions need before they can read Admin: `LIKHA_INTERNAL_SECRET`, `LIKHA_HASH_SALT` (never change after launch: it would break saved phone hashes), `LIKHA_SITE` (member app address, CORS) and `LIKHA_ADMIN_SITE` (admin address, CORS for `admin-keys`), and `SEND_SMS_HOOK_SECRET` (from Authentication > Hooks). `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase. Any provider key also set here acts only as a fallback while Admin is empty.
 
 **Picture models** for Imagine Us are chosen in Admin > AI models: Google Nano Banana 2.1 (default), Nano Banana 2 Lite, Nano Banana Pro, OpenAI GPT Image 2 and 2.5 Flare, and through fal.ai FLUX.2 [max], GPT Image 2 and Seedream 5.0 Pro (off until its endpoint id is confirmed). Any fal.ai image-edit endpoint can be added there. Press Test (one labelled picture from stand-in portraits, cost logged) before switching.
 
-**Cron** (put the internal secret in Supabase Vault as `likha_internal`):
+**Cron**: `deploy/1-database.sh` sets all of these up from `deploy/cron.sql.tpl` (one helper, `private.call_function`, reads the internal secret from Vault). For reference:
 ```sql
 select cron.schedule('kundli-worker', '* * * * *', $$
   select net.http_post(url := 'https://<project>.supabase.co/functions/v1/kundli-worker',

@@ -91,6 +91,22 @@ await autoList.getByRole("button", { name: "Looks fine" }).first().click();
 ok(await toast("Marked as checked"), "Spot check: marked fine");
 await shot("03-photos");
 
+// push: keys on Keys, then live numbers on Notifications
+await page.getByRole("navigation", { name: "Admin" }).getByRole("link", { name: "Keys and integrations", exact: true }).click();
+await page.waitForURL("**/keys");
+await btn("Test", row("ONESIGNAL_REST_API_KEY:any")).isDisabled().catch(() => true);
+await setKey("ONESIGNAL_REST_API_KEY:any", "os-rest-key-9911");
+await btn("Test", row("ONESIGNAL_REST_API_KEY:any")).click();
+ok(await seen(row("ONESIGNAL_REST_API_KEY:any").getByText(/Set the OneSignal app id first/)), "Push: REST key test needs the app id");
+await setKey("ONESIGNAL_APP_ID:any", "a1b2c3d4-0000-4000-8000-onesignal01");
+ok(await seen(row("ONESIGNAL_APP_ID:any").getByText("a1b2c3d4-0000-4000-8000-onesignal01")), "Push: app id shown in full (it's public)");
+await btn("Test", row("ONESIGNAL_REST_API_KEY:any")).click();
+ok(await seen(row("ONESIGNAL_REST_API_KEY:any").getByText(/answered 200/)), "Push: key test passes");
+await nav("Notifications, Saathi, AI");
+const ps = page.getByRole("region", { name: "Push status" });
+ok(await seen(ps.getByText("Sending")) && await seen(ps.getByText("Members with a device")) && (await page.getByText(/Push isn.t connected yet/).count()) === 0, "Push: connected, with numbers");
+await shot("05-push");
+
 await nav("Security and data");
 const sec = page.getByRole("region", { name: "Security checks" });
 ok(await seen(sec.getByText("Every table has row-level security")) && (await sec.getByText("Pass", { exact: true }).count()) === 5 && (await sec.getByText("Fix", { exact: true }).count()) === 0,

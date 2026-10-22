@@ -63,7 +63,7 @@ await shot("02-features");
 
 // notifications and AI
 await nav("Notifications, Saathi, AI");
-ok(await seen(page.getByText(/Push notifications aren.t connected yet/)), "Comms: push honestly not connected");
+ok(await seen(page.getByText(/Push isn.t connected yet/)), "Comms: push honestly not connected");
 await btn("Stop all AI now").click(); await page.getByLabel("Note").fill("Cost spike drill"); await btn("Confirm").click();
 ok(await toast("All AI features stopped") && await seen(page.getByText("All AI features stopped").first()), "Comms: AI emergency stop");
 await btn("Turn AI back on").click(); await page.getByLabel("Note").fill("Drill over"); await btn("Confirm").click();

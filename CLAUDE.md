@@ -52,8 +52,9 @@ node --experimental-strip-types --test tests/unit/*.test.ts         # panchang m
 
 
 ## Security rules
-- Every migration ends with `select private.lockdown();` (closes new functions to visitors, server-only functions to members).
+- Every migration ends with `select private.lockdown();` (apply live with `deploy/1-database.sh --part FILE`) (closes new functions to visitors, server-only functions to members).
 - The team changes data only through `admin_*` functions (permission + validation + audit). Never add direct-write RLS policies for the team.
 - Member-writable tables need a guard trigger for any column a member must not set (see part 20).
 - `supabase/test/B0_security.sql` must pass; it runs against a stub with Supabase's real default grants.
 - Read SECURITY.md before changing auth, storage, payments or keys.
+- Every new Edge Function needs an entry in `supabase/config.toml` (verify_jwt true for member/team calls, false for cron/webhooks that check a secret or signature); `deploy/2-functions.sh` refuses to deploy one that's missing.

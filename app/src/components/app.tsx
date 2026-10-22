@@ -36,6 +36,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [features, setFeatures] = useState<Record<string, boolean>>({});
   useEffect(() => { api().myFeatures().then(setFeatures).catch(() => {}); }, []);
+  useEffect(() => { import("@/lib/push").then((m) => m.syncPush()).catch(() => {}); }, []);   // keep this device linked if notifications are on
   const reload = useCallback(async () => {
     const [h, p] = await Promise.all([api().home(), api().prices()]);
     setHome(h); setPrices(p);

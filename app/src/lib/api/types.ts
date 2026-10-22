@@ -28,9 +28,9 @@ export interface PublicSettings {
   grievance_officer?: { name: string; email: string; phone: string; ack_hours: number; resolve_days: number };
   company?: { legal_name: string; gstin: string; cin: string; address: string };
   /** Browser-safe keys set in Admin > Keys (Maps browser key, Razorpay key id in use). */
-  public_keys?: { google_maps_browser_key?: string; razorpay_key_id?: string };
+  public_keys?: { google_maps_browser_key?: string; razorpay_key_id?: string; onesignal_app_id?: string };
   /** Admin > Settings > General. When maintenance is on the app shows maintenance_message instead of screens. */
-  app?: { maintenance?: boolean; maintenance_message?: string; support_email?: string; min_app_version?: string };
+  app?: { maintenance?: boolean; maintenance_message?: string; support_email?: string; min_app_version?: string; otp_whatsapp?: boolean };
   // Admin > Onboarding and Matching
   max_age_filter?: number;
   gender_options?: Gender[];
@@ -280,6 +280,7 @@ export interface Api {
   cityQueue(): Promise<CityQueue | null>;
   myChart(): Promise<MyChart | null>;
   savePushToken(token: string): Promise<void>;
+  releasePushToken(token: string): Promise<void>;
 
   // member app
   home(): Promise<HomeData>;

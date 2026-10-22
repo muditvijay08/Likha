@@ -228,7 +228,10 @@ export interface AdminApi {
   decidePhoto(id: string, approve: boolean, reason: string | null): Promise<void>;
   /** Live checks of the database's protections (Security and data). */
   securityAudit(): Promise<SecurityAudit>;
+  pushStats(): Promise<PushStats>;
 }
+export interface PushStats { configured: boolean; devices: number; members_with_device: number; waiting: number; sent_24h: number; no_device_24h: number;
+  failed_24h: number; skipped_24h: number; health: { status: string; success_pct: number | null; latency_ms: number | null; checked_at: string } | null }
 export interface SecurityAudit { tables_without_rls: string[]; open_to_visitors: string[]; server_only_callable_by_members: string[]; definer_without_search_path: string[]; team_without_mfa: number; checked_at: string }
 
 export type VerifyMode = "auto" | "manual" | "api";

@@ -1,0 +1,30 @@
+# Kundli engine + Caddy (automatic HTTPS). Only Caddy is reachable from outside; the engine listens on the internal network.
+services:
+  kundli:
+    build: ../../kundli
+    restart: unless-stopped
+    environment:
+      LIKHA_KUNDLI_KEY: ${LIKHA_KUNDLI_KEY:?set LIKHA_KUNDLI_KEY}
+    expose: ["8080"]
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    depends_on: [kundli]
+    ports: ["80:80", "443:443"]
+    environment:
+      KUNDLI_DOMAIN: ${KUNDLI_DOMAIN:?set KUNDLI_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  caddy_data:
+  caddy_config:

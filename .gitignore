@@ -6,3 +6,10 @@ __pycache__/
 app/tests/shots/
 tsconfig.tsbuildinfo
 next-env.d.ts
+
+# deploy
+deploy/.env
+deploy/kundli/.env
+app/vercel.json
+admin/vercel.json
+.vercel/

@@ -21,18 +21,14 @@
 | **Settings take effect: every Admin setting is read by the code (free Cosmic Likes, inactive and age limits, photo and prompt limits, gender options and colours, birth-correction limit, auto-suspend, check-in alert time, refund rules, automatic payment re-check, GST rate, plan reminders, part-month refunds, free day after long outages, retention, admin idle sign-out, app version check, reading length and rewrites, Daily Kick time, Saathi break nudge). Selfie and push rules are ready for when those are connected** | **Done, 58 database checks** |
 | **Verification switch: selfie and photo checks set to auto-approve (for now), team review, or call an API (address + key in Admin, test call, request/reply format shown). Auto-approved members get no Verified badge; photo review queue and spot checks of auto-approved photos; honest member wording in each mode** | **Done, 40 database + 17 admin + 6 member checks** |
 | **Security audit and hardening (see SECURITY.md): 15 findings fixed (function access for visitors, like/plan/photo tampering, team edits skipping audits, storage by job, hidden profile fields, headers); attack tests run against a Supabase-identical setup; live Security checks in Admin** | **Done, 46 security checks** |
+| **Push notifications (OneSignal): keys and test in Admin, sender every minute honouring quiet hours/opt-ins/limits, device linking and release on sign-out, live numbers in Admin. Login codes by SMS through MSG91 (Supabase Send SMS hook, signature-checked)** | **Done, 21 database + 5 gateway + 4 admin checks** |
+| **Deployment pack (`deploy/`): numbered scripts for Supabase, functions, kundli server (Docker + HTTPS), Vercel, first owner and a live smoke test; dry-run mode; tested end to end against a fresh Supabase-like database** | **Done** |
 | AI agent service (does the work behind the AI CEO console) | Not started: rules, approvals and undo are ready in the database |
 | Razorpay payments (create-order + signed webhook) | Built and tested; paste live keys in Admin > Keys, test, then Go live |
-| A real selfie and photo check service (plug into Verification > Call an API), OneSignal push, MSG91 OTP in Supabase auth, Sentry/PostHog | Not started (selfie, photo and push rules already in the database) |
+| A real selfie and photo check service (plug into Verification > Call an API), Sentry/PostHog, CAPTCHA on the waitlist | Not started |
 
-## First-time setup (half a day)
-1. Create a Supabase project in **Mumbai (ap-south-1)**. Enable phone auth, using MSG91 or Twilio for SMS and WhatsApp OTP.
-2. Run `supabase/schema/likha_schema.sql`, then `supabase/schema/guna_lookup.sql`. Enable `pg_cron` and `pg_net`.
-3. Make yourself Owner. The command is at the bottom of `parts/04_seed.sql`.
-4. Deploy the kundli service from `kundli/Dockerfile` to a Mumbai host. Set `LIKHA_KUNDLI_KEY`.
-5. Deploy the Edge Functions and set the four function secrets listed in `supabase/README.md`.
-6. Deploy `admin/` (e.g. admin.likha.in), sign in, set up your authenticator, then paste every provider key in **Keys and integrations** and press Test on each.
-7. Set up the app: copy `app/.env.example` to `.env.local`, fill in the Supabase URL and anon key (the Maps key comes from Admin). Then run `npm run dev`.
+## First-time setup
+Follow **`deploy/README.md`**: accounts, then `deploy/0-secrets.sh` to `deploy/6-smoke.sh` (about half a day; MSG91 DLT approval takes a few days, start it first).
 
 ## Week-by-week plan (2 developers)
 | Week | Build | Done when |

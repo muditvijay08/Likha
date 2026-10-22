@@ -1,15 +1,45 @@
-# Only the settings Likha needs; merge into the project's config.toml.
+# Edge Function settings for Likha. Merge into the project's config.toml if you already have one.
+# verify_jwt = false: the function checks callers itself (internal secret, webhook signature, or the member token in code).
+# verify_jwt = true:  Supabase rejects calls without a signed-in user before our code runs.
+
+# called with a member/team sign-in only
+[functions.create-order]
+verify_jwt = true
+[functions.selfie-check]
+verify_jwt = true
+[functions.photo-check]
+verify_jwt = true
+[functions.admin-keys]
+verify_jwt = true
+[functions.admin-ops]
+verify_jwt = true
+
+# member token checked in code, and the internal secret for the reading worker
 [functions.ai-gateway]
-verify_jwt = false        # checks the member token itself, and also accepts the internal secret
+verify_jwt = false
 
+# scheduled jobs: internal secret only (cron sends x-likha-internal, no user)
 [functions.kundli-worker]
-verify_jwt = false        # internal secret only
-
+verify_jwt = false
 [functions.kick-batch]
-verify_jwt = false        # internal secret only
+verify_jwt = false
+[functions.reading-worker]
+verify_jwt = false
+[functions.safety-worker]
+verify_jwt = false
+[functions.payment-recheck]
+verify_jwt = false
+[functions.push-worker]
+verify_jwt = false
 
-[functions.cupid-redirect]
-verify_jwt = false        # public link: likha.in/c/<code>
-
+# webhooks: signature checked in code
+[functions.razorpay-webhook]
+verify_jwt = false
 [functions.payout-worker]
-verify_jwt = false        # RazorpayX webhook (signature checked) + internal secret
+verify_jwt = false        # RazorpayX webhook (signature) + internal secret
+[functions.sms-hook]
+verify_jwt = false        # Supabase Auth Send SMS hook (Standard Webhooks signature)
+
+# public link: likha.in/c/<code>
+[functions.cupid-redirect]
+verify_jwt = false

@@ -4,10 +4,31 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAction, useAdmin } from "@/components/shell";
 import { SettingsForm } from "@/components/settings-form";
-import { NoteAction, Page, label, useLoad } from "@/components/ui";
+import { Kpi, NoteAction, Page, label, useLoad } from "@/components/ui";
 import { api } from "@/lib/api";
 
 type PushType = { on: boolean; kind: "core" | "nudge" | "marketing"; when?: string; after_days?: number; minutes_before?: number; days?: number; per_month?: number };
+
+function PushStatus() {
+  const { data } = useLoad(() => api().pushStats());
+  if (!data) return <div className="skel" style={{ height: 90 }} />;
+  if (!data.configured) return (
+    <div className="note warn"><strong>Push isn&apos;t connected yet.</strong> Add the OneSignal app id and REST API key on <Link href="/keys">Keys and integrations</Link>.
+      Until then notifications wait in the inbox only; the settings below are saved and apply as soon as push is connected.</div>);
+  return (
+    <section className="card stack" aria-label="Push status">
+      <div className="row"><h2 className="grow">Push (OneSignal)</h2>
+        <span className={`pill ${data.health?.status === "down" ? "bad" : data.health?.status === "slow" ? "warn" : "ok"}`}>{data.health?.status === "down" ? "Not sending" : data.health?.status === "slow" ? "Some failing" : "Sending"}</span></div>
+      <div className="kpis">
+        <Kpi k="Sent" v={data.sent_24h.toLocaleString("en-IN")} s="last 24 hours" />
+        <Kpi k="Members with a device" v={data.members_with_device.toLocaleString("en-IN")} s={`${data.devices.toLocaleString("en-IN")} devices`} />
+        <Kpi k="Held back" v={data.skipped_24h.toLocaleString("en-IN")} s="quiet hours, opt-outs, limits" />
+        <Kpi k="No device" v={data.no_device_24h.toLocaleString("en-IN")} s="inbox only" />
+        <Kpi k="Failed" v={data.failed_24h} s="after 3 tries" alert={data.failed_24h > 50} />
+        <Kpi k="Waiting now" v={data.waiting} s="sent every minute" />
+      </div>
+    </section>);
+}
 
 function PushTypes({ can }: { can: boolean }) {
   const { toast } = useAdmin();
@@ -18,7 +39,7 @@ function PushTypes({ can }: { can: boolean }) {
   const dirty = JSON.stringify(v) !== JSON.stringify(data.push_types.value);
   return (
     <section className="card stack" aria-label="Push notification types">
-      <div className="row"><h2 className="grow">Notification types</h2><span className="pill info">Applies once push is connected</span></div>
+      <div className="row"><h2 className="grow">Notification types</h2></div>
       <table className="t"><thead><tr><th>Notification</th><th>Kind</th><th>On</th><th>Time</th></tr></thead><tbody>
         {Object.entries(v).map(([k, t]) => <tr key={k}><td>{label(k)}</td><td><span className={`pill ${t.kind === "core" ? "ok" : t.kind === "nudge" ? "info" : "off"}`}>{t.kind}</span></td>
           <td><input type="checkbox" aria-label={`${label(k)} on`} checked={t.on} disabled={!can || t.kind === "core"} onChange={(e) => setV({ ...v, [k]: { ...t, on: e.target.checked } })} /></td>
@@ -41,7 +62,7 @@ export default function CommsPage() {
   const enabled = (ai.data?.ai.value as { enabled?: boolean } | undefined)?.enabled !== false;
   return (
     <Page title="Notifications, Saathi and AI" sub="How Likha talks to members. Member copy never says “AI”; Saathi is described as a virtual companion, not a real person.">
-      <div className="note warn"><strong>Push notifications aren&apos;t connected yet (OneSignal).</strong> Settings here are saved and will apply once push is set up in Keys and integrations. In-app inbox messages already work.</div>
+      <PushStatus />
       <section className="card stack" aria-label="AI emergency stop" style={{ borderColor: enabled ? "var(--line)" : "var(--red)" }}>
         <div className="row"><h2 className="grow">AI emergency stop</h2><span className={`pill ${enabled ? "ok" : "bad"}`}>{enabled ? "AI features on" : "All AI features stopped"}</span></div>
         <p className="sub">Stops every AI feature at once: readings, Daily Kick writing, Saathi, Guru Ji, Imagine Us and Cupid openers. Matching, chat and payments keep working. Paid readings that can&apos;t run are refunded automatically.</p>

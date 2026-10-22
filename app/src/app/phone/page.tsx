@@ -10,12 +10,13 @@ const CODES = [{ cc: "+91", label: "+91", digits: 10 }, { cc: "+971", label: "+9
 
 export default function Phone() {
   const router = useRouter();
-  const { setDraft } = useFlow();
+  const { setDraft, settings } = useFlow();
+  const offerWa = !!settings?.app?.otp_whatsapp;           // only when WhatsApp login codes are actually set up
   const [cc, setCc] = useState("+91");
   const [num, setNum] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
-  const [wa, setWa] = useState(true);
+  const [wa, setWa] = useState(false);
   const [left, setLeft] = useState(0);
   const boxes = useRef<(HTMLInputElement | null)[]>([]);
   const send = useAction();
@@ -30,7 +31,7 @@ export default function Phone() {
 
   const sendCode = () => send.run(async () => {
     if (clean.length !== needed) throw new Error(`Enter your ${needed}-digit mobile number.`);
-    await api().sendOtp(e164, wa ? "whatsapp" : "sms");
+    await api().sendOtp(e164, wa && offerWa ? "whatsapp" : "sms");
     setSentTo(e164); setDraft({ phone: e164 }); setLeft(30);
     setTimeout(() => boxes.current[0]?.focus(), 50);
   });
@@ -96,10 +97,10 @@ export default function Phone() {
         </section>
       )}
 
-      <label htmlFor="wa" className="check" style={{ justifyContent: "space-between", alignItems: "center" }}>
+      {offerWa && <label htmlFor="wa" className="check" style={{ justifyContent: "space-between", alignItems: "center" }}>
         <span className="stack" style={{ gap: 2 }}><strong>Get the code on WhatsApp</strong><span className="small">Faster on most phones</span></span>
         <input id="wa" type="checkbox" checked={wa} onChange={(e) => setWa(e.target.checked)} />
-      </label>
+      </label>}
 
       <div className="grow" />
       <div className="stack" style={{ gap: 10 }}>

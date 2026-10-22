@@ -34,6 +34,10 @@ export function testKey(name: string, value: string, other: string | undefined, 
       // an empty body is refused as invalid (422) only after the key is accepted
       return probe(fetcher, `${other.replace(/\/$/, "")}/v1/chart`, { method: "POST", headers: { "content-type": "application/json", "x-likha-key": value }, body: "{}" },
         "Kundli service", [200, 400, 422]);
+    case "ONESIGNAL_REST_API_KEY":
+      if (!other) return Promise.resolve({ ok: false, note: "Set the OneSignal app id first" });
+      // reads the app's last notification: proves the key and app id match, sends nothing
+      return probe(fetcher, `https://api.onesignal.com/notifications?app_id=${encodeURIComponent(other)}&limit=1`, { headers: { authorization: `Key ${value}` } }, "OneSignal");
     case "LIKHA_ALERT_WEBHOOK":
       return probe(fetcher, value, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: "Likha admin: test alert. You can ignore this." }) },
         "Webhook", [200, 201, 202, 204]);
@@ -43,4 +47,4 @@ export function testKey(name: string, value: string, other: string | undefined, 
 }
 
 /** Which other key a test needs, if any. */
-export const PAIRED: Record<string, string> = { RAZORPAY_KEY_SECRET: "RAZORPAY_KEY_ID", RAZORPAYX_KEY_SECRET: "RAZORPAYX_KEY_ID", KUNDLI_KEY: "KUNDLI_URL" };
+export const PAIRED: Record<string, string> = { RAZORPAY_KEY_SECRET: "RAZORPAY_KEY_ID", RAZORPAYX_KEY_SECRET: "RAZORPAYX_KEY_ID", KUNDLI_KEY: "KUNDLI_URL", ONESIGNAL_REST_API_KEY: "ONESIGNAL_APP_ID" };
