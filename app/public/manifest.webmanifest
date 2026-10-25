@@ -2,7 +2,7 @@
   "name": "Likha",
   "short_name": "Likha",
   "description": "Real people, matched by your kundli.",
-  "start_url": "/",
+  "start_url": "/open",
   "scope": "/",
   "display": "standalone",
   "background_color": "#FBF8FF",

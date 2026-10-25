@@ -6,10 +6,10 @@ which prints what it would do and changes nothing. All scripts are safe to run a
 
 ```
 deploy/0-secrets.sh     create deploy/.env, generate the three internal secrets
-deploy/1-database.sh    schema, Guna table, Vault secret, 15 scheduled jobs
-deploy/2-functions.sh   function secrets + all 16 Edge Functions
+deploy/1-database.sh    schema, Guna table, Vault secret, 16 scheduled jobs
+deploy/2-functions.sh   function secrets + all 17 Edge Functions
 deploy/3-kundli.sh      (on your server) kundli engine behind HTTPS
-deploy/4-web.sh         member app and admin on Vercel (Mumbai)
+deploy/4-web.sh         member app + public website, and admin, on Vercel (Mumbai)
 deploy/5-owner.sh       first Owner for the admin
 deploy/6-smoke.sh       checks everything, changes nothing (run after every deploy)
 ```
@@ -22,15 +22,18 @@ deploy/6-smoke.sh       checks everything, changes nothing (run after every depl
 | **Vercel** | Account or team. | token, team slug |
 | **Server for the kundli engine** | Any Ubuntu VPS in Mumbai (2 GB RAM is plenty) with Docker. | its IP address |
 | **Domain** | DNS for likha.in. | |
-| **MSG91** | Sender ID and **DLT** registration; two templates (below). | auth key, 2 template ids |
+| **MSG91** | Sender ID and **DLT** registration; three templates (below). | auth key, 3 template ids |
 | **Razorpay + RazorpayX** | KYC; test keys first. | keys, webhook secrets |
 | **OneSignal** | Web push app for likha.in (settings below). | app id, REST API key |
 | **AI** | Anthropic and/or Google Gemini / OpenAI keys. | keys |
 | **Google Cloud** | Maps JavaScript + Places API (New); browser key restricted to likha.in. | key |
+| **Cloudflare Turnstile** | Free. Add a widget for likha.in (Managed). Protects the website waitlist. | site key, secret key |
+| **Google Search Console** | Add likha.in (DNS check), then submit `https://likha.in/sitemap.xml`. | |
 
 MSG91 templates to register on DLT:
 - Login code (variable `otp`): `Your Likha login code is ##otp##. It expires in 5 minutes. Do not share it with anyone.`
 - Date safety alert (variables `name`, `member`, `place`, `time`): the text in `supabase/functions/_shared/sms.ts` (`alertText`).
+- City is open (variables `name`, `city`, `link`): `Hi ##name##, Likha is now live in ##city##! Your Founding Member spot is ready. Make your kundli and start: ##link##`
 
 ## B. Run the steps
 
@@ -86,8 +89,8 @@ Open admin.likha.in, sign in with the email code, scan the QR with an authentica
 ## C. In the admin (you, about 30 minutes)
 
 1. **Keys and integrations**: paste each key and press **Test** on every one:
-   AI keys · Razorpay **test** keys + webhook secret · RazorpayX test keys · MSG91 auth key, login-code template id, safety template id ·
-   `KUNDLI_URL` = `https://kundli.likha.in` and `KUNDLI_KEY` = `LIKHA_KUNDLI_KEY` · Google Maps browser key · OneSignal app id + REST API key · team alert webhook.
+   AI keys · Razorpay **test** keys + webhook secret · RazorpayX test keys · MSG91 auth key, login-code, safety and city-open template ids ·
+   `KUNDLI_URL` = `https://kundli.likha.in` and `KUNDLI_KEY` = `LIKHA_KUNDLI_KEY` · Google Maps browser key · OneSignal app id + REST API key · Turnstile site + secret key · team alert webhook.
 2. **Razorpay dashboard** > Webhooks: `https://<ref>.supabase.co/functions/v1/razorpay-webhook`, events `payment.captured`, `payment.failed`, `order.paid`, `refund.processed`, the same secret as in Admin.
    **RazorpayX** > Webhooks: `https://<ref>.supabase.co/functions/v1/payout-worker`, payout events.
 3. **OneSignal** > Settings > Web: site `https://likha.in`, Custom Code, service worker path `push/onesignal/OneSignalSDKWorker.js`, scope `/push/onesignal/`.
@@ -100,6 +103,7 @@ Open admin.likha.in, sign in with the email code, scan the QR with an authentica
 ```bash
 ./deploy/6-smoke.sh              # every line should be ✓
 ```
+Open https://likha.in signed out: the website shows, the waitlist form works (Turnstile check appears), and `/sitemap.xml` lists the pages. Submit the sitemap in Google Search Console.
 Then on a phone: sign up with your own number (SMS code arrives), finish the profile, see your kundli, buy the smallest pack with a Razorpay **test** card, see the credits land, turn on notifications and receive one.
 When that works: Admin > Keys > paste the **live** Razorpay keys, Test, then **Go live** (owner only, type LIVE). Make one real ₹99 purchase and refund it.
 

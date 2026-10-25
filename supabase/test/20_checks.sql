@@ -49,7 +49,7 @@ insert into auth.users (id, phone) values
  ('a0000000-0000-0000-0000-000000000012','+919800000012'),   -- Seema, finance
  ('a0000000-0000-0000-0000-000000000013','+919800000013'),   -- Rohit, viewer
  ('a0000000-0000-0000-0000-000000000014','+919800000014');   -- Kavya, admin
-set role anon;
+reset role;
 select public.join_waitlist('Ishita','+919811111111','jaipur','woman');
 reset role;
 

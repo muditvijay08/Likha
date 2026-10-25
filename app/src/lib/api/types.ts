@@ -28,7 +28,7 @@ export interface PublicSettings {
   grievance_officer?: { name: string; email: string; phone: string; ack_hours: number; resolve_days: number };
   company?: { legal_name: string; gstin: string; cin: string; address: string };
   /** Browser-safe keys set in Admin > Keys (Maps browser key, Razorpay key id in use). */
-  public_keys?: { google_maps_browser_key?: string; razorpay_key_id?: string; onesignal_app_id?: string };
+  public_keys?: { google_maps_browser_key?: string; razorpay_key_id?: string; onesignal_app_id?: string; turnstile_site_key?: string };
   /** Admin > Settings > General. When maintenance is on the app shows maintenance_message instead of screens. */
   app?: { maintenance?: boolean; maintenance_message?: string; support_email?: string; min_app_version?: string; otp_whatsapp?: boolean };
   // Admin > Onboarding and Matching
@@ -401,4 +401,13 @@ export interface Api {
   giftLanding(token: string): Promise<GiftLanding | null>;
   claimCrush(token: string): Promise<string>;
   openGift(token: string): Promise<string>;
+  // Public website (no sign-in)
+  cityCounters(): Promise<CityCounter[]>;
+  /** Through the waitlist Edge Function (Turnstile + per-IP limit). Throws with a message for the form. */
+  joinWaitlist(input: WaitlistJoin): Promise<WaitlistResult>;
 }
+
+/** members is null until a city passes the public counter minimum (Admin: 100). sample = demo numbers. */
+export interface CityCounter { slug: string; name: string; status: "live" | "waitlist"; members: number | null; unlock_threshold: number; sample?: boolean }
+export interface WaitlistJoin { first_name: string; phone: string; city: string; gender: Gender; consent: boolean; invite?: string | null; token?: string | null }
+export interface WaitlistResult { existing?: boolean; position?: number; invite_code?: string; city?: string; city_live?: boolean; unlock_threshold?: number; jump_per_invite?: number }

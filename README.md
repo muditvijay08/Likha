@@ -1,6 +1,6 @@
 # Likha: build and launch plan
 
-## Status (21 Oct 2026)
+## Status (25 Oct 2026)
 | Area | Status |
 |---|---|
 | Design canvas (105 app + 25 admin screens) | Done |
@@ -23,9 +23,10 @@
 | **Security audit and hardening (see SECURITY.md): 15 findings fixed (function access for visitors, like/plan/photo tampering, team edits skipping audits, storage by job, hidden profile fields, headers); attack tests run against a Supabase-identical setup; live Security checks in Admin** | **Done, 46 security checks** |
 | **Push notifications (OneSignal): keys and test in Admin, sender every minute honouring quiet hours/opt-ins/limits, device linking and release on sign-out, live numbers in Admin. Login codes by SMS through MSG91 (Supabase Send SMS hook, signature-checked)** | **Done, 21 database + 5 gateway + 4 admin checks** |
 | **Deployment pack (`deploy/`): numbered scripts for Supabase, functions, kundli server (Docker + HTTPS), Vercel, first owner and a live smoke test; dry-run mode; tested end to end against a fresh Supabase-like database** | **Done** |
+| **Public website likha.in (L9): Founding Members waitlist (Cloudflare Turnstile + per-IP limit through the `waitlist` function; visitors can no longer write the waitlist directly), live city counters, invite links, "your city is open" SMS when a city unlocks; 109 server-rendered SEO pages: how it works, safety, check your crush, FAQ, kundli matching, Manglik, Moon sign calculator, 12 rashi pages, 78 Moon-sign pair pages (engine rules, checked against the kundli engine), 4 city pages; sitemap, robots, structured data, link preview image** | **Done, 42 database + 7 gateway + 113 website checks** |
 | AI agent service (does the work behind the AI CEO console) | Not started: rules, approvals and undo are ready in the database |
 | Razorpay payments (create-order + signed webhook) | Built and tested; paste live keys in Admin > Keys, test, then Go live |
-| A real selfie and photo check service (plug into Verification > Call an API), Sentry/PostHog, CAPTCHA on the waitlist | Not started |
+| A real selfie and photo check service (plug into Verification > Call an API), Sentry/PostHog | Not started |
 
 ## First-time setup
 Follow **`deploy/README.md`**: accounts, then `deploy/0-secrets.sh` to `deploy/6-smoke.sh` (about half a day; MSG91 DLT approval takes a few days, start it first).

@@ -12,7 +12,7 @@ export default function SecurityPage() {
   const can = me.perms.includes("settings.write");
   const { data } = useLoad(() => api().security());
   const audit = useLoad(() => (can ? api().securityAudit() : Promise.resolve(null)), [can]);
-  const OPEN = ["city_counters", "crush_landing", "gift_landing", "join_waitlist", "public_settings", "sos_view"];
+  const OPEN = ["city_counters", "crush_landing", "gift_landing", "public_settings", "sos_view"];
   return (
     <Page title="Security and data" sub="Every view of birth details or a reported chat is in the audit log. Admin always needs a second step (MFA).">
       {!data ? <div className="skel" style={{ height: 120 }} /> : <>

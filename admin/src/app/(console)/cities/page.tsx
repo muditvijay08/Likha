@@ -25,12 +25,13 @@ function CityPanel({ c, canEdit, done }: { c: CityRow; canEdit: boolean; done():
           <div key={String(l)} className="stack" style={{ gap: 3 }}><div className="row" style={{ justifyContent: "space-between" }}><span>{ok ? "✓" : "·"} {String(l)}</span><span className="small">{String(txt)}</span></div>
             <div className="bar"><span style={{ width: `${Math.min(100, ((Number(v) || 0) / Number(min || 1)) * 100)}%`, background: ok ? "var(--green)" : undefined }} /></div></div>))}
         <span className="small">{c.per_day} new a day over 14 days{c.eta_days ? ` · at this pace, ready in about ${c.eta_days} days` : ""} · {c.waitlist_only} more on the website waitlist without an account</span>
+        {c.waitlist_sms && <span className="small" aria-label={`${c.name} city-open SMS`}>City-open SMS to the website waitlist: {c.waitlist_sms.sent} sent · {c.waitlist_sms.queued} waiting · {c.waitlist_sms.failed} failed · {c.waitlist_sms.skipped} skipped (has an account, or not an Indian mobile)</span>}
       </div>
       {c.status === "waitlist" && canEdit && <div className="stack" style={{ gap: 8, padding: 12, borderRadius: 12, background: "#F7F4FC" }}>
         <strong style={{ fontSize: 13 }}>{c.unlock_at ? `Unlock scheduled for ${new Date(c.unlock_at).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` : "Unlock"}</strong>
         {!c.unlock_at && <><label className="f">When<input className="input" type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} /></label>
           {!c.ready && <label className="f">Not ready yet. Why unlock early?<input className="input" value={override} onChange={(e) => setOverride(e.target.value)} placeholder="College fest launch" /></label>}</>}
-        <span className="small">Everyone who signed up in {c.name} gets an in-app notice the moment it opens. This can&apos;t be undone.</span>
+        <span className="small">Everyone who signed up in {c.name} gets an in-app notice the moment it opens, and people on the website waitlist get one SMS. This can&apos;t be undone.</span>
         <div className="row">
           {c.unlock_at ? <button type="button" className="btn ghost sm" disabled={busy} onClick={() => run(async () => { await api().scheduleUnlock(c.slug, null, null); toast("Unlock cancelled"); done(); })}>Cancel scheduled unlock</button>
             : <button type="button" className="btn sm" disabled={busy || (!c.ready && !override.trim())} onClick={() => run(async () => { await api().scheduleUnlock(c.slug, new Date(at).toISOString(), override || null); toast(`${c.name} scheduled`); done(); })}>Schedule unlock</button>}

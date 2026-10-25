@@ -36,6 +36,9 @@ const SLOTS: Slot[] = [
   ["MSG91_OTP_TEMPLATE_ID", "any", "SMS", "MSG91 login code template id (DLT)", "msg91", false, false, false, "The DLT-approved OTP template with an ##otp## variable"],
   ["ONESIGNAL_APP_ID", "any", "Push", "OneSignal app id", "onesignal", true, false, false, "OneSignal > Settings > Keys & IDs. Safe to show: the app uses it to subscribe browsers."],
   ["ONESIGNAL_REST_API_KEY", "any", "Push", "OneSignal REST API key", "onesignal", false, true, true, "OneSignal > Settings > Keys & IDs > REST API key. Tested with the app id."],
+  ["MSG91_CITY_TEMPLATE_ID", "any", "SMS", "MSG91 \"city is open\" template id (DLT)", "msg91", false, false, false, "Variables name, city, link. Sent once to waitlist sign-ups when their city opens."],
+  ["TURNSTILE_SITE_KEY", "any", "Website", "Cloudflare Turnstile site key", "cloudflare", true, false, false, "Cloudflare > Turnstile > add likha.in. Safe to show: the website uses it to draw the check."],
+  ["TURNSTILE_SECRET_KEY", "any", "Website", "Cloudflare Turnstile secret key", "cloudflare", false, true, true, "Same Turnstile widget. Until both are set, the waitlist relies on the per-IP limit only."],
   ["LIKHA_ALERT_WEBHOOK", "any", "Alerts", "Team alert webhook (Slack / Google Chat)", null, false, true, true, "AI spend and safety alerts"],
 ];
 const M = (model: string, provider: Model["provider"], kind: Model["kind"], label: string, input: number, output: number, per_image: number | null, note: string | null, active = true) =>
@@ -804,7 +807,7 @@ export class DemoAdmin implements AdminApi {
   }
   async securityAudit() {
     await wait(150);
-    return { tables_without_rls: [], open_to_visitors: ["city_counters", "crush_landing", "gift_landing", "join_waitlist", "public_settings", "sos_view"],
+    return { tables_without_rls: [], open_to_visitors: ["city_counters", "crush_landing", "gift_landing", "public_settings", "sos_view"],
       server_only_callable_by_members: [], definer_without_search_path: [], team_without_mfa: 0, checked_at: new Date().toISOString() };
   }
   async photoQueue(): Promise<PhotoQueue> { await wait(120); const v = this.v(); return { pending: v.pending, auto_recent: v.auto_recent, mode: v.config.photos.mode }; }

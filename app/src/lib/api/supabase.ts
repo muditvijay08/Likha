@@ -4,6 +4,7 @@ import type {
   AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
+  CityCounter, WaitlistJoin, WaitlistResult,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
 } from "./types";
@@ -639,6 +640,16 @@ export class SupabaseApi implements Api {
     const id = await this.rpc<string>("open_gift", { p_token: token }, "Gift");
     this.gateway({ action: "reading", reading_id: id }).catch(() => {});
     return id;
+  }
+  async cityCounters() { return (await this.rpc<CityCounter[]>("city_counters", {}, "Cities")) ?? []; }
+  async joinWaitlist(input: WaitlistJoin): Promise<WaitlistResult> {
+    const { data, error } = await this.sb.functions.invoke("waitlist", { body: input });
+    if (error) {
+      let msg = "Something went wrong. Please try again.";
+      try { const j = await (error as { context?: Response }).context?.json(); if (j?.message) msg = j.message; } catch { /* keep default */ }
+      throw new Error(msg);
+    }
+    return data as WaitlistResult;
   }
 }
 

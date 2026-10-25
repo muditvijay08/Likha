@@ -6,6 +6,7 @@ import type {
   AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
+  CityCounter, WaitlistJoin, WaitlistResult,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
 } from "./types";
@@ -996,5 +997,33 @@ export class DemoApi implements Api {
         { heading: "Later in the year", body: "More confidence. Say yes to the plans you'd usually skip." }], try_this: g.note ? `From your friend: "${g.note}"` : "Write down what you want this year." }, readyAt: Date.now() + 1500 };
     this.edit((d) => { d.gifts = (d.gifts ?? []).map((x) => x.token === token ? { ...x, opened: true } : x); d.readings = [r, ...(d.readings ?? [])]; });
     return r.id;
+  }
+  // Website: sample counts, clearly labelled on the page. Sign-ups stay in this browser.
+  async cityCounters(): Promise<CityCounter[]> {
+    await wait(100);
+    const joined = this.waitlist();
+    const base: Record<string, number> = { pune: 612, ahmedabad: 410, dubai: 288 };
+    return CITIES.filter((c) => c.status !== "locked").map((c) => ({ slug: c.slug, name: c.name, status: c.status as "live" | "waitlist",
+      members: c.status === "live" ? null : (base[c.slug] ?? 0) + joined.filter((j) => j.city === c.slug).length, unlock_threshold: c.slug === "dubai" ? 800 : 1000, sample: true }));
+  }
+  private waitlist(): { phone: string; city: string; code: string }[] { try { return JSON.parse(localStorage.getItem("likha-demo-waitlist") ?? "[]"); } catch { return []; } }
+  async joinWaitlist(w: WaitlistJoin): Promise<WaitlistResult> {
+    await wait();
+    const name = w.first_name.trim();
+    if (!name || name.length > 40 || /[<>{}\\/@0-9]/.test(name)) throw new Error("Enter your first name (letters only).");
+    const d = w.phone.replace(/\D/g, "").replace(/^(91|0)(?=[6-9]\d{9}$)/, "");
+    if (!/^[6-9]\d{9}$/.test(d) && !/^(971)?5\d{8}$/.test(d)) throw new Error("Enter a valid mobile number.");
+    if (!w.consent) throw new Error("Tick the box to confirm you're 18+ and agree to the Terms and Privacy Policy.");
+    const city = CITIES.find((c) => c.slug === w.city);
+    if (!city || city.status === "locked") throw new Error("Pick a city from the list.");
+    if (city.status === "live") return { city_live: true, city: city.name };
+    const list = this.waitlist();
+    if (list.some((j) => j.phone === d)) return { existing: true };
+    const code = Math.random().toString(16).slice(2, 10).padEnd(8, "0");
+    list.push({ phone: d, city: w.city, code });
+    try { localStorage.setItem("likha-demo-waitlist", JSON.stringify(list)); } catch { /* private mode */ }
+    const base: Record<string, number> = { pune: 612, ahmedabad: 410, dubai: 288 };
+    return { existing: false, position: (base[w.city] ?? 0) + list.filter((j) => j.city === w.city).length, invite_code: code, city: city.name,
+      unlock_threshold: w.city === "dubai" ? 800 : 1000, jump_per_invite: 50 };
   }
 }

@@ -1,13 +1,13 @@
 # Likha security
 
-How the platform is protected, what the October 2026 audit found and fixed, and what must be done on the live accounts before launch.
+How the platform is protected, what the October 2026 audit found and fixed (plus #16, found when the website was built), and what must be done on the live accounts before launch.
 
 ## How it is protected
 
 | Layer | Rule |
 |---|---|
 | Database (Supabase Postgres) | Every table has row-level security. Members see only their own rows and the public fields of people they can see. Private data (birth details, charts, keys) lives in the `private` schema, which apps cannot reach at all. |
-| Functions | Signed-out visitors can call six functions only (public website and share links). Server-only functions (`svc_*`) can't be called from the apps. Admin functions (`admin_*`) check a permission, need two-step sign-in (MFA), and write the audit log. |
+| Functions | Signed-out visitors can call five functions only (public website and share links). Server-only functions (`svc_*`) can't be called from the apps. Admin functions (`admin_*`) check a permission, need two-step sign-in (MFA), and write the audit log. |
 | Team | Admin needs an authenticator app (aal2) for every request. Roles have only the permissions they need. The team changes data only through audited functions, never by editing tables. |
 | Money | Prices come from the database, never the app. Razorpay webhooks are signature-checked in constant time. Credits move only through the ledger with idempotency keys. Bank refunds need a second person. Live payments need the owner, all live keys tested, and typing LIVE. |
 | Keys | Provider keys are in Supabase Vault, write-only from Admin (last 4 shown), owner only, audited. Never in code, logs or the app. |
@@ -34,6 +34,7 @@ How the platform is protected, what the October 2026 audit found and fixed, and 
 | 13 | Low | Shared-secret and RazorpayX signature checks used plain comparison. | Constant-time compare; secret must be 32+ characters. |
 | 14 | Low | Verification API address could point at internal addresses; repeated selfie calls could flood the review queue. | Public https names only; one waiting selfie per member. |
 | 15 | Low | No security headers on either app. | CSP, no framing, HSTS, nosniff, permissions policy. |
+| 16 | Medium | The public waitlist could be written straight from the browser with no limit (spam, fake sign-ups inflating city counts). | Visitors can't call it any more; the `waitlist` function checks Cloudflare Turnstile and allows 5 tries per IP an hour (salted IP hash only, kept a day). |
 
 Checked and fine: MFA enforced for the team (aal2 in every permission check); 18+ enforced when birth details are saved; Razorpay webhook signature (constant time); Cupid redirect can't send people off likha.in; SOS share links use 96-bit random tokens; no secrets in either app bundle; every privileged function pins its `search_path`; no SQL built from user text.
 
@@ -47,7 +48,7 @@ Tests: `supabase/test/B0_security.sql` tries each attack above against a databas
 2. **Function secrets:** `LIKHA_INTERNAL_SECRET` at least 32 random characters; `LIKHA_SITE` and `LIKHA_ADMIN_SITE` set (otherwise CORS falls back to any site).
 3. **Razorpay:** webhook secret set and tested; enable 2FA on the Razorpay and RazorpayX dashboards; restrict RazorpayX payouts to approved accounts.
 4. **Google Maps key:** restrict to likha.in (HTTP referrer) and to Places API only.
-5. **Waitlist and sign-up spam:** add Cloudflare Turnstile (or similar) to the public waitlist form; it has no rate limit of its own.
+5. **Waitlist spam:** paste the Cloudflare Turnstile site and secret keys in Admin > Keys (Website) and press Test. Without them the form still has the per-IP limit.
 6. **Admin site:** put it behind Cloudflare Access or an IP allow-list as a second door in front of MFA.
 7. **Monitoring:** Sentry with personal-data scrubbing (no message text, phone numbers or birth details in error reports).
 8. **External test:** a short penetration test before public launch, then yearly; rotate provider keys yearly or when someone leaves the team.

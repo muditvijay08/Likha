@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { RegisterSW } from "@/components/RegisterSW";
 import { MaintenanceGate } from "@/components/gates";
 import { FlowProvider } from "@/lib/flow";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Likha · Jo likha hai, woh milega",
   description: "Real people, matched by your kundli. Dating is free.",
   manifest: "/manifest.webmanifest",
@@ -16,7 +18,7 @@ export const viewport: Viewport = { themeColor: "#FBF8FF", width: "device-width"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-gender="woman">
+    <html lang="en-IN" data-gender="woman">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

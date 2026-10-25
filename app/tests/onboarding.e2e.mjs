@@ -25,7 +25,7 @@ page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connec
   const shot = async (n) => page.screenshot({ path: `${OUT}${name}-${n}.png`, fullPage: true });
   const click = (text) => page.getByRole("button", { name: text, exact: true }).click();
 
-  await page.goto(`${BASE}/`);
+  await page.goto(`${BASE}/open`);
   await page.waitForURL("**/start");
   await shot("01-start");
   await click(gender === "woman" ? "Woman" : "Man");

@@ -45,7 +45,7 @@ grant all on seen to anon, authenticated;
 
 -- ---------------------------------------------------------------- who can see the Keys page
 select pg_temp.act_as_team('c1000000-0000-0000-0000-000000000001');
-select pg_temp.check('owner with MFA sees every key slot, payments in test', $q$ select jsonb_array_length(public.admin_keys() -> 'slots') = 29 and public.admin_keys() ->> 'payments_mode' = 'test' $q$);
+select pg_temp.check('owner with MFA sees every key slot, payments in test', $q$ select jsonb_array_length(public.admin_keys() -> 'slots') = 32 and public.admin_keys() ->> 'payments_mode' = 'test' $q$);
 select pg_temp.act_as_team('c1000000-0000-0000-0000-000000000001', 'aal1');
 select pg_temp.denied('owner without MFA cannot open Keys', $q$ select public.admin_keys() $q$);
 select pg_temp.act_as_team('c1000000-0000-0000-0000-000000000002');

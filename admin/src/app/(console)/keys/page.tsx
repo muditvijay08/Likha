@@ -10,6 +10,7 @@ const GROUPS: [string, string][] = [["AI", "Writers and picture makers. Text fea
   ["SMS", "Login codes (through Supabase\u2019s Send SMS hook) and safety alerts to trusted contacts. Both need DLT-approved templates."], ["Kundli", "The Likha kundli service (NASA JPL ephemeris)."],
   ["Maps", "City search in the app. Browser key: restrict it to likha.in in Google Cloud."],
   ["Push", "OneSignal web push. Members get notifications once both are set; quiet hours and types are on Settings > Notifications."],
+  ["Website", "Cloudflare Turnstile on the likha.in waitlist form. Until both are set, the form relies on the per-IP limit only."],
   ["Verification", "Only needed when a check is set to \"Call an API\" on Settings > Verification."], ["Alerts", "Where the team hears about AI spend and safety alerts."]];
 
 function Row({ s, reload }: { s: KeySlot; reload(): void }) {

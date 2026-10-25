@@ -63,7 +63,7 @@ grant all on seen to anon, authenticated;
 -- ---- invariants
 select pg_temp.check('every public table has row level security', $q$ select not exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity) $q$);
-select pg_temp.check('visitors can call only the public website functions', $q$ select array_agg(p.proname order by p.proname) = array['city_counters','crush_landing','gift_landing','join_waitlist','public_settings','sos_view']::name[]
+select pg_temp.check('visitors can call only the public website functions', $q$ select array_agg(p.proname order by p.proname) = array['city_counters','crush_landing','gift_landing','public_settings','sos_view']::name[]
   from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute') $q$);
 select pg_temp.check('members cannot call any server-only function', $q$ select not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and p.proname like 'svc\_%' and has_function_privilege('authenticated', p.oid, 'execute')) $q$);
@@ -136,4 +136,4 @@ select pg_temp.check('roles unchanged', $q$ select exists (select 1 from public.
 select pg_temp.check('refund still waiting for a second person', $q$ select status = 'awaiting_second_approval' from public.refunds where id = 'e7300000-0000-0000-0000-000000000001' $q$);
 select pg_temp.act_as_team('d7000000-0000-0000-0000-000000000001');
 select pg_temp.check('the built-in audit is clean', $q$ select a -> 'tables_without_rls' = '[]' and a -> 'server_only_callable_by_members' = '[]' and a -> 'definer_without_search_path' = '[]'
-  and jsonb_array_length(a -> 'open_to_visitors') = 6 from (select public.admin_security_audit() a) x $q$);
+  and jsonb_array_length(a -> 'open_to_visitors') = 5 from (select public.admin_security_audit() a) x $q$);

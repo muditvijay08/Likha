@@ -47,7 +47,7 @@ psql -f supabase/test/00_supabase_stub.sql -f supabase/schema/likha_schema.sql -
 # app
 cd app && cp .env.example .env.local && npm i && npm run dev
 NEXT_PUBLIC_DEMO=1 npm run build && npm start & npm run test:e2e   # onboarding (23) + member app (36) + chat and companions (25) + wallet and store (33) + account and safety (37) + couples and growth (61)
-node --experimental-strip-types --test tests/unit/*.test.ts         # panchang maths
+node --experimental-strip-types --test tests/unit/*.test.ts         # panchang maths; Moon-sign rules vs the kundli engine
 ```
 
 
@@ -58,3 +58,10 @@ node --experimental-strip-types --test tests/unit/*.test.ts         # panchang m
 - `supabase/test/B0_security.sql` must pass; it runs against a stub with Supabase's real default grants.
 - Read SECURITY.md before changing auth, storage, payments or keys.
 - Every new Edge Function needs an entry in `supabase/config.toml` (verify_jwt true for member/team calls, false for cron/webhooks that check a secret or signature); `deploy/2-functions.sh` refuses to deploy one that's missing.
+
+## Public website (likha.in)
+- Pages live in `app/src/app/(site)/` and are server-rendered for search engines; app screens are outside that group. `/` is the website, `/open` is the installed app's entry (manifest start_url); signed-in visitors to `/` are sent into the app.
+- New website pages: add them to `app/src/app/sitemap.ts`; new app screens: add their path to `PRIVATE` in `app/src/app/robots.ts`.
+- `app/src/lib/rashi.ts` must use the kundli engine's rules; `tests/unit/rashi.test.ts` compares all 144 sign pairs with `kundli/likha_kundli`.
+- The waitlist form posts to the `waitlist` Edge Function (Turnstile + per-IP limit). Never reopen `join_waitlist` to visitors.
+- Website copy follows the same rules as the app: no guarantees, no "AI", no fake numbers (demo counts say "Sample numbers"), no "first in India"-style claims.

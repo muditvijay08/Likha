@@ -32,6 +32,10 @@ verify_jwt = false
 [functions.push-worker]
 verify_jwt = false
 
+# public website form (Turnstile + per-IP limit in code) and its cron
+[functions.waitlist]
+verify_jwt = false
+
 # webhooks: signature checked in code
 [functions.razorpay-webhook]
 verify_jwt = false

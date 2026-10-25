@@ -1,0 +1,102 @@
+/* Public website (likha.in). Same tokens as the app, wider layout. Everything is scoped under .site. */
+.site { min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
+.site .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+.site .narrow { max-width: 760px; }
+.site main { flex: 1; }
+.site h1, .site h2, .site h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+.site h1 { font-size: clamp(34px, 5.4vw, 56px); line-height: 1.05; margin: 0; }
+.site h2 { font-size: clamp(24px, 3.2vw, 34px); line-height: 1.15; margin: 0; }
+.site h3 { font-size: 20px; line-height: 1.25; margin: 0; }
+.site p { line-height: 1.6; }
+.site .lead { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); margin: 0; max-width: 620px; }
+.site .eyebrow { font: 700 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--link); }
+.site section { padding: 56px 0; }
+.site section.tight { padding: 32px 0; }
+.site .sec-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* header */
+.site-header { position: sticky; top: 0; z-index: 20; background: rgba(251, 248, 255, .92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line-soft); }
+.site-header .bar { height: 64px; display: flex; align-items: center; gap: 24px; }
+.site-header nav { display: flex; gap: 22px; flex: 1; }
+.site-header nav a { color: var(--ink); text-decoration: none; font: 600 14px var(--sans); }
+.site-header nav a:hover { color: var(--link); }
+.site-header .wordmark { text-decoration: none; color: var(--ink); }
+.site .pill-btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 18px; border-radius: 999px; background: var(--saffron);
+  color: var(--ink); font: 700 14px var(--sans); text-decoration: none; border: 0; white-space: nowrap; }
+.site .pill-btn:hover { background: #F5A50F; color: var(--ink); }
+.site .pill-btn.ghost { background: var(--card); border: 1px solid var(--line); }
+.site .pill-btn.lg { height: 52px; padding: 0 26px; font-size: 16px; }
+@media (max-width: 760px) { .site-header nav { display: none; } .site-header .bar { justify-content: space-between; } }
+
+/* hero */
+.hero { padding: 48px 0 40px; background: radial-gradient(1200px 500px at 85% -10%, #FFF3D6 0%, transparent 60%), radial-gradient(900px 500px at -10% 10%, #EDE6FF 0%, transparent 55%); }
+.hero .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: start; }
+.hero .copy { display: flex; flex-direction: column; gap: 18px; padding-top: 18px; }
+@media (max-width: 900px) { .hero .grid { grid-template-columns: 1fr; gap: 28px; } .hero .copy { padding-top: 0; } }
+
+/* cards and grids */
+.site .panel { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 24px; box-shadow: 0 18px 50px rgba(30, 24, 56, .07); }
+.site .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.site .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.site .grid2s { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 900px) { .site .grid3, .site .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .site .grid3, .site .grid4, .site .grid2s { grid-template-columns: 1fr; } }
+.site .feature { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 10px; }
+.site .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+.site .icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--saffron-soft); color: var(--saffron-ink); }
+.site .icon.v { background: var(--violet-soft); color: #5B3FD0; }
+.site .icon.r { background: var(--rose-soft); color: var(--rose-ink); }
+.site .tile { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); text-decoration: none; color: var(--ink); }
+.site .tile:hover { border-color: var(--saffron); color: var(--ink); }
+.site .tile strong { font: 600 17px var(--serif); }
+.site .tile span { font-size: 13px; color: var(--muted); }
+
+/* city unlocks */
+.city-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
+.city-row .track { height: 10px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.city-row .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--saffron), #FF8A3D); }
+.city-row .live { color: var(--green); font-weight: 700; }
+
+/* waitlist form */
+.join { display: flex; flex-direction: column; gap: 14px; }
+.join .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 420px) { .join .two { grid-template-columns: 1fr; } }
+.join .chip { height: 42px; }
+
+/* articles */
+.site .prose { font-size: 17px; color: var(--ink); }
+.site .prose p { margin: 0 0 14px; }
+.site .prose h2 { margin: 34px 0 12px; font-size: 26px; }
+.site .prose h3 { margin: 24px 0 8px; }
+.site .prose ul { margin: 0 0 14px; padding-left: 20px; line-height: 1.7; }
+.site table.t { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--card); border-radius: 16px; overflow: hidden; border: 1px solid var(--line); }
+.site table.t th, .site table.t td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+.site table.t th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: #FBF9FE; }
+.site .crumbs { font-size: 13px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.site .crumbs a { color: var(--muted); }
+.site .score { display: flex; align-items: baseline; gap: 6px; font-family: var(--serif); }
+.site .score b { font-size: 56px; font-weight: 600; line-height: 1; }
+.site .score span { font-size: 20px; color: var(--muted); }
+.site .badge { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; font: 700 12px var(--sans); background: var(--saffron-soft); color: var(--saffron-ink); }
+.site .badge.green { background: var(--green-soft); color: var(--green); }
+.site .badge.violet { background: var(--violet-soft); color: #5B3FD0; }
+.site .badge.rose { background: var(--rose-soft); color: var(--rose-ink); }
+.site .cta { border-radius: 28px; padding: 36px; background: linear-gradient(135deg, #1E1838, #3B2A7A); color: #fff; display: flex; gap: 24px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.site .cta h2 { color: #fff; }
+.site .cta p { color: #D9D2F5; margin: 6px 0 0; }
+.site details.faq { border-bottom: 1px solid var(--line); padding: 16px 0; }
+.site details.faq summary { cursor: pointer; font: 700 16px var(--sans); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.site details.faq summary::after { content: "+"; color: var(--link); font-size: 20px; line-height: 1; }
+.site details.faq[open] summary::after { content: "–"; }
+.site details.faq p { margin: 10px 0 0; color: var(--muted); }
+
+/* footer */
+.site-footer { background: #1E1838; color: #CFC7EE; padding: 48px 0 28px; margin-top: 24px; }
+.site-footer .cols { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 28px; }
+.site-footer h4 { margin: 0 0 12px; color: #fff; font: 700 13px var(--sans); letter-spacing: .06em; text-transform: uppercase; }
+.site-footer a { color: #CFC7EE; text-decoration: none; font-size: 14px; display: block; padding: 4px 0; }
+.site-footer a:hover { color: #fff; }
+.site-footer .wordmark { color: #fff; }
+.site-footer .legal { border-top: 1px solid rgba(255, 255, 255, .12); margin-top: 32px; padding-top: 18px; display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; font-size: 13px; }
+.site-footer .legal a { display: inline; }
+@media (max-width: 760px) { .site-footer .cols { grid-template-columns: 1fr 1fr; } }

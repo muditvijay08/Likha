@@ -248,8 +248,9 @@ reset role;
 select pg_temp.ok((select value->>'woman' from public.app_settings where key='likes_per_day') = '60', 'normal users cannot change settings');
 
 -- 16. Waitlist from the website (no login) --------------------------
+-- (the website's waitlist function calls this as the server since part 22)
 select pg_temp.act_as_service();
-set role anon;
+reset role;
 select pg_temp.ok((public.join_waitlist('Sneha','+919811111111','pune','woman') ->> 'position')::int = 1, 'website visitor joins the Pune waitlist');
 select pg_temp.ok((public.join_waitlist('Sneha','+919811111111','pune','woman') ->> 'existing')::boolean, 'same phone does not join twice');
 reset role;

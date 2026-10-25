@@ -38,6 +38,17 @@ export function testKey(name: string, value: string, other: string | undefined, 
       if (!other) return Promise.resolve({ ok: false, note: "Set the OneSignal app id first" });
       // reads the app's last notification: proves the key and app id match, sends nothing
       return probe(fetcher, `https://api.onesignal.com/notifications?app_id=${encodeURIComponent(other)}&limit=1`, { headers: { authorization: `Key ${value}` } }, "OneSignal");
+    case "TURNSTILE_SECRET_KEY":
+      // a dummy token: Cloudflare answers "invalid-input-response" for a good secret, "invalid-input-secret" for a bad one
+      return (async (): Promise<KeyTest> => {
+        try {
+          const r = await fetcher("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: new URLSearchParams({ secret: value, response: "likha-admin-test" }), signal: AbortSignal.timeout(15_000) });
+          const j = await r.json().catch(() => ({})) as { "error-codes"?: string[] };
+          const codes = j["error-codes"] ?? [];
+          if (codes.includes("invalid-input-secret") || codes.includes("missing-input-secret")) return { ok: false, note: "Cloudflare refused the secret key" };
+          return r.ok ? { ok: true, note: "Cloudflare accepted the secret key" } : { ok: false, note: `Cloudflare answered ${r.status}` };
+        } catch (e) { return { ok: false, note: `Cloudflare unreachable: ${(e as Error).message.slice(0, 80)}` }; }
+      })();
     case "LIKHA_ALERT_WEBHOOK":
       return probe(fetcher, value, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: "Likha admin: test alert. You can ignore this." }) },
         "Webhook", [200, 201, 202, 204]);

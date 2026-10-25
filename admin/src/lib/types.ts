@@ -78,7 +78,9 @@ export interface SettingValue { value: unknown; version: number; updated_at: str
 export interface SettingVersion { version: number; value: unknown; note: string; at: string; by: string | null }
 export interface CityRow { slug: string; name: string; state: string | null; country: string; status: "locked" | "waitlist" | "live"; threshold: number; min_women: number; min_complete: number;
   unlock_at: string | null; unlocked_at: string | null; lat: number | null; lng: number | null; timezone: string;
-  members: number; women_pct: number | null; complete_pct: number | null; waitlist_only: number; per_day: number; eta_days: number | null; ready: boolean }
+  members: number; women_pct: number | null; complete_pct: number | null; waitlist_only: number; per_day: number; eta_days: number | null; ready: boolean;
+  /** "Your city is open" SMS to website waitlist sign-ups, once the city has opened */
+  waitlist_sms?: { queued: number; sent: number; failed: number; skipped: number } | null }
 export interface Cities { can_edit: boolean; can_rules: boolean; cities: CityRow[]; invites_month: number; rules: Record<string, unknown> }
 export interface CupidRow { user_id: string; name: string; short_id: string; kind: "user" | "partner"; status: string; clicks: number; joined: number; verified: number; paying: number;
   owed_paise: number; kyc: string | null; rates: { signup_paise: number | null; first_paid_paise: number | null } }

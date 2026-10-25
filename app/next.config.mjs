@@ -1,16 +1,16 @@
 /** @type {import('next').NextConfig} */
 // Security headers. The CSP lists only what the app loads: Supabase (data, storage, realtime), Razorpay Checkout,
-// Google Places, OneSignal and Google Fonts. Next.js needs inline scripts and styles without nonces.
+// Google Places, OneSignal, Cloudflare Turnstile (website waitlist) and Google Fonts. Next.js needs inline scripts and styles without nonces.
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host : "*.supabase.co";
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://maps.googleapis.com https://cdn.onesignal.com`,
+  `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://maps.googleapis.com https://cdn.onesignal.com https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   `img-src 'self' data: blob: https://${supabase} https://maps.gstatic.com https://maps.googleapis.com https://*.razorpay.com`,
   `media-src 'self' blob: data: https://${supabase}`,
-  `connect-src 'self' https://${supabase} wss://${supabase} https://api.razorpay.com https://lumberjack.razorpay.com https://maps.googleapis.com https://places.googleapis.com https://*.onesignal.com https://onesignal.com`,
-  "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+  `connect-src 'self' https://${supabase} wss://${supabase} https://api.razorpay.com https://lumberjack.razorpay.com https://maps.googleapis.com https://places.googleapis.com https://*.onesignal.com https://onesignal.com https://challenges.cloudflare.com`,
+  "frame-src https://api.razorpay.com https://checkout.razorpay.com https://challenges.cloudflare.com",
   "worker-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
