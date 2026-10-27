@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BackButton, ErrorNote } from "@/components/ui";
 import { Toggle, useApp } from "@/components/app";
+import { InstallCard } from "@/components/install";
 import { api, type MyProfile, type NotifPrefs } from "@/lib/api";
 import { useFlow } from "@/lib/flow";
 
@@ -27,6 +28,7 @@ export default function Settings() {
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/me" /><h1>Settings</h1></div>
       <ErrorNote error={error} />
+      <InstallCard />
       {!p || !n ? <div className="skel" style={{ height: 400 }} /> : <>
         <div className="stack"><span style={sec}>LANGUAGE</span>
           <div role="radiogroup" aria-label="Language" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, padding: 4, borderRadius: 14, background: "#EDE6FF" }}>

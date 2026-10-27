@@ -135,6 +135,13 @@ ok(await seen(page.getByText("Not enough credits. Top up your wallet to continue
 await page.getByRole("link", { name: "Menu" }).click();
 await page.waitForURL("**/menu");
 ok(await seen(page.getByText("8 credits")) && await seen(page.getByRole("link", { name: /Be a Cupid/ })), "Menu: wallet and every link");
+const inst = page.getByRole("region", { name: "Add Likha to your home screen" });
+ok(await seen(inst), "Menu: Add to home screen for people who skipped it");
+await inst.getByRole("button", { name: "How" }).click();
+ok(await seen(inst.getByText("Install app")), "Menu: shows the steps when the browser can't install in one tap");
+await page.evaluate(() => { const e = new Event("beforeinstallprompt"); Object.assign(e, { prompt: async () => { window.__prompted = true; }, userChoice: Promise.resolve({ outcome: "accepted" }) }); window.dispatchEvent(e); });
+await inst.getByRole("button", { name: "Install" }).click();
+ok(await page.evaluate(() => window.__prompted === true), "Menu: one-tap Install uses the browser's own prompt");
 await shot("12-menu");
 await page.getByRole("link", { name: /^Chats/ }).click();
 await page.waitForURL("**/matches");

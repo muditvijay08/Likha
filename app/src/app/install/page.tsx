@@ -7,8 +7,8 @@ import { api } from "@/lib/api";
 import { useFlow } from "@/lib/flow";
 import { useGuard } from "@/lib/guard";
 import { enablePush } from "@/lib/push";
+import { installState, onInstallChange, promptInstall } from "@/lib/install";
 
-type BIPEvent = Event & { prompt(): Promise<void> };
 
 export default function Install() {
   useGuard();
@@ -16,16 +16,16 @@ export default function Install() {
   const { state } = useFlow();
   const [ios, setIos] = useState(false);
   const [standalone, setStandalone] = useState(false);
-  const [bip, setBip] = useState<BIPEvent | null>(null);
+  const [canPrompt, setCanPrompt] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
     setStandalone(window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true);
-    const h = (e: Event) => { e.preventDefault(); setBip(e as BIPEvent); };
-    window.addEventListener("beforeinstallprompt", h);
-    return () => window.removeEventListener("beforeinstallprompt", h);
+    // the browser's install offer is caught app-wide (it often fires before this screen opens)
+    const up = () => { const s = installState(); setCanPrompt(s === "prompt"); setStandalone(s === "installed"); };
+    up(); return onInstallChange(up);
   }, []);
 
   async function finish() { await api().setStep(11); router.push("/bonus"); }
@@ -33,7 +33,7 @@ export default function Install() {
   async function notifications() {
     setBusy(true);
     try {
-      if (bip) { await bip.prompt(); setBip(null); }
+      if (canPrompt) await promptInstall();
       const r = await enablePush().catch(() => "unsupported" as const);
       if (r === "denied") setMsg("Notifications are blocked. You can turn them on later in your browser settings.");
       if (r === "ios-needs-install") { setMsg("On iPhone, add Likha to your Home Screen first, then open it from there."); return; }

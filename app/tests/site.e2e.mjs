@@ -12,7 +12,7 @@ const ok = (c, msg) => { if (c) { pass++; console.log("PASS |", msg); } else { f
 // 1. server HTML (what a search engine sees, no JavaScript)
 const pages = ["/", "/how-it-works", "/safety", "/check-your-crush", "/faq", "/kundli-matching", "/manglik-dosha", "/moon-sign-calculator",
   "/rashi", "/rashi/aries", "/rashi/pisces", "/compatibility", "/compatibility/aries-and-pisces", "/compatibility/leo-and-capricorn", "/compatibility/cancer-and-cancer",
-  "/dating/jaipur", "/dating/dubai"];
+  "/dating/jaipur", "/dating/dubai", "/get-the-app"];
 for (const p of pages) {
   const html = await (await fetch(BASE + p)).text();
   const title = /<title>([^<]+)/.exec(html)?.[1] ?? "";
@@ -29,13 +29,16 @@ ok(/<b>0<\/b>/.test(lc) && /no classical cancellation/.test(lc), "Simha and Maka
 ok((await fetch(BASE + "/compatibility/pisces-and-aries")).status === 404, "reversed pair is not a second page");
 ok((await fetch(BASE + "/rashi/pluto")).status === 404, "unknown rashi is 404");
 const sitemap = await (await fetch(BASE + "/sitemap.xml")).text();
-ok((sitemap.match(/<url>/g) ?? []).length === 109, "sitemap lists 109 pages");
+ok((sitemap.match(/<url>/g) ?? []).length === 110, "sitemap lists 110 pages");
 ok(!/\/home<|\/chat|\/open</.test(sitemap), "sitemap has no app screens");
 const robots = await (await fetch(BASE + "/robots.txt")).text();
 ok(/Disallow: \/home/.test(robots) && /Disallow: \/chat\//.test(robots) && /Sitemap: https:\/\/likha.in\/sitemap.xml/.test(robots), "robots keeps app screens out and points to the sitemap");
 ok((await fetch(BASE + "/opengraph-image")).headers.get("content-type") === "image/png", "link preview image");
 const manifest = await (await fetch(BASE + "/manifest.webmanifest")).json();
 ok(manifest.start_url === "/open", "installed app opens the app, not the website");
+ok(manifest.icons.some((i) => i.purpose === "maskable") && manifest.icons.some((i) => i.purpose === "any" && i.sizes === "512x512"), "manifest has full-bleed and maskable icons");
+for (const f of ["icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) ok((await fetch(`${BASE}/icons/${f}`)).headers.get("content-type") === "image/png", `icon ${f}`);
+ok(/rel="apple-touch-icon" href="\/icons\/apple-touch-icon.png"/.test(await (await fetch(BASE + "/")).text()), "iPhone home-screen icon linked");
 
 // 2. in the browser
 const browser = await chromium.launch();
@@ -101,6 +104,12 @@ for (const [label, viewport] of [["desktop", { width: 1280, height: 900 }], ["ph
     await page.waitForURL("**/compatibility/aries-and-leo");
     ok(true, "pair picker opens the pair page in zodiac order");
     await page.screenshot({ path: `${OUT}site-desktop-pair.png`, fullPage: true });
+    // get the app
+    await page.goto(BASE + "/get-the-app");
+    ok(await page.getByText("Install app").first().isVisible(), "Get the app: steps for this phone");
+    await page.evaluate(() => { const e = new Event("beforeinstallprompt"); Object.assign(e, { prompt: async () => { window.__prompted = true; } }); window.dispatchEvent(e); });
+    await page.getByRole("button", { name: "Install Likha" }).click();
+    ok(await page.evaluate(() => window.__prompted === true), "Get the app: one-tap install where the browser allows it");
   }
   ok(errors.length === 0, `${label}: no page or CSP errors ${errors.join(" | ")}`);
   await ctx.close();

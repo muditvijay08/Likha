@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "Real people, matched by your kundli. Dating is free.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Likha", statusBarStyle: "default" },
-  icons: { icon: "/icons/icon.svg", apple: "/icons/icon-192.png" },
+  icons: { icon: "/icons/icon.svg", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#FBF8FF", width: "device-width", initialScale: 1, viewportFit: "cover" };

@@ -9,7 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ({ url: `${SITE_URL}${path}`, lastModified: at, changeFrequency, priority });
   return [
     page("/", 1, "daily"),
-    ...["/how-it-works", "/safety", "/check-your-crush", "/faq"].map((p) => page(p, 0.8)),
+    ...["/how-it-works", "/safety", "/check-your-crush", "/faq", "/get-the-app"].map((p) => page(p, 0.8)),
     ...["/kundli-matching", "/manglik-dosha", "/moon-sign-calculator", "/compatibility", "/rashi"].map((p) => page(p, 0.9, "weekly")),
     ...CITY_PAGES.map((c) => page(`/dating/${c.slug}`, 0.8, "weekly")),
     ...RASHIS.map((r) => page(`/rashi/${r.slug}`, 0.7)),

@@ -8,6 +8,8 @@ import { api, type CityCounter, type Gender, type WaitlistResult } from "@/lib/a
 import { resumePath } from "@/lib/flow";
 import { moonLongitude } from "@/lib/moon";
 import { RASHIS, pairSlug } from "@/lib/rashi";
+import { installState, onInstallChange, promptInstall } from "@/lib/install";
+import { InstallSteps } from "@/components/install";
 
 /** Members who are signed in go to their app, not the website. */
 export function SignedInRedirect() {
@@ -207,5 +209,20 @@ export function PairPicker() {
       <button className="btn">See our match</button>
       <span className="small" style={{ textAlign: "center" }}>Don&apos;t know your Moon sign? <Link href="/moon-sign-calculator">Find it from your birth date</Link>.</span>
     </form>
+  );
+}
+
+/** Website: one-tap install where the browser allows it, otherwise the right steps for this phone. */
+export function InstallButton() {
+  const [state, setState] = useState<ReturnType<typeof installState> | null>(null);
+  useEffect(() => { const up = () => setState(installState()); up(); return onInstallChange(up); }, []);
+  if (!state) return <div style={{ height: 56 }} />;
+  if (state === "installed") return <p className="lead">Likha is already on this phone. <Link href="/open">Open it</Link></p>;
+  if (state === "prompt") return <div><button type="button" className="pill-btn lg" onClick={() => promptInstall()}>Install Likha</button></div>;
+  return (
+    <div className="stack" style={{ gap: 10 }}>
+      <strong style={{ color: "#fff" }}>{state === "ios" ? "On this iPhone:" : "On this phone:"}</strong>
+      <div style={{ color: "#EDE6FF" }}><InstallSteps ios={state === "ios"} /></div>
+    </div>
   );
 }

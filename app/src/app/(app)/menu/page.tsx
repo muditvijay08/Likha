@@ -2,6 +2,7 @@
 // N1 Menu: profile, wallet, tier, every feature, and the account links.
 import Link from "next/link";
 import { Avatar, Chevron, TIER_LABEL, featureOn, useApp } from "@/components/app";
+import { InstallCard } from "@/components/install";
 import { api } from "@/lib/api";
 
 const TILES: [string, string, string, string][] = [
@@ -41,6 +42,7 @@ export default function Menu() {
           </Link>
         ))}
       </div>
+      <InstallCard />
       <div className="listcard">
         {LINKS.map(([href, t, badge]) => (
           <Link key={t} href={href}>{t}<span className="row" style={{ marginLeft: "auto", gap: 8 }}>
