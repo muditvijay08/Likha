@@ -23,9 +23,9 @@ for (const p of pages) {
   ok(!/\bAI\b/.test(html.replace(/<script[\s\S]*?<\/script>/g, "")), `${p}: never says AI`);
 }
 const pairHtml = await (await fetch(BASE + "/compatibility/aries-and-pisces")).text();
-ok(/12<\/b>/.test(pairHtml) && /dosha cancelled/.test(pairHtml) && /Mars and Jupiter, are friends/.test(pairHtml), "Mesh and Meen: 12/12, 2/12 dosha cancelled by friendly lords (engine rules)");
+ok(/<b>12<\/b>/.test(pairHtml) && /dosha cancelled/.test(pairHtml) && /Mars and Jupiter, are friends/.test(pairHtml), "Mesh and Meen: 12/12, 2/12 dosha cancelled by friendly lords (engine rules)");
 const lc = await (await fetch(BASE + "/compatibility/leo-and-capricorn")).text();
-ok(/0<\/b>/.test(lc) && /no classical cancellation/.test(lc), "Simha and Makar: 0/12, 6/8 not cancelled");
+ok(/<b>0<\/b>/.test(lc) && /no classical cancellation/.test(lc), "Simha and Makar: 0/12, 6/8 not cancelled");
 ok((await fetch(BASE + "/compatibility/pisces-and-aries")).status === 404, "reversed pair is not a second page");
 ok((await fetch(BASE + "/rashi/pluto")).status === 404, "unknown rashi is 404");
 const sitemap = await (await fetch(BASE + "/sitemap.xml")).text();

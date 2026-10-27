@@ -23,23 +23,20 @@ export function SignedInRedirect() {
 export function CityUnlocks() {
   const [rows, setRows] = useState<CityCounter[] | null>(null);
   useEffect(() => { api().cityCounters().then(setRows).catch(() => setRows([])); }, []);
-  if (!rows) return <div className="panel" aria-busy="true" style={{ minHeight: 180 }} />;
+  if (!rows) return <div aria-busy="true" style={{ minHeight: 260 }} />;
   if (!rows.length) return null;
   const sample = rows.some((r) => r.sample);
   return (
-    <div className="panel" aria-label="City unlocks">
-      <h3 style={{ marginBottom: 6 }}>City unlocks</h3>
-      <p className="small" style={{ margin: "0 0 8px" }}>Each city opens when it reaches its Founding Members.</p>
+    <div className="cities" aria-label="City unlocks">
       {[...rows].sort((a, b) => (a.status === "live" ? -1 : 0) - (b.status === "live" ? -1 : 0) || (b.members ?? 0) - (a.members ?? 0)).map((c) => (
-        <div key={c.slug} className="city-row">
-          <Link href={`/dating/${c.slug}`} style={{ color: "var(--ink)", fontWeight: 700, textDecoration: "none" }}>{c.name}</Link>
-          <div className="track" role="img" aria-label={c.status === "live" ? `${c.name} is live` : c.members === null ? `${c.name}: counting` : `${c.name}: ${c.members} of ${c.unlock_threshold}`}>
-            <div className="fill" style={{ width: c.status === "live" ? "100%" : c.members === null ? "4%" : `${Math.min(100, (c.members / c.unlock_threshold) * 100)}%` }} />
-          </div>
-          <span className="small">{c.status === "live" ? <span className="live">Live</span> : c.members === null ? "Counting" : `${c.members.toLocaleString("en-IN")} / ${c.unlock_threshold.toLocaleString("en-IN")}`}</span>
-        </div>))}
-      <p className="small" style={{ margin: "8px 0 0" }}>{sample ? "Sample numbers. Real counts show once a city passes 100 members."
-        : "A city shows its count once it passes 100 members."}</p>
+        <Link key={c.slug} href={`/dating/${c.slug}`} className="city">
+          <strong>{c.name}</strong>
+          <span className={`n ${c.status === "live" ? "live" : ""}`}>{c.status === "live" ? "Open now" : c.members === null ? "Counting" : `${c.members.toLocaleString("en-IN")} of ${c.unlock_threshold.toLocaleString("en-IN")}`}</span>
+          <span className="track" role="img" aria-label={c.status === "live" ? `${c.name} is open` : c.members === null ? `${c.name}: counting` : `${c.name}: ${c.members} of ${c.unlock_threshold}`}>
+            <span className="fill" style={{ display: "block", width: c.status === "live" ? "100%" : c.members === null ? "3%" : `${Math.min(100, (c.members / c.unlock_threshold) * 100)}%` }} />
+          </span>
+        </Link>))}
+      <p className="c-note">{sample ? "Sample numbers. Real counts show once a city passes 100 members." : "A city shows its count once it passes 100 members."}</p>
     </div>
   );
 }

@@ -16,8 +16,8 @@ export function SiteHeader() {
           <Link href="/kundli-matching">Kundli matching</Link>
           <Link href="/compatibility">Compatibility</Link>
         </nav>
-        <Link href="/start" className="pill-btn ghost">Sign in</Link>
-        <Link href="/#join" className="pill-btn">Join</Link>
+        <Link href="/start" className="signin">Sign in</Link>
+        <Link href="/#join" className="pill-btn">Join the list</Link>
       </div>
     </header>
   );
@@ -30,8 +30,8 @@ export function SiteFooter() {
         <div className="cols">
           <div>
             <div className="wordmark">Likha<span>.</span></div>
-            <p style={{ fontSize: 14, maxWidth: 300 }}>Real people, matched by your kundli. Dating is free. Jo likha hai, woh milega.</p>
-            <p style={{ fontSize: 13 }}>18+ only.</p>
+            <p className="deva" lang="hi">जो लिखा है, वो मिलेगा</p>
+            <p style={{ fontSize: 14, maxWidth: 300 }}>Real people, matched by your kundli. Dating is free. For people 18 and over.</p>
           </div>
           <div><h4>Likha</h4>
             <Link href="/how-it-works">How it works</Link><Link href="/safety">Safety</Link><Link href="/check-your-crush">Check your crush</Link>
@@ -41,7 +41,7 @@ export function SiteFooter() {
           <div><h4>Cities</h4>{CITY_PAGES.map((c) => <Link key={c.slug} href={`/dating/${c.slug}`}>Dating in {c.name}</Link>)}</div>
         </div>
         <div className="legal">
-          <span>A Young Attitude Group company · Jaipur</span>
+          <span>A Young Attitude Group company, Jaipur</span>
           <span style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             <Link href="/legal/terms">Terms</Link><Link href="/legal/privacy">Privacy</Link><Link href="/legal/refunds">Refunds</Link>
             <Link href="/legal/disclaimer">Disclaimer</Link><Link href="/help">Grievance Officer</Link></span>
@@ -88,11 +88,18 @@ export function Faq({ items }: { items: [string, string][] }) {
   );
 }
 
-export function RashiLinks({ title = "Explore the 12 rashis" }: { title?: string }) {
+export function RashiLinks({ title = "Find your rashi on the wheel" }: { title?: string }) {
   return (
-    <section className="tight"><div className="wrap">
-      <div className="sec-head"><h2>{title}</h2></div>
-      <div className="grid4">{RASHIS.map((r) => <Link key={r.slug} className="tile" href={`/rashi/${r.slug}`}><strong>{r.hi} · {r.en}</strong><span>{r.deva} · ruled by {r.lord}</span></Link>)}</div>
+    <section className="wheel-sec"><div className="wrap grid">
+      <div className="sec-head" style={{ marginBottom: 0 }}>
+        <h2>{title}</h2>
+        <p className="lead">Your rashi is your Moon sign: the heart of a Vedic chart and of kundli matching. Each one loves a little differently.</p>
+        <p><Link href="/compatibility">See how every pair of signs gets along</Link></p>
+      </div>
+      <nav className="wheel" aria-label="The 12 rashis">
+        {RASHIS.map((r) => <Link key={r.slug} href={`/rashi/${r.slug}`} style={{ ["--a" as string]: `${r.i * 30}deg` }}><b>{r.hi}</b><small>{r.en}</small></Link>)}
+        <div className="hub"><Link href="/moon-sign-calculator">Don&apos;t know yours? Find it</Link></div>
+      </nav>
     </div></section>
   );
 }

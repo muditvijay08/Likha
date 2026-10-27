@@ -38,7 +38,14 @@ export default async function PairPage({ params }: { params: Promise<{ pair: str
       </div></section>
       <section className="tight"><div className="wrap narrow">
         <div className="panel" style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
-          <div className="score" aria-label={`${p.points} of 12 Moon-sign points`}><b>{p.points}</b><span>/ 12</span></div>
+          <div className="ring" role="img" aria-label={`${p.points} of 12 Moon-sign points`}>
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFB020" /><stop offset="1" stopColor="#E8457A" /></linearGradient></defs>
+              <circle className="bg" cx="60" cy="60" r="50" />
+              {p.points > 0 && <circle className="fg" cx="60" cy="60" r="50" pathLength={12} strokeDasharray={`${p.points} 12`} />}
+            </svg>
+            <div className="val"><div><b>{p.points}</b><span>of 12</span></div></div>
+          </div>
           <div className="stack" style={{ gap: 8, flex: 1, minWidth: 220 }}>
             <span className={`badge ${p.band === "strong" || p.band === "good" ? "green" : p.band === "mixed" ? "" : "rose"}`} style={{ alignSelf: "flex-start" }}>{BAND_WORD[p.band]}</span>
             <span className="sub">Graha Maitri {p.maitri} of 5 · Bhakoot {bkPoints} of 7{bk.dosha ? (bk.cancelled ? " (dosha cancelled)" : " (Bhakoot dosha)") : ""}. The other 24 Gunas depend on your two nakshatras.</span>
