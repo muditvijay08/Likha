@@ -41,9 +41,9 @@ export default function Login() {
           <button className="btn big" disabled={busy || !email.includes("@")}>Send code</button>
         </>}
         {step === "code" && <>
-          <p className="sub">We sent a 6-digit code to {email}.</p>
-          <label className="f">Code<input className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} /></label>
-          <button className="btn big" disabled={busy || code.trim().length !== 6}>Continue</button>
+          <p className="sub">We sent a sign-in code to {email}.</p>
+          <label className="f">Code<input className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} /></label>
+          <button className="btn big" disabled={busy || code.length < 6}>Continue</button>
         </>}
         {step === "enroll" && enroll && <>
           <h2>Set up your authenticator app</h2>
