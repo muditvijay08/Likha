@@ -19,7 +19,7 @@ export default function InvoicePage() {
       <div className="row no-print" style={{ justifyContent: "space-between" }}><BackButton href="/plans" /><button type="button" className="btn ghost" style={{ width: "auto", padding: "0 16px", height: 40 }} onClick={() => print()}>Print or save PDF</button></div>
       <article className="card stack" style={{ gap: 12, borderRadius: 18, fontSize: 13, lineHeight: 1.5 }}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 15 }}>{iv.company.legal_name}</strong><span>{iv.company.address}</span><span>GSTIN {iv.company.gstin} · CIN {iv.company.cin}</span></div>
+          <div className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 15 }}>{iv.company.legal_name}</strong><span>{iv.company.address}</span>{(iv.company.gstin || iv.company.cin) && <span>{[iv.company.gstin && `GSTIN ${iv.company.gstin}`, iv.company.cin && `CIN ${iv.company.cin}`].filter(Boolean).join(" · ")}</span>}</div>
           <div className="wordmark" style={{ fontSize: 20 }}>Likha<span>.</span></div>
         </div>
         <strong style={{ fontSize: 16 }}>Tax invoice</strong>

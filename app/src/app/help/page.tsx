@@ -93,13 +93,13 @@ function Help() {
             <ErrorNote error={t2.error} />
             <Primary onClick={grieve} busy={t2.busy} disabled={!detail.trim()}>Submit grievance</Primary>
           </>}
-          <span className="small">Grievance Officer: {g?.name ?? "[NAME]"}, {g?.email ?? "grievance@likha.in"}</span>
+          <span className="small">Grievance Officer: {g?.name ?? "Mudit Dudhoria"}, {g?.email ?? "grievance@likha.in"}</span>
         </section>
       </> : (
         <div className="card stack" style={{ gap: 6, borderRadius: 18 }}>
           <strong>Write to us</strong>
           <a href="mailto:help@likha.in">help@likha.in</a>
-          <span className="small">Grievance Officer: {g?.name ?? "[NAME]"}, <a href={`mailto:${g?.email ?? "grievance@likha.in"}`}>{g?.email ?? "grievance@likha.in"}</a>. We acknowledge within {g?.ack_hours ?? 24} hours and resolve within {g?.resolve_days ?? 15} days.</span>
+          <span className="small">Grievance Officer: {g?.name ?? "Mudit Dudhoria"}, <a href={`mailto:${g?.email ?? "grievance@likha.in"}`}>{g?.email ?? "grievance@likha.in"}</a>. We acknowledge within {g?.ack_hours ?? 24} hours and resolve within {g?.resolve_days ?? 15} days.</span>
         </div>
       )}
       <div className="row small" style={{ gap: 12, flexWrap: "wrap" }}>

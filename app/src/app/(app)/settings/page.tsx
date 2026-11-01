@@ -71,7 +71,7 @@ export default function Settings() {
           <Link href="/legal/terms">Terms, privacy and refunds<span aria-hidden="true">›</span></Link>
         </div>
         <div className="stack" style={{ gap: 4, padding: "12px 14px", borderRadius: 16, background: "#F3EEFF", fontSize: 13 }}>
-          <strong>Grievance Officer: {g?.name ?? "[NAME]"}</strong>
+          <strong>Grievance Officer: {g?.name ?? "Mudit Dudhoria"}</strong>
           <span>{g?.email ?? "grievance@likha.in"} · reply within {g?.ack_hours ?? 24} hours, resolved within {g?.resolve_days ?? 15} days</span>
           <Link href="/help#grievance">File a grievance</Link>
         </div>

@@ -10,7 +10,7 @@
   ],
   [
    "p",
-   "Likha is run by [COMPANY NAME] Private Limited, Jaipur, Rajasthan (\"we\"). By using Likha you agree to these terms."
+   "Likha is run by {company} (\"we\"). By using Likha you agree to these terms."
   ],
   [
    "h2",
@@ -122,7 +122,7 @@
   ],
   [
    "strong",
-   "[NAME]"
+   "{grievance}"
   ]
  ],
  "privacy": [
@@ -248,7 +248,7 @@
   ],
   [
    "strong",
-   "[NAME]"
+   "{grievance}"
   ]
  ],
  "refunds": [
@@ -318,7 +318,7 @@
   ],
   [
    "strong",
-   "[NAME]"
+   "{grievance}"
   ]
  ],
  "disclaimer": [
@@ -388,7 +388,7 @@
   ],
   [
    "strong",
-   "[NAME]"
+   "{grievance}"
   ]
  ],
  "help": [
