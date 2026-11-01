@@ -82,10 +82,18 @@ export class SupabaseApi implements Api {
 
   async signOut() { const { releasePush } = await import("../push"); await releasePush(); await this.sb.auth.signOut(); }
 
-  async settings(): Promise<PublicSettings> {
-    const { data, error } = await this.sb.rpc("public_settings");
-    fail(error, "Settings");
-    return data as PublicSettings;
+  // Public settings change rarely: share one request between every caller for 5 minutes (gates, flow, push, places).
+  private settingsAsk: { at: number; p: Promise<PublicSettings> } | null = null;
+  settings(): Promise<PublicSettings> {
+    if (this.settingsAsk && Date.now() - this.settingsAsk.at < 300_000) return this.settingsAsk.p;
+    const p = (async () => {
+      const { data, error } = await this.sb.rpc("public_settings");
+      fail(error, "Settings");
+      return data as PublicSettings;
+    })();
+    this.settingsAsk = { at: Date.now(), p };
+    p.catch(() => { this.settingsAsk = null; });
+    return p;
   }
 
   async myFeatures() { return this.rpc<Record<string, boolean>>("my_features"); }
