@@ -276,11 +276,27 @@ export class SupabaseApi implements Api {
     return rows.map((r) => ({ ...r, photos: (r.photos ?? []).map((x) => url.get(x) ?? "").filter(Boolean) }));
   }
 
-  async home(): Promise<HomeData> {
+  // Opening the app starts Home and prices while the sign-in check runs (prefetchHome). The first home()/prices()
+  // within 10 s takes that answer once; every later call (after a purchase, say) asks the database again.
+  private earlyHome: { at: number; p: Promise<HomeData> } | null = null;
+  private earlyPrices: { at: number; p: Promise<Prices> } | null = null;
+  private async fetchHome(): Promise<HomeData> {
     const h = await this.rpc<HomeData>("app_home");
     return { ...h, top: await this.sign(h.top ?? []) };
   }
-  async prices(): Promise<Prices> { return this.rpc<Prices>("my_prices"); }
+  prefetchHome() {
+    const at = Date.now();
+    this.earlyHome = { at, p: this.fetchHome() }; this.earlyHome.p.catch(() => {});
+    this.earlyPrices = { at, p: this.rpc<Prices>("my_prices") }; this.earlyPrices.p.catch(() => {});
+  }
+  home(): Promise<HomeData> {
+    const e = this.earlyHome; this.earlyHome = null;
+    return e && Date.now() - e.at < 10_000 ? e.p : this.fetchHome();
+  }
+  prices(): Promise<Prices> {
+    const e = this.earlyPrices; this.earlyPrices = null;
+    return e && Date.now() - e.at < 10_000 ? e.p : this.rpc<Prices>("my_prices");
+  }
   async unlockKick(): Promise<Kick> {
     await this.rpc("unlock_kick", {}, "Unlocking your Kick");
     return this.rpc<Kick>("get_kick");

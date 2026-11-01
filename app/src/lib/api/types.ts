@@ -250,6 +250,8 @@ export interface CrushLanding { name: string; open: boolean }
 export interface GiftLanding { name: string; from: string; note: string | null; kind: string; deliver_on: string; open: boolean }
 
 export interface Api {
+  /** Real backend only: start Home and prices early, used once by the next home()/prices(). */
+  prefetchHome?(): void;
   readonly demo: boolean;
   sendOtp(phoneE164: string, channel: "sms" | "whatsapp"): Promise<void>;
   verifyOtp(phoneE164: string, code: string): Promise<void>;

@@ -15,12 +15,13 @@ $$;
 revoke all on function private.call_function(text, jsonb) from public, anon, authenticated;
 
 select cron.unschedule(jobname) from cron.job where jobname in ('kundli-worker','kick-tick','payment-recheck','payouts','tiers','readings','safety','push','waitlist-sms',
-  'kick-catchup','lift-suspensions','city-unlocks','fraud-scan','crush-expiry','plan-reminders','retention','ai-close-stale');
+  'kick-catchup','kundli-warm','lift-suspensions','city-unlocks','fraud-scan','crush-expiry','plan-reminders','retention','ai-close-stale');
 
 -- Edge Functions (times are UTC; IST = UTC + 5:30)
-select cron.schedule('kundli-worker',   '* * * * *',    $$ select private.call_function('kundli-worker') $$);              -- queued kundlis
-select cron.schedule('readings',        '* * * * *',    $$ select private.call_function('reading-worker') $$);             -- paid readings still waiting
-select cron.schedule('push',            '* * * * *',    $$ select private.call_function('push-worker') $$);                -- push notifications
+select cron.schedule('kundli-worker',   '* * * * *',    $$ select private.call_function('kundli-worker') where exists (select 1 from private.kundli_jobs j where j.status = 'queued' or (j.status = 'running' and j.updated_at < now() - interval '5 minutes' and j.attempts < 5)) $$);  -- queued kundlis, only when there are any
+select cron.schedule('readings',        '* * * * *',    $$ select private.call_function('reading-worker') where exists (select 1 from public.readings x where x.status = 'generating' and (x.writing_until is null or x.writing_until < now()) and x.created_at < now() - interval '30 seconds') $$);  -- paid readings still waiting
+select cron.schedule('push',            '* * * * *',    $$ select private.call_function('push-worker') where exists (select 1 from public.notifications n where n.channel = 'push' and n.sent_at is null) $$);  -- push notifications waiting
+select cron.schedule('kundli-warm',     '*/10 * * * *', $$ select private.kundli_keep_warm() $$);                         -- keeps the Render free-tier engine awake
 select cron.schedule('kick-tick',       '*/15 * * * *', $$ select private.call_function('kick-batch', '{"step":"tick"}') $$);  -- Daily Kick at the time set in Admin
 select cron.schedule('kick-catchup',    '40 * * * *',   $$ select private.call_function('kick-batch', '{"step":"collect"}') $$);  -- Kick for members who joined after the batch (Gemini/OpenAI)
 select cron.schedule('payment-recheck', '*/15 * * * *', $$ select private.call_function('payment-recheck') $$);            -- paid but not credited

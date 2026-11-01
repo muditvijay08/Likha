@@ -22,6 +22,8 @@ function PendingClaim() {
 }
 
 export default function AppLayout({ children }: { children: ReactNode }) {
+  // Start Home's data now, in parallel with the sign-in check below (AppProvider picks up the same request).
+  useEffect(() => { api().signedIn().then((yes) => { if (yes) api().prefetchHome?.(); }).catch(() => {}); }, []);
   const s = useGuard();
   const router = useRouter();
   const path = usePathname();
