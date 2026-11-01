@@ -47,3 +47,6 @@ verify_jwt = false        # Supabase Auth Send SMS hook (Standard Webhooks signa
 # public link: likha.in/c/<code>
 [functions.cupid-redirect]
 verify_jwt = false
+
+[functions.seed-sample-photos]
+verify_jwt = false
