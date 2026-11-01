@@ -67,7 +67,7 @@ function Chat() {
   const lastMineSeen = [...c.messages].reverse().find((m) => m.mine && m.read_at);
 
   return (
-    <div className="app-body flush" style={{ paddingBottom: 0, minHeight: "calc(100dvh - 26px)" }}>
+    <div className="app-body flush" style={{ paddingBottom: "calc(76px + env(safe-area-inset-bottom))", minHeight: "calc(100dvh - 26px)" }}>
       <header className="row" style={{ gap: 10, padding: "16px 16px 12px", borderBottom: "1px solid #ECE6FA", background: "#fff", position: "sticky", top: 0, zIndex: 5 }}>
         <button type="button" aria-label="Back" className="iconbtn" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push("/matches")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
@@ -108,7 +108,8 @@ function Chat() {
       </div>
 
       <div style={{ position: "sticky", bottom: "calc(76px + env(safe-area-inset-bottom))", background: "var(--bg)", zIndex: 4 }}>
-        <div className="row" style={{ gap: 8, padding: "0 16px 10px", overflowX: "auto", scrollbarWidth: "none" }}>
+        <div className="row" style={{ gap: 8, padding: "10px 32px 10px 16px", overflowX: "auto", scrollbarWidth: "none", borderTop: "1px solid #ECE6FA",
+          maskImage: "linear-gradient(to right, #000 calc(100% - 40px), transparent)", WebkitMaskImage: "linear-gradient(to right, #000 calc(100% - 40px), transparent)" }}>
           {[[`/guru/${c.match_id}`, "Ask Guru Ji", "#E4F4EE", "#1F5E49"], [`/universe/${c.match_id}`, "Our Universe", "#EDE6FF", "#3D3560"], [`/story/${c.match_id}`, "Our Story", "#FFF0F4", "#A3164C"],
             [`/golden/${c.match_id}`, "Golden Hours", "#FFF3D6", "#8A4300"], [`/share-date?match=${c.match_id}`, "Share my date", "#fff", "var(--ink)"]].map(([href, label, bg, fg]) => (
             <Link key={label} href={href} style={{ flex: "none", padding: "8px 12px", borderRadius: 999, background: bg, border: bg === "#fff" ? "1px solid var(--line)" : 0, color: fg, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>{label}</Link>
