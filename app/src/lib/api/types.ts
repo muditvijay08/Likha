@@ -138,6 +138,8 @@ export interface HomeData {
   first_name: string; gender: Gender; tier: Tier; status: string; pct: number; city: HomeCity | null; balance: number;
   kick: Kick | null; kick_pass: boolean; kick_price: number; streak: number; likes_count: number; top: Card[];
   feature: { key: string; title: string; body: string; link: string; reward: number; day: number } | null; unread: number;
+  /** Unread Activity notices (the Home bell). */
+  notices?: number;
 }
 export interface Pulse { city: string; matches_last_hour: number; top_score: number | null; minutes_ago: number }
 export interface Filters {

@@ -46,6 +46,11 @@ export default function Home() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E07B00" strokeWidth="2.2" aria-hidden="true"><path d="M12 3c2 4 6 5 6 10a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 4 4 0-3 0-5 0-7z" /></svg>{home.streak}
           </span>
           <Link href="/wallet" className="pillbtn credits tip tip-r" data-tip="Your credits. 1 credit = ₹1"><Coin />{home.balance}</Link>
+          <Link href="/inbox" className="pillbtn bell tip tip-r" data-tip={home.notices ? `${home.notices} new: likes, matches and readings` : "Activity: likes, matches and readings"}
+            aria-label={home.notices ? `Activity, ${home.notices} new` : "Activity"}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10.3 20a1.9 1.9 0 0 0 3.4 0" /></svg>
+            {!!home.notices && <span className="bell-dot" aria-hidden="true">{home.notices > 9 ? "9+" : home.notices}</span>}
+          </Link>
         </div>
       </header>
 
@@ -53,7 +58,7 @@ export default function Home() {
         <div className="row" role="note" aria-label="Announcement" style={{ gap: 10, padding: "12px 14px", borderRadius: 18, background: "#FFF3D6" }}>
           {notice.link ? <Link href={notice.link} style={{ flex: 1, color: "var(--ink)", fontWeight: 600, fontSize: 14, textDecoration: "none" }}>{notice.text}</Link>
             : <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{notice.text}</span>}
-          <button type="button" onClick={closeNotice} aria-label="Close announcement" style={{ background: "none", border: 0, fontSize: 18, color: "var(--muted)" }}>×</button>
+          <button type="button" onClick={closeNotice} aria-label="Close announcement" className="tip tip-r" data-tip="Close" style={{ background: "none", border: 0, fontSize: 18, color: "var(--muted)" }}>×</button>
         </div>
       )}
       {asks.map((q) => (

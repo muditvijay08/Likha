@@ -81,6 +81,7 @@ select pg_temp.act_as('d0000000-0000-0000-0000-000000000001');
 select pg_temp.check('D5 likes_me: two, newest first, with the note and new flag', $q$select jsonb_array_length(l) = 2 and l -> 0 ->> 'first_name' = 'Kabir'
   and l -> 1 ->> 'note' = 'Chai at Tapri?' and (l -> 0 ->> 'new')::boolean from (select public.likes_me() l) x$q$);
 select pg_temp.check('H1 likes_count = 2', $q$select (public.app_home() ->> 'likes_count')::int = 2$q$);
+select pg_temp.check('H1 bell counts unread notices', $q$select (public.app_home() ->> 'notices')::int = (select count(*) from public.notifications where user_id = auth.uid() and not is_marketing and read_at is null)$q$);
 select pg_temp.check('D1 card says Aarav liked me', $q$select (public.discover_cards(10,0) -> 0 ->> 'liked_me')::boolean$q$);
 select pg_temp.step('mark_likes_seen', $q$select public.mark_likes_seen()$q$);
 select pg_temp.check('likes are no longer new', $q$select not (public.likes_me() -> 0 ->> 'new')::boolean$q$);

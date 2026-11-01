@@ -271,7 +271,7 @@ export class DemoApi implements Api {
       balance: this.balance(db), kick: this.kick(db), kick_pass: (db.subs?.kick_pass ?? 0) > Date.now(), kick_price: PRICES.daily_kick, streak: db.kickOpen === today() ? 1 : 0,
       likes_count: (await this.likesMe()).length, top: this.visible(db).slice(0, 4),
       feature: { key: "golden_hours", title: "Golden Hours", body: "The best time to text each match. Try it, +5 credits", link: "/matches", reward: 5, day: Math.max(day, 2) },
-      unread: 0,
+      unread: 0, notices: (await this.notices()).filter((n) => !n.read).length,
     };
   }
   /** Like the database: the first Cosmic Like each IST week is free (Admin > Pricing > free Cosmic Likes). */

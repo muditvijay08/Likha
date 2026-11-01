@@ -6,6 +6,7 @@ import { BackButton, ErrorNote } from "@/components/ui";
 import { Toggle, useApp } from "@/components/app";
 import { InstallCard } from "@/components/install";
 import { api, type MyProfile, type NotifPrefs } from "@/lib/api";
+import { enablePush, pushState } from "@/lib/push";
 import { useFlow } from "@/lib/flow";
 
 const sec = { fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "var(--muted)" } as const;
@@ -23,6 +24,16 @@ export default function Settings() {
   const pause = (v: boolean) => { setP({ ...p!, paused: v }); go(() => api().saveProfile({ paused: v }), v ? "Profile paused. Chats stay." : "You're back in Discover"); };
   const logout = async () => { await api().signOut(); location.href = "/start"; };
   const g = settings?.grievance_officer;
+  const [device, setDevice] = useState<ReturnType<typeof pushState>>("unsupported");
+  useEffect(() => { setDevice(pushState()); }, []);
+  const allow = async () => {
+    const r = await enablePush().catch(() => "unsupported" as const);
+    if (r === "not-set-up") { setError("Notifications aren't switched on for Likha yet. Try again later."); return; }
+    setDevice(pushState());
+    if (r === "granted") toast("Notifications on for this device");
+  };
+  const DEVICE = { on: "On", off: "Off", blocked: "Blocked in your browser settings", unsupported: "This browser can't show notifications",
+    "ios-needs-install": "Add Likha to your Home Screen first, then open it from there" } as const;
 
   return (
     <div className="app-body pad" style={{ gap: 14 }}>
@@ -39,6 +50,10 @@ export default function Settings() {
           </div></div>
         <div className="stack"><span style={sec}>NOTIFICATIONS</span>
           <div className="listcard" style={{ padding: 0 }}>
+            <div className="row" style={{ justifyContent: "space-between", gap: 12, padding: "12px 16px", fontSize: 14 }}>
+              <span className="stack" style={{ gap: 2 }}><span>On this device</span><span style={{ fontSize: 12, color: device === "on" ? "var(--green)" : "var(--muted)" }}>{DEVICE[device]}</span></span>
+              {device === "off" && <button type="button" className="btn" onClick={allow} style={{ height: 36, width: "auto", flex: "none", padding: "0 16px", fontSize: 13 }}>Turn on</button>}
+            </div>
             <label htmlFor="n-kick" className="row" style={{ justifyContent: "space-between", padding: "12px 16px", fontSize: 14 }}>Daily Kick time
               <input id="n-kick" type="time" value={n.kick_time} onChange={(e) => setPref({ kick_time: e.target.value })} style={{ border: 0, font: "700 14px var(--sans)", background: "transparent", color: "var(--ink)" }} /></label>
             <Toggle id="n-likes" label="New likes" checked={n.new_likes} onChange={(v) => setPref({ new_likes: v })} />

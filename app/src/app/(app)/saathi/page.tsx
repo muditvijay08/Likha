@@ -127,7 +127,7 @@ export default function Saathi() {
   return (
     <div className="app-body flush" style={{ paddingBottom: 0, minHeight: "calc(100dvh - 26px)" }}>
       <header className="row" style={{ gap: 10, padding: "16px 16px 12px", background: "#fff", borderBottom: "1px solid #ECE6FA", position: "sticky", top: 0, zIndex: 5 }}>
-        <button type="button" aria-label="Back" className="iconbtn" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push("/matches")}>
+        <button type="button" aria-label="Back" className="iconbtn tip" data-tip="Back" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push("/matches")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
         <Sparkle />
         <span className="stack" style={{ gap: 0, flex: 1 }}>
@@ -162,7 +162,7 @@ export default function Saathi() {
         {longChat && !breakClosed && (
           <div className="row" role="note" aria-label="Take a break" style={{ gap: 8, margin: "0 16px 10px", padding: "10px 12px", borderRadius: 12, background: "#FFF3D6", fontSize: 13 }}>
             <span style={{ flex: 1 }}>You&apos;ve been chatting with {name} for a while. Maybe a short break, or a hello to one of <Link href="/matches">your matches</Link>?</span>
-            <button type="button" aria-label="Close" onClick={() => setBreakClosed(true)} style={{ background: "none", border: 0, fontSize: 18 }}>×</button>
+            <button type="button" aria-label="Close" className="tip tip-r" data-tip="Close" onClick={() => setBreakClosed(true)} style={{ background: "none", border: 0, fontSize: 18 }}>×</button>
           </div>)}
         <ErrorNote error={error} />
         {s.left > 0 ? (
@@ -170,7 +170,7 @@ export default function Saathi() {
             <label htmlFor="ai-msg" className="sr">Message {name}</label>
             <input id="ai-msg" value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder={`Talk to ${name}`} autoComplete="off"
               style={{ flex: 1, minWidth: 0, height: 44, borderRadius: 999, border: "1px solid var(--line)", background: "var(--bg)", padding: "0 16px", font: "500 14px var(--sans)", color: "var(--ink)" }} />
-            <button type="submit" aria-label="Send" disabled={busy || !text.trim()} style={{ width: 44, height: 44, flex: "none", borderRadius: 999, background: "var(--saffron)", border: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <button type="submit" aria-label="Send" className="tip tip-r tip-up" data-tip="Send" disabled={busy || !text.trim()} style={{ width: 44, height: 44, flex: "none", borderRadius: 999, background: "var(--saffron)", border: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1838" strokeWidth="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z" /></svg></button>
           </form>
         ) : (

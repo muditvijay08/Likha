@@ -48,8 +48,8 @@ export default function Profile() {
         <Link href={`/safety/report?user=${p.id}`} aria-label="Report or block" className="tip tip-r" data-tip="Report or block" style={{ ...round, right: 16 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg></Link>
         {n > 1 && <>
-          <button type="button" aria-label="Previous photo" onClick={() => setPhoto((photo + n - 1) % n)} style={{ position: "absolute", left: 0, top: 70, bottom: 30, width: "40%", background: "transparent", border: 0 }} />
-          <button type="button" aria-label="Next photo" onClick={() => setPhoto((photo + 1) % n)} style={{ position: "absolute", right: 0, top: 70, bottom: 30, width: "40%", background: "transparent", border: 0 }} />
+          <button type="button" aria-label="Previous photo" className="tip" data-tip="Previous photo" onClick={() => setPhoto((photo + n - 1) % n)} style={{ position: "absolute", left: 0, top: 70, bottom: 30, width: "40%", background: "transparent", border: 0 }} />
+          <button type="button" aria-label="Next photo" className="tip tip-r" data-tip="Next photo" onClick={() => setPhoto((photo + 1) % n)} style={{ position: "absolute", right: 0, top: 70, bottom: 30, width: "40%", background: "transparent", border: 0 }} />
           <div aria-hidden="true" style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6 }}>
             {p.photos.map((_, i) => <span key={i} style={{ width: 22, height: 4, borderRadius: 999, background: i === photo ? "#fff" : "rgba(255,255,255,0.5)" }} />)}
           </div>

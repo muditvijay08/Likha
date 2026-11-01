@@ -31,7 +31,7 @@ export default function Guru() {
   return (
     <div className="app-body flush" style={{ background: G.bg, paddingBottom: 0, minHeight: "calc(100dvh - 26px)" }}>
       <header className="row" style={{ gap: 10, padding: 16, background: "#fff", borderBottom: `1px solid ${G.line}`, position: "sticky", top: 0, zIndex: 5 }}>
-        <button type="button" aria-label="Back" className="iconbtn" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push(`/chat/${id}`)}>
+        <button type="button" aria-label="Back" className="iconbtn tip" data-tip="Back to chat" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push(`/chat/${id}`)}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
         <span className="stack" style={{ gap: 0, flex: 1 }}><strong style={{ fontSize: 15 }}>Guru Ji</strong>
           <span style={{ fontSize: 12, color: "var(--muted)" }}>{g ? `About you and ${g.other_name} · ${g.left} of ${g.allowed} questions left` : "…"}</span></span>
@@ -75,7 +75,7 @@ export default function Guru() {
             <label htmlFor="guru-msg" className="sr">Ask Guru Ji</label>
             <input id="guru-msg" value={text} onChange={(e) => setText(e.target.value)} maxLength={600} placeholder="Ask about you two" autoComplete="off"
               style={{ flex: 1, minWidth: 0, height: 44, borderRadius: 999, border: `1px solid ${G.line}`, background: G.bg, padding: "0 16px", font: "500 14px var(--sans)", color: "var(--ink)" }} />
-            <button type="submit" disabled={busy || !text.trim()} aria-label="Ask"
+            <button type="submit" disabled={busy || !text.trim()} aria-label="Ask" className="tip tip-r tip-up" data-tip="Ask Guru Ji"
               style={{ width: 44, height: 44, flex: "none", borderRadius: 999, background: "var(--saffron)", border: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1838" strokeWidth="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z" /></svg></button>
           </form>

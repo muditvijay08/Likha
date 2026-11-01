@@ -61,6 +61,15 @@ export async function syncPush() {
   try { const OS = await oneSignal(id); await save(OS); } catch { /* blocked or offline */ }
 }
 
+/** What the Settings row shows for this device. Never asks. */
+export function pushState(): "on" | "off" | "blocked" | "unsupported" | "ios-needs-install" {
+  if (typeof window === "undefined") return "unsupported";
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (ios && !window.matchMedia("(display-mode: standalone)").matches) return "ios-needs-install";
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) return "unsupported";
+  return Notification.permission === "granted" ? "on" : Notification.permission === "denied" ? "blocked" : "off";
+}
+
 /** Signing out: this device stops getting this member's notifications. */
 export async function releasePush() {
   let id: string | null = null;
