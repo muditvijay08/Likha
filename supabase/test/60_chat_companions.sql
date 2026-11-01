@@ -78,8 +78,15 @@ select pg_temp.act_as_server();
 select pg_temp.step('gateway fails: question given back', $q$select public.svc_guru_failed('ee000000-0000-0000-0000-000000000001', (public.svc_guru_pending('ee000000-0000-0000-0000-000000000001') ->> 'id')::bigint)$q$);
 select pg_temp.act_as('e0000000-0000-0000-0000-000000000001');
 select pg_temp.check('failed question not counted (still 2 left)', $q$select (public.guru_state('ee000000-0000-0000-0000-000000000001') ->> 'left')::int = 2$q$);
+select pg_temp.step('question whose answer never arrives', $q$select public.ask_guru('ee000000-0000-0000-0000-000000000001', 'stale q')$q$);
+select pg_temp.act_as_server();
+update public.guru_messages set created_at = now() - interval '3 minutes' where body = 'stale q';
+select pg_temp.act_as('e0000000-0000-0000-0000-000000000001');
+select pg_temp.check('after 2 minutes it is given back: not counted, not waiting, hidden', $q$select (g ->> 'left')::int = 2 and not (g ->> 'waiting')::boolean
+  and not exists (select 1 from jsonb_array_elements(g -> 'messages') m where m ->> 'body' = 'stale q') from (select public.guru_state('ee000000-0000-0000-0000-000000000001') g) x$q$);
 select pg_temp.step('second question', $q$select public.ask_guru('ee000000-0000-0000-0000-000000000001', 'q2')$q$);
 select pg_temp.act_as_server();
+select pg_temp.check('the next question clears it, so the gateway answers the new one', $q$select public.svc_guru_pending('ee000000-0000-0000-0000-000000000001') ->> 'body' = 'q2'$q$);
 update public.guru_messages set answered = true where match_id = 'ee000000-0000-0000-0000-000000000001';
 select pg_temp.act_as('e0000000-0000-0000-0000-000000000001');
 select pg_temp.step('third question', $q$select public.ask_guru('ee000000-0000-0000-0000-000000000001', 'q3')$q$);
