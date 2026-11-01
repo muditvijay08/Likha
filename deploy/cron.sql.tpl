@@ -15,13 +15,14 @@ $$;
 revoke all on function private.call_function(text, jsonb) from public, anon, authenticated;
 
 select cron.unschedule(jobname) from cron.job where jobname in ('kundli-worker','kick-tick','payment-recheck','payouts','tiers','readings','safety','push','waitlist-sms',
-  'lift-suspensions','city-unlocks','fraud-scan','crush-expiry','plan-reminders','retention','ai-close-stale');
+  'kick-catchup','lift-suspensions','city-unlocks','fraud-scan','crush-expiry','plan-reminders','retention','ai-close-stale');
 
 -- Edge Functions (times are UTC; IST = UTC + 5:30)
 select cron.schedule('kundli-worker',   '* * * * *',    $$ select private.call_function('kundli-worker') $$);              -- queued kundlis
 select cron.schedule('readings',        '* * * * *',    $$ select private.call_function('reading-worker') $$);             -- paid readings still waiting
 select cron.schedule('push',            '* * * * *',    $$ select private.call_function('push-worker') $$);                -- push notifications
 select cron.schedule('kick-tick',       '*/15 * * * *', $$ select private.call_function('kick-batch', '{"step":"tick"}') $$);  -- Daily Kick at the time set in Admin
+select cron.schedule('kick-catchup',    '40 * * * *',   $$ select private.call_function('kick-batch', '{"step":"collect"}') $$);  -- Kick for members who joined after the batch (Gemini/OpenAI)
 select cron.schedule('payment-recheck', '*/15 * * * *', $$ select private.call_function('payment-recheck') $$);            -- paid but not credited
 select cron.schedule('safety',          '*/5 * * * *',  $$ select private.call_function('safety-worker') $$);              -- date check-ins, selfie cleanup
 select cron.schedule('waitlist-sms',    '*/5 * * * *',  $$ select private.call_function('waitlist', '{"action":"notify"}') $$);  -- "your city is open" SMS
