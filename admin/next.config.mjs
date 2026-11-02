@@ -15,6 +15,8 @@ const csp = [
 ].join("; ");
 
 const nextConfig = {
+  // Self-hosted builds (deploy/vps) set LIKHA_STANDALONE=1 for a small server bundle; Vercel builds ignore it.
+  ...(process.env.LIKHA_STANDALONE === "1" ? { output: "standalone" } : {}),
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {

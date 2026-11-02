@@ -1,0 +1,69 @@
+# Likha on one VPS: member app + website, admin console, kundli engine, behind Caddy (automatic HTTPS).
+# Supabase (database, logins, storage, server functions) stays on Supabase. Settings come from deploy/vps/.env,
+# written by install.sh. Only Caddy is reachable from outside; the three services listen on the internal network.
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+
+services:
+  app:
+    <<: *hardening
+    build:
+      context: ../../app
+      dockerfile: ../deploy/vps/web.Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:?set SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?set SUPABASE_ANON_KEY}
+    expose: ["3000"]
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/open"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  admin:
+    <<: *hardening
+    build:
+      context: ../../admin
+      dockerfile: ../deploy/vps/web.Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:?set SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?set SUPABASE_ANON_KEY}
+    expose: ["3000"]
+    mem_limit: 512m
+
+  kundli:
+    <<: *hardening
+    build: ../../kundli
+    environment:
+      LIKHA_KUNDLI_KEY: ${LIKHA_KUNDLI_KEY:?set LIKHA_KUNDLI_KEY}
+    expose: ["8080"]
+    read_only: true
+    tmpfs: ["/tmp"]
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  caddy:
+    <<: *hardening
+    image: caddy:2.8
+    depends_on: [app, admin, kundli]
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?set ADMIN_DOMAIN}
+      KUNDLI_DOMAIN: ${KUNDLI_DOMAIN:?set KUNDLI_DOMAIN}
+      SUPABASE_HOST: ${SUPABASE_HOST:?set SUPABASE_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

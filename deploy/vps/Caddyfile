@@ -1,0 +1,36 @@
+(common) {
+	encode zstd gzip
+	header {
+		-Server
+		Strict-Transport-Security "max-age=63072000"
+	}
+}
+
+# Member app and website. likha.in/c/<code> goes to the Cupid link function (sets the referral cookie, then redirects).
+{$SITE_DOMAIN} {
+	import common
+	handle /c/* {
+		uri replace /c/ /functions/v1/cupid-redirect/ 1
+		reverse_proxy https://{$SUPABASE_HOST} {
+			header_up Host {$SUPABASE_HOST}
+		}
+	}
+	handle {
+		reverse_proxy app:3000
+	}
+}
+
+# Team console. Keep it behind MFA; put Cloudflare Access in front once the domain is on Cloudflare.
+{$ADMIN_DOMAIN} {
+	import common
+	reverse_proxy admin:3000
+}
+
+# Kundli engine (called only by our server functions, with the key).
+{$KUNDLI_DOMAIN} {
+	import common
+	request_body {
+		max_size 64KB
+	}
+	reverse_proxy kundli:8080
+}

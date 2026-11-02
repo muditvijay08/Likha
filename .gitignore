@@ -10,6 +10,7 @@ next-env.d.ts
 # deploy
 deploy/.env
 deploy/kundli/.env
+deploy/vps/.env
 app/vercel.json
 admin/vercel.json
 .vercel/
