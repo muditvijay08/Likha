@@ -84,48 +84,61 @@ function Hero() {
   );
 }
 
-// Why Likha, for the person who just picked. Every line is a real feature; credits come from Admin > Onboarding.
-const WHY: Record<string, { title: string; points: [string, string][] }> = {
-  woman: { title: "Made for you to feel safe and in control", points: [
-    ["You set the pace", "Message first only if you want to. Go incognito, so only people you like can see you."],
-    ["Real, verified people", "Everyone takes a selfie check. Numbers and links stay hidden in first messages."],
-    ["Safe dates, built in", "Share your date with someone you trust. Likha checks in afterwards, and SOS is one tap away."],
-    ["See who likes you, free", "And your kundli match on every profile, before you decide."],
+// Why Likha, for the person who just picked. Ad-style, but every line is a real feature; credits come from Admin > Onboarding.
+type Pitch = { photo: "her" | "him"; kicker: string; title: string; sub: string; points: [string, string][] };
+const WHY: Record<string, Pitch> = {
+  woman: { photo: "her", kicker: "FOR HER", title: "Dating, on your terms.", sub: "Safe. Real. Written in your stars.", points: [
+    ["\u2728", "You make the first move. Or don\u2019t."],
+    ["\u2705", "Only selfie-verified people."],
+    ["\ud83d\udd12", "No numbers or links in first messages."],
+    ["\ud83d\udee1\ufe0f", "Date check-ins + one-tap SOS."],
+    ["\ud83d\udc8c", "See who likes you. Free."],
   ] },
-  man: { title: "Better matches. Better conversations.", points: [
-    ["Know before you like", "Your Jodi Score and 36-Guna match on every profile, from both real charts."],
-    ["Stand out", "Send a Cosmic Like with a note. Cupid suggests openers better than \u201chey\u201d."],
-    ["Text at the right time", "Golden Hours show when your stars line up to talk."],
-    ["See who likes you, free", "No paywall on your likes."],
+  man: { photo: "him", kicker: "FOR HIM", title: "Stop swiping blind.", sub: "See if the stars agree before you like.", points: [
+    ["\ud83d\udd2e", "Jodi Score + 36 gunas on every profile."],
+    ["\ud83d\udcab", "Cosmic Like: say hi before you match."],
+    ["\ud83d\udcac", "Never open with \u201chey\u201d again. Cupid helps."],
+    ["\u23f0", "Golden Hours: text when it counts."],
+    ["\ud83d\udc8c", "See who likes you. Free."],
   ] },
 };
 
 function Why({ gender, credits, onGo, onBack }: { gender: Gender; credits: number; onGo(): void; onBack(): void }) {
   const w = WHY[gender] ?? WHY.woman;
   return (
-    <Screen style={{ gap: 18 }}>
-      <button type="button" className="linkbtn" onClick={onBack} style={{ alignSelf: "flex-start", fontSize: 14 }}>‹ Change</button>
-      <div className="stack" style={{ gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: "var(--g-ink)" }}>WHY LIKHA</span>
-        <h1 className="h1 big" style={{ margin: 0 }}>{w.title}</h1>
+    <Screen style={{ gap: 18, paddingTop: 0 }}>
+      <div style={{ position: "relative", margin: "0 -24px", height: 300, overflow: "hidden", background: "linear-gradient(160deg, var(--g-ink), #1E1838)" }}>
+        <StockPhoto name={w.photo} eager sizes="(max-width: 480px) 100vw, 480px" />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(20,16,40,.15) 30%, rgba(20,16,40,.88))" }} />
+        <button type="button" onClick={onBack} aria-label="Change"
+          style={{ position: "absolute", top: 14, left: 16, border: 0, borderRadius: 999, padding: "6px 12px", background: "rgba(255,255,255,.9)", font: "600 13px var(--sans)", color: "var(--ink)" }}>‹ Change</button>
+        <span style={{ position: "absolute", top: 20, right: 14, fontSize: 10, color: "rgba(255,255,255,.85)", textShadow: "0 1px 2px rgba(0,0,0,.5)" }}>Models · Pexels</span>
+        <div style={{ position: "absolute", left: 24, right: 24, bottom: 22, color: "#fff" }}>
+          <span style={{ font: "800 11px var(--sans)", letterSpacing: ".14em", color: "#FFD98A" }}>{w.kicker}</span>
+          <h1 style={{ margin: "6px 0 4px", font: "700 36px/1.05 var(--serif)" }}>{w.title}</h1>
+          <span style={{ fontSize: 15, opacity: .9 }}>{w.sub}</span>
+        </div>
       </div>
-      <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-        {w.points.map(([t, d], i) => (
-          <li key={t} className="row" style={{ gap: 14, alignItems: "flex-start", padding: 14, borderRadius: 18, background: "#fff", border: "1px solid var(--line)" }}>
-            <span aria-hidden="true" style={{ width: 32, height: 32, flex: "none", borderRadius: 999, background: "var(--g-soft)", color: "var(--g-ink)", display: "flex", alignItems: "center", justifyContent: "center", font: "700 14px var(--sans)" }}>{i + 1}</span>
-            <span className="stack" style={{ gap: 3 }}><strong style={{ fontSize: 15 }}>{t}</strong><span style={{ fontSize: 13, lineHeight: 1.45, color: "var(--muted)" }}>{d}</span></span>
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+        {w.points.map(([icon, t]) => (
+          <li key={t} className="row" style={{ gap: 12, alignItems: "center", font: "600 16px/1.3 var(--sans)" }}>
+            <span aria-hidden="true" style={{ width: 36, height: 36, flex: "none", borderRadius: 12, background: "var(--g-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{icon}</span>
+            {t}
           </li>
         ))}
-      </ol>
+      </ul>
       {credits > 0 && (
-        <div className="row" style={{ gap: 10, padding: "12px 14px", borderRadius: 16, background: "var(--saffron-soft)", fontSize: 14 }}>
-          <strong style={{ fontFamily: "var(--serif)", fontSize: 22, color: "var(--saffron-ink)" }}>{credits}</strong>
-          <span>free credits as you set up your profile</span>
+        <div className="row" style={{ gap: 14, padding: "14px 18px", borderRadius: 18, background: "linear-gradient(120deg, #FFE7A8, #FFC94D)", border: "2px dashed rgba(120,70,0,.35)" }}>
+          <strong style={{ font: "700 40px/1 var(--serif)", color: "#5A3300" }}>{credits}</strong>
+          <span className="stack" style={{ gap: 2 }}>
+            <strong style={{ fontSize: 15, color: "#3D2300" }}>free credits, on us</strong>
+            <span style={{ fontSize: 12, color: "#5A3300" }}>Earned as you set up your profile</span>
+          </span>
         </div>
       )}
       <div className="grow" />
-      <button type="button" className="btn" onClick={onGo}>Continue</button>
-      <span className="small" style={{ textAlign: "center" }}>Takes about 3 minutes.</span>
+      <button type="button" className="btn" onClick={onGo}>{credits > 0 ? `Claim my ${credits} credits \u2192` : "Let\u2019s go \u2192"}</button>
+      <span className="small" style={{ textAlign: "center" }}>Takes about 3 minutes. Jo likha hai, woh milega.</span>
     </Screen>
   );
 }
