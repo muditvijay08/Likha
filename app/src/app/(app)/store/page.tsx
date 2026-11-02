@@ -34,7 +34,7 @@ export default function Store() {
           <span style={{ padding: "8px 14px", borderRadius: 999, background: "#FF7A9A", fontSize: 14, fontWeight: 700 }}>{price(prices, "check_anyone", 29)} credits</span>
         </div>
       </Link>
-      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+      <ul className="desk-grid2" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
         {rows.map(([href, t, s, p]) => (
           <li key={t}><Link href={href} className="rowlink" style={{ borderRadius: 18 }}>
             <span className="t"><strong style={{ fontSize: 15 }}>{t}</strong><span style={{ fontSize: 13 }}>{s}</span></span>

@@ -41,7 +41,7 @@ export default function Profile() {
   const n = Math.max(1, p.photos.length);
 
   return (
-    <div className="app-body flush">
+    <div className="app-body flush wide prof-cols">
       <PhotoBlock name={p.first_name} photos={p.photos} height={270} index={photo}>
         <button type="button" aria-label="Back" className="tip" data-tip="Back" onClick={() => router.back()} style={{ ...round, left: 16 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>

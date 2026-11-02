@@ -35,7 +35,7 @@ export default function Home() {
   const love = plan?.love;
 
   return (
-    <div className="app-body">
+    <div className="app-body wide">
       <header className="row" style={{ justifyContent: "space-between", gap: 10 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, color: "var(--muted)" }}>{dateLabel}{city ? ` · ${city.name}` : ""}</div>
@@ -69,6 +69,7 @@ export default function Home() {
         <Link key={d.match_id} href={`/together/${d.match_id}?day=${d.day_mark}&name=${encodeURIComponent(d.other_name)}`} className="rowlink" style={{ background: "var(--rose-soft)" }}>
           <span className="t"><strong>{d.day_mark} days with {d.other_name}</strong><span>How&apos;s it going? Just for you, they never see it.</span></span><Chevron /></Link>
       ))}
+      <div className="home-cols"><div className="home-col">
       <Link href="/kick" aria-label="Today's love weather" style={{ display: "flex", gap: 16, alignItems: "center", padding: 18, borderRadius: 26,
         background: "linear-gradient(135deg, #FFE7B8 0%, #FFD3E0 55%, #E3D8FF 100%)", color: "var(--ink)", textDecoration: "none" }}>
         <svg width="112" height="112" viewBox="0 0 112 112" aria-hidden="true" style={{ flex: "none" }}>
@@ -118,6 +119,7 @@ export default function Home() {
         </section>
       )}
 
+      </div><div className="home-col">
       <section aria-label="Stars aligned today" className="stack" style={{ gap: 10 }}>
         <div className="sec-title"><strong>Stars aligned for you today</strong><Link href="/discover">See all</Link></div>
         {home.top.length ? (
@@ -159,6 +161,7 @@ export default function Home() {
         <span className="t"><strong>Got a crush outside the app?</strong><span>Check your Jodi Score with anyone · {price(prices, "check_anyone", 29)} cr</span></span>
         <Chevron />
       </Link>
+      </div></div>
     </div>
   );
 }

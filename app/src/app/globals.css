@@ -216,6 +216,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 
 /* ======================= Laptop and desktop (1024px+): sidebar, wider screens, split chats ======================= */
 .nav a.nav-brand, .desk-only { display: none; }
+.home-cols, .home-col { display: flex; flex-direction: column; gap: 16px; }
 @media (min-width: 1024px) {
   :root { --navh: 0px; --side: 248px; }
   .app { max-width: none; width: auto; margin: 0 0 0 var(--side); }
@@ -241,6 +242,15 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
   .split-list .app-body { max-width: none; padding: 24px 16px; }
   .split-main { min-width: 0; display: flex; flex-direction: column; }
   .split-main .app-body { max-width: none; }
+  /* Home: today on the left, people on the right */
+  .home-cols { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  /* Profile: photo on the left (stays in view), details and actions on the right */
+  .app-body.flush.prof-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 0 40px; padding: 32px 40px; align-items: start; }
+  .prof-cols > :first-child { grid-row: 1 / span 2; height: 640px !important; border-radius: 24px; position: sticky; top: 32px; }
+  .prof-cols > :not(:first-child) { grid-column: 2; padding-left: 0 !important; padding-right: 0 !important; }
+  /* Lists of offers: two columns */
+  .desk-grid2 { display: grid !important; grid-template-columns: 1fr 1fr; }
+  .desk-grid2 > li > a { height: 100%; }
   /* Discover: photo on the left, details on the right */
   .disc-card { flex-direction: row !important; }
   .disc-card > :first-child { width: 50%; height: 600px !important; }
