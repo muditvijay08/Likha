@@ -89,9 +89,9 @@ type Pitch = { photo: "her" | "him"; kicker: string; title: string; sub: string;
 const WHY: Record<string, Pitch> = {
   woman: { photo: "her", kicker: "FOR HER", title: "Dating, on your terms.", sub: "Safe. Real. Written in your stars.", points: [
     ["\u2728", "You make the first move. Or don\u2019t."],
-    ["\u2705", "Only selfie-verified people."],
-    ["\ud83d\udd12", "No numbers or links in first messages."],
-    ["\ud83d\udee1\ufe0f", "Date check-ins + one-tap SOS."],
+    ["\ud83d\udd2e", "Know if the stars agree, before you say hi."],
+    ["\ud83d\ude48", "Go incognito. Only people you like see you."],
+    ["\ud83d\udee1\ufe0f", "No numbers in first chats. One-tap SOS on dates."],
     ["\ud83d\udc8c", "See who likes you. Free."],
   ] },
   man: { photo: "him", kicker: "FOR HIM", title: "Stop swiping blind.", sub: "See if the stars agree before you like.", points: [
