@@ -36,7 +36,13 @@ export default function Saathi() {
   const [breakClosed, setBreakClosed] = useState(false);
 
   useEffect(() => {
-    api().saathi().then((x) => { setS(x); setChar(x.character); setStyles(x.styles); setView(!x.setup ? "setup" : x.paused ? "paused" : "chat"); }).catch(() => setView("chat"));
+    // /saathi?char=dhruv (from the empty Discover screen) picks that companion; choosing the other one opens setup to switch.
+    const want = new URLSearchParams(window.location.search).get("char") as SaathiChar | null;
+    const picked = want && CHARS.some((c) => c.v === want) ? want : null;
+    api().saathi().then((x) => {
+      setS(x); setChar(picked ?? x.character); setStyles(x.styles);
+      setView(!x.setup || (picked && picked !== x.character) ? "setup" : x.paused ? "paused" : "chat");
+    }).catch(() => setView("chat"));
   }, []);
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [s?.history.length, typing]);
   const name = CHARS.find((c) => c.v === (s?.setup ? s.character : char))!.name;

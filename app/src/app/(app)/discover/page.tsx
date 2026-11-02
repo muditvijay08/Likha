@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ErrorNote, useAction } from "@/components/ui";
 import { CreditsPill, GOAL_LABEL, Info, PhotoBlock, SampleTag, TIER_LABEL, price, useApp } from "@/components/app";
-import { api, type Card, type Filters, type Pulse } from "@/lib/api";
+import { api, type Card, type Filters, type Pulse, type SaathiState } from "@/lib/api";
 
 const COACH = "likha-coach-jodi";
 const seen = () => { try { return localStorage.getItem(COACH) === "1"; } catch { return true; } };
@@ -118,10 +118,19 @@ export default function Discover() {
   );
 }
 
+const COMPANIONS = [
+  { v: "chandni", name: "Chandni", line: "Warm, playful, remembers your day", bg: "linear-gradient(135deg, #FFC6D4, #C9B8FF)" },
+  { v: "dhruv", name: "Dhruv", line: "Calm, witty, steady advice", bg: "linear-gradient(135deg, #C9B8FF, #A7D8F0)" },
+] as const;
+
 function EmptySky({ city, filters, onWiden }: { city: string; filters: Filters | null; onWiden(): Promise<void> }) {
-  const { prices } = useApp();
+  const { prices, home } = useApp();
   const [more, setMore] = useState<number | null>(null);
+  const [saathi, setSaathi] = useState<SaathiState | null>(null);
   useEffect(() => { if (filters?.distance === "same_city") api().discoverCount(true).then(setMore).catch(() => {}); }, [filters]);
+  useEffect(() => { api().saathi().then(setSaathi).catch(() => {}); }, []);
+  // Companion matching who they usually want to meet comes first; both are always offered.
+  const pair = home?.gender === "woman" ? [COMPANIONS[1], COMPANIONS[0]] : [COMPANIONS[0], COMPANIONS[1]];
   const widen = async () => { if (filters) { await api().saveFilters({ ...filters, distance: "any_city" }); await onWiden(); } };
   return (
     <section className="stack" style={{ gap: 16 }} aria-label="Nobody new right now">
@@ -129,6 +138,25 @@ function EmptySky({ city, filters, onWiden }: { city: string; filters: Filters |
         <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 26, fontWeight: 600, lineHeight: 1.2 }}>You&apos;ve seen every star in {city} tonight</h1>
         <p className="sub">New ones rise tomorrow. Or widen your sky now:</p>
       </div>
+      {saathi?.available && (
+        <div className="stack" style={{ gap: 10, padding: 16, borderRadius: 20, background: "#F6F2FF", border: "1px solid var(--line)" }}>
+          <div className="stack" style={{ gap: 2 }}>
+            <strong style={{ fontSize: 15 }}>While new stars rise, talk to Saathi</strong>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>A virtual companion, not a real person. {saathi.free_per_day} free messages a day.</span>
+          </div>
+          <div className="grid2" style={{ gap: 10 }}>
+            {pair.map((c) => (
+              <Link key={c.v} href={`/saathi?char=${c.v}`} className="row" style={{ gap: 10, padding: 12, borderRadius: 16, background: "#fff", border: "1px solid var(--line)", color: "var(--ink)", textDecoration: "none", alignItems: "center" }}>
+                <span aria-hidden="true" style={{ width: 40, height: 40, flex: "none", borderRadius: 999, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--serif)", fontWeight: 600, color: "#3D3560" }}>{c.name[0]}</span>
+                <span className="stack" style={{ gap: 1, minWidth: 0 }}>
+                  <strong style={{ fontSize: 14 }}>{c.name} {saathi.setup && saathi.character === c.v && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--link)" }}>· yours</span>}</strong>
+                  <span style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.3 }}>{c.line}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="stack" style={{ gap: 10 }}>
         {filters?.distance === "same_city" && (
           <button type="button" className="rowlink" onClick={widen} style={{ textAlign: "left", font: "inherit" }}>
