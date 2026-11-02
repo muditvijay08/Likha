@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Screen } from "@/components/ui";
+import { StockPhoto } from "@/components/stock-photo";
 import { useFlow } from "@/lib/flow";
 import { api, type Gender } from "@/lib/api";
 
@@ -60,29 +61,14 @@ export default function Start() {
   );
 }
 
+// A warm mood photo (stock models, labelled so). Falls back to the brand gradient if it can't load.
 function Hero() {
   return (
-    <div style={{ position: "relative", height: 290, flex: "none", maxWidth: 342, width: "100%", alignSelf: "center" }}>
-      <svg width="290" height="290" viewBox="0 0 290 290" aria-hidden="true" style={{ position: "absolute", left: 21, top: 0 }}>
-        <circle cx="145" cy="145" r="138" fill="none" stroke="#E7E1F5" strokeWidth="1.5" />
-        <circle cx="145" cy="145" r="98" fill="none" stroke="#E7E1F5" strokeWidth="1.5" strokeDasharray="4 6" />
-        <circle cx="145" cy="145" r="58" fill="#FFF3D6" />
-        <circle cx="283" cy="145" r="7" fill="#FFB020" /><circle cx="76" cy="76" r="5" fill="#FF7A9A" />
-        <circle cx="145" cy="7" r="4" fill="#7E5BEF" /><circle cx="214" cy="214" r="4" fill="#7E5BEF" />
-      </svg>
-      <div style={{ position: "absolute", left: 36, top: 64, width: 148, height: 188, borderRadius: 20, background: "#fff", border: "1px solid var(--line)",
-        transform: "rotate(-8deg)", boxShadow: "0 10px 28px rgba(30,24,56,.10)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ flex: 1, background: "#EDE6FF", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--serif)", fontSize: 52, color: "#9C88E6" }}>M</div>
-        <div style={{ padding: "10px 12px", display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700 }}><span>Meera, 25</span><span style={{ color: "var(--link)" }}>88%</span></div>
-      </div>
-      <div style={{ position: "absolute", left: 172, top: 40, width: 156, height: 200, borderRadius: 20, background: "#fff", border: "1px solid var(--line)",
-        transform: "rotate(6deg)", boxShadow: "0 10px 28px rgba(30,24,56,.12)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ position: "relative", flex: 1, background: "#FFE4EC", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--serif)", fontSize: 56, color: "#E0457B" }}>R
-          <span style={{ position: "absolute", top: 10, left: 10, background: "#FFB020", color: "#1E1838", borderRadius: 10, padding: "4px 8px", font: "700 13px var(--sans)" }}>92%</span>
-        </div>
-        <div style={{ padding: "10px 12px", display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700 }}><span>Riya, 26</span><span style={{ color: "var(--muted)", fontWeight: 600 }}>27 Gunas</span></div>
-      </div>
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, textAlign: "center", fontSize: 11, color: "var(--muted)" }}>Sample profiles</div>
+    <div style={{ position: "relative", height: 300, flex: "none", borderRadius: 28, overflow: "hidden",
+      background: "linear-gradient(135deg, #FFE7B8 0%, #FFD3E0 55%, #E3D8FF 100%)", boxShadow: "0 14px 34px rgba(30,24,56,.14)" }}>
+      <StockPhoto name="laugh" eager sizes="(max-width: 480px) 100vw, 480px" />
+      <span style={{ position: "absolute", left: 14, bottom: 14, padding: "6px 12px", borderRadius: 999, background: "rgba(30,24,56,.78)", color: "#FFD98A", font: "700 12px var(--sans)" }}>Written in the stars</span>
+      <span style={{ position: "absolute", right: 12, bottom: 16, fontSize: 10, color: "rgba(255,255,255,.85)", textShadow: "0 1px 2px rgba(0,0,0,.5)" }}>Models · Pexels</span>
     </div>
   );
 }

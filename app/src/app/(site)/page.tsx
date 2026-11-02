@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Cta, Faq, JsonLd, RashiLinks } from "@/components/site/chrome";
 import { CityUnlocks, SignedInRedirect, WaitlistForm } from "@/components/site/client";
 import { GUIDES, SITE_URL, TAGLINE } from "@/lib/site";
+import { StockPhoto } from "@/components/stock-photo";
 
 export const metadata: Metadata = {
   title: "Likha · Kundli-first dating app · Swipe less, match written in the stars",
@@ -113,6 +114,18 @@ export default function Home() {
             <p style={{ marginTop: 28 }}><Link href="/how-it-works">More about how Likha works</Link></p>
           </div>
           <Phone />
+        </div>
+      </section>
+
+      <section className="moments" aria-label="Moments worth matching for">
+        <div className="wrap">
+          <div className="sec-head"><h2>Moments worth matching for</h2><p>The chai that turns into an hour. The joke only you two get. Likha starts with the stars; the rest is yours.</p></div>
+          <div className="mosaic">
+            <figure className="m1"><StockPhoto name="laugh" sizes="(max-width: 900px) 100vw, 55vw" /></figure>
+            <figure className="m2"><StockPhoto name="chai" /></figure>
+            <figure className="m3"><StockPhoto name="talk" /></figure>
+          </div>
+          <p className="credit">Photos: Pexels. Models, not Likha members.</p>
         </div>
       </section>
 

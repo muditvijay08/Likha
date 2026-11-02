@@ -279,3 +279,11 @@
 .site-footer .legal { border-top: 1px solid var(--night-line); margin-top: 40px; padding-top: 20px; display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; font-size: 13px; }
 .site-footer .legal a { display: inline; }
 @media (max-width: 760px) { .site-footer .cols { grid-template-columns: 1fr 1fr; } }
+
+/* Moments: stock mood photos (lib/photos.ts). Warm background shows if a photo can't load. */
+.moments .sec-head p { max-width: 560px; color: var(--muted); margin: 10px 0 0; }
+.moments .mosaic { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: 240px 240px; gap: 16px; margin-top: 28px; }
+.moments figure { margin: 0; border-radius: 22px; overflow: hidden; background: linear-gradient(135deg, #FFE7B8, #FFD3E0 60%, #E3D8FF); }
+.moments .m1 { grid-row: 1 / span 2; }
+.moments .credit { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) { .moments .mosaic { grid-template-columns: 1fr 1fr; grid-template-rows: 260px 160px; } .moments .m1 { grid-row: auto; grid-column: 1 / span 2; } }
