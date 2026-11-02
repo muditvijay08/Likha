@@ -1,0 +1,9 @@
+# Used instead of Caddy when nginx already serves other sites on this server (install.sh picks it).
+# The three services listen on localhost only; nginx (deploy/vps/nginx-likha.conf) is the door to the internet.
+services:
+  app:
+    ports: ["127.0.0.1:3201:3000"]
+  admin:
+    ports: ["127.0.0.1:3202:3000"]
+  kundli:
+    ports: ["127.0.0.1:3203:8080"]

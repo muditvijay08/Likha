@@ -2,9 +2,12 @@
 # Deploys the latest main on the VPS: pull, rebuild what changed, restart, clean old images, check health.
 # Installed as /usr/local/bin/likha-update by install.sh. GitHub Actions runs it on every push (deploy-vps.yml).
 set -euo pipefail
-DIR="/opt/likha"
+[ -f /etc/likha.conf ] || { echo "Run install.sh first."; exit 1; }
+. /etc/likha.conf                           # LIKHA_DIR (the folder you installed into), LIKHA_MODE (caddy | nginx)
+DIR="$LIKHA_DIR"
 ENV_FILE="$DIR/deploy/vps/.env"
 COMPOSE=(docker compose -f "$DIR/deploy/vps/docker-compose.yml" --env-file "$ENV_FILE")
+if [ "${LIKHA_MODE:-caddy}" = nginx ]; then COMPOSE+=(-f "$DIR/deploy/vps/behind-nginx.yml"); else COMPOSE+=(--profile caddy); fi
 exec 9>/var/lock/likha-update.lock; flock -n 9 || { echo "An update is already running."; exit 0; }
 
 cd "$DIR"

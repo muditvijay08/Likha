@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Likha on your own VPS, in one command. Ubuntu 22.04/24.04, run as root:
-#   sudo bash install.sh
-# (copy this file to the server first, or: curl -fsSL <raw link to this file> -o install.sh)
+# Likha on your own VPS, in one command. Ubuntu 22.04/24.04. Make a folder, put this file in it, run it there:
+#   mkdir -p /srv/likha && cd /srv/likha && sudo bash install.sh
+# Likha installs into the folder you run it from (or LIKHA_DIR=/some/folder). Works on a server of its own
+# (Caddy serves HTTPS) or next to an existing site: if nginx already owns ports 80/443, Likha slots in behind it.
 #
 # What it does, safely re-runnable:
 #   1. Installs Docker, git and a firewall (only SSH, 80, 443 open); adds swap on small servers.
@@ -14,9 +15,8 @@ set -euo pipefail
 
 REPO_SSH="git@github.com:muditvijay08/Likha.git"
 REPO_WEB="https://github.com/muditvijay08/Likha"
-DIR="/opt/likha"
+DIR="$(realpath -m "${LIKHA_DIR:-$PWD}")"
 ENV_FILE="$DIR/deploy/vps/.env"
-COMPOSE=(docker compose -f "$DIR/deploy/vps/docker-compose.yml" --env-file "$ENV_FILE")
 
 say()  { printf '\n\033[1;35m== %s\033[0m\n' "$*"; }
 ok()   { printf '\033[32m✓ %s\033[0m\n' "$*"; }
@@ -25,6 +25,19 @@ ask()  { local q="$1" def="${2:-}" a; if [ -n "$def" ]; then read -r -p "$q [$de
 
 [ "$(id -u)" = 0 ] || { echo "Run as root: sudo bash install.sh"; exit 1; }
 . /etc/os-release; [ "${ID:-}" = ubuntu ] || warn "Tested on Ubuntu; you are on ${PRETTY_NAME:-unknown}."
+
+case "$DIR" in /|/root|/home|/usr|/etc|/var|/bin|/opt) echo "Make a folder for Likha first: mkdir -p /srv/likha && cd /srv/likha"; exit 1;; esac
+confirm=$(ask "Install Likha into $DIR? (y/n)" "y"); [ "$confirm" = y ] || exit 1
+mkdir -p "$DIR"
+
+# Is another web server already on 80/443 (for example nginx running another site)? Then slot in behind it.
+MODE=caddy
+if [ -f /etc/likha.conf ]; then . /etc/likha.conf; MODE="${LIKHA_MODE:-caddy}"
+elif ss -ltnpH '( sport = :80 or sport = :443 )' 2>/dev/null | grep -v docker-proxy | grep -q .; then
+  owner=$(ss -ltnpH '( sport = :80 or sport = :443 )' | grep -o 'users:(("[^"]*' | head -1 | cut -d'"' -f2)
+  if command -v nginx >/dev/null; then MODE=nginx; warn "Ports 80/443 belong to ${owner:-nginx}: Likha will run behind your nginx and leave your other sites untouched."
+  else echo "Ports 80/443 are used by ${owner:-another program}. Stop it, or put nginx in front of both, then run this again."; exit 1; fi
+fi
 
 say "1/5 Server basics"
 export DEBIAN_FRONTEND=noninteractive
@@ -39,9 +52,15 @@ if [ "$mem_mb" -lt 4000 ] && ! swapon --show | grep -q .; then
   grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
   ok "Added 4 GB swap (server has ${mem_mb} MB RAM; building the apps needs headroom)"
 fi
-ufw allow OpenSSH >/dev/null; ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null; ufw allow 443/udp >/dev/null
-ufw --force enable >/dev/null
-ok "Firewall: only SSH, 80 and 443 are open"
+if [ "$MODE" = caddy ] && ! ufw status | grep -q "Status: active"; then
+  ufw allow OpenSSH >/dev/null; ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null; ufw allow 443/udp >/dev/null
+  ufw --force enable >/dev/null
+  ok "Firewall: only SSH, 80 and 443 are open"
+else
+  # A shared server keeps its own firewall rules (control panels and other sites may need their ports).
+  if ufw status | grep -q "Status: active"; then ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null; fi
+  ok "Firewall left as it is (80 and 443 allowed)"
+fi
 
 say "2/5 Code"
 KEY=/root/.ssh/likha_deploy
@@ -53,8 +72,11 @@ if [ ! -d "$DIR/.git" ]; then
   echo "  $REPO_WEB/settings/keys  ->  Add deploy key  ->  title: likha-vps  ->  do NOT tick 'Allow write access'"
   echo; cat "$KEY.pub"; echo
   read -r -p "Press Enter once the key is added... " _ </dev/tty
-  GIT_SSH_COMMAND="ssh -i $KEY -o IdentitiesOnly=yes" git clone -q "$REPO_SSH" "$DIR"
+  # init + fetch works even though this folder already holds install.sh
+  git -C "$DIR" init -q && git -C "$DIR" remote add origin "$REPO_SSH"
   git -C "$DIR" config core.sshCommand "ssh -i $KEY -o IdentitiesOnly=yes"
+  git -C "$DIR" fetch -q origin main && git -C "$DIR" checkout -q -f -B main origin/main
+  git -C "$DIR" branch -q --set-upstream-to=origin/main main
 fi
 git -C "$DIR" pull -q --ff-only
 ok "Code at $DIR ($(git -C "$DIR" log -1 --format='%h %s' | cut -c1-60))"
@@ -89,11 +111,26 @@ else
   ok "Using existing $ENV_FILE"
 fi
 set -a; . "$ENV_FILE"; set +a
+printf 'LIKHA_DIR=%q\nLIKHA_MODE=%s\n' "$DIR" "$MODE" > /etc/likha.conf
+COMPOSE=(docker compose -f "$DIR/deploy/vps/docker-compose.yml" --env-file "$ENV_FILE")
+if [ "$MODE" = nginx ]; then COMPOSE+=(-f "$DIR/deploy/vps/behind-nginx.yml"); else COMPOSE+=(--profile caddy); fi
 
 say "4/5 Build and start (first build takes 5-10 minutes)"
 "${COMPOSE[@]}" up -d --build
+if [ "$MODE" = nginx ]; then
+  # Our three sites in their own nginx file; your existing sites are not touched.
+  conf=/etc/nginx/sites-available/likha.conf
+  sed -e "s|{SITE_DOMAIN}|$SITE_DOMAIN|g" -e "s|{ADMIN_DOMAIN}|$ADMIN_DOMAIN|g" -e "s|{KUNDLI_DOMAIN}|$KUNDLI_DOMAIN|g" \
+      -e "s|{SUPABASE_HOST}|$SUPABASE_HOST|g" "$DIR/deploy/vps/nginx-likha.conf" > "$conf"
+  ln -sf "$conf" /etc/nginx/sites-enabled/likha.conf
+  nginx -t && systemctl reload nginx
+  apt-get install -y -qq certbot python3-certbot-nginx >/dev/null
+  certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email --redirect \
+    -d "$SITE_DOMAIN" -d "$ADMIN_DOMAIN" -d "$KUNDLI_DOMAIN" || warn "Certificate not issued yet: check the domains point here, then run: certbot --nginx -d $SITE_DOMAIN -d $ADMIN_DOMAIN -d $KUNDLI_DOMAIN"
+  ok "nginx: Likha's sites added in $conf (HTTPS by certbot, renews by itself)"
+fi
 for _ in $(seq 1 60); do curl -fsS "https://$KUNDLI_DOMAIN/health" >/dev/null 2>&1 && break; sleep 5; done
-if curl -fsS "https://$KUNDLI_DOMAIN/health" >/dev/null 2>&1; then ok "Kundli engine: https://$KUNDLI_DOMAIN/health"; else warn "Kundli not answering on HTTPS yet: check DNS, then '${COMPOSE[*]} logs caddy'"; fi
+if curl -fsS "https://$KUNDLI_DOMAIN/health" >/dev/null 2>&1; then ok "Kundli engine: https://$KUNDLI_DOMAIN/health"; else warn "Kundli not answering on HTTPS yet: check DNS, then 'sudo likha-update' or 'docker compose logs'"; fi
 curl -fsS -o /dev/null "https://$SITE_DOMAIN/" 2>/dev/null && ok "Member app: https://$SITE_DOMAIN" || warn "Member app not answering yet (certificate may take a minute)"
 curl -fsS -o /dev/null "https://$ADMIN_DOMAIN/login" 2>/dev/null && ok "Admin: https://$ADMIN_DOMAIN" || warn "Admin not answering yet"
 
