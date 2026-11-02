@@ -7,7 +7,7 @@ const PRIVATE = ["/open", "/home", "/discover", "/likes", "/matches", "/match/",
   "/saathi", "/guru/", "/maasi", "/couple", "/universe", "/story", "/together/", "/seven/", "/imagine/", "/golden/", "/ask/", "/boost", "/travel",
   "/cupid", "/invite", "/trusted", "/share-date", "/sos", "/safety/report", "/checkin/", "/check", "/gift", "/why", "/why-not", "/my-kundli", "/filters",
   "/account-status", "/basics", "/birth", "/bonus", "/consent", "/goal", "/lifestyle", "/phone", "/photos", "/preferences", "/selfie", "/vibe", "/kundli",
-  "/waitlist", "/tour/", "/install", "/offline", "/g/", "/i/", "/k/", "/s/"];
+  "/waitlist", "/tour/", "/install", "/login", "/offline", "/g/", "/i/", "/k/", "/s/"];
 
 export default function robots(): MetadataRoute.Robots {
   return { rules: [{ userAgent: "*", allow: ["/", "/check-your-crush", "/kundli-matching"], disallow: PRIVATE }], sitemap: `${SITE_URL}/sitemap.xml`, host: SITE_URL };

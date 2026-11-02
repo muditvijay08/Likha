@@ -18,7 +18,7 @@ const LINKS: [string, string, string?][] = [
 
 export default function Menu() {
   const { home, features } = useApp();
-  const signOut = async () => { await api().signOut(); location.href = "/start"; };
+  const signOut = async () => { await api().signOut(); location.href = "/login"; };
   return (
     <div className="app-body" style={{ gap: 14 }}>
       <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 28, fontWeight: 600 }}>Menu</h1>

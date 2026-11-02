@@ -2,7 +2,7 @@
 // O1 Landing and gender pick
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Screen } from "@/components/ui";
 import { StockPhoto } from "@/components/stock-photo";
 import { useFlow } from "@/lib/flow";
@@ -14,6 +14,9 @@ export default function Start() {
   const options = settings?.gender_options ?? ["woman", "man"];          // Admin > Onboarding
   const [invite, setInvite] = useState(false);
   const [code, setCode] = useState(draft.inviteCode ?? "");
+  // Arrived from Log in with a number that has no account yet (already signed in): just pick, then carry on.
+  const [fresh, setFresh] = useState(false);
+  useEffect(() => { setFresh(new URLSearchParams(window.location.search).get("new") === "1"); }, []);
 
   async function choose(g: Gender) {
     setDraft({ gender: g, inviteCode: code.trim() || undefined });
@@ -38,6 +41,7 @@ export default function Start() {
       </div>
       <div className="grow" />
       <div className="stack" style={{ gap: 10 }}>
+        {fresh && <div className="note" role="status"><span>No account with that number yet. Pick one below to set it up.</span></div>}
         <span className="label" style={{ fontWeight: 700 }}>I am a</span>
         <div className={options.length > 1 ? "grid2" : "stack"} style={{ gap: 10 }}>
           {options.includes("woman") && card("woman", "Woman", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="9" r="5" /><path d="M12 14v7M9 18h6" /></svg>, "#FFF0F4", "#E0457B", "#A3164C")}
@@ -52,6 +56,7 @@ export default function Start() {
         ) : (
           <button type="button" className="btn ghost" onClick={() => setInvite(true)}>I have an invite code</button>
         )}
+        {!fresh && <div className="small" style={{ textAlign: "center", fontSize: 14 }}>Already on Likha? <Link href="/login" style={{ fontWeight: 700 }}>Log in</Link></div>}
         <div className="row small" style={{ justifyContent: "center", gap: 10, paddingTop: 4, flexWrap: "wrap" }}>
           <span>18+ only</span><span aria-hidden="true">·</span><Link href="/legal/terms">Terms</Link><span aria-hidden="true">·</span>
           <Link href="/legal/privacy">Privacy</Link><span aria-hidden="true">·</span><Link href="/help">Grievance Officer</Link>

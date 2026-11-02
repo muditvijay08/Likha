@@ -22,7 +22,7 @@ export default function Settings() {
   const setPref = (x: Partial<NotifPrefs>) => { const v = { ...n!, ...x }; setN(v); go(() => api().saveNotifPrefs(v)); };
   const lang = (l: MyProfile["language_pref"]) => { setP({ ...p!, language_pref: l }); go(() => api().saveProfile({ language_pref: l }), l === "hi" ? "Hindi screens are coming soon; Saathi and readings switch now" : "Saved"); };
   const pause = (v: boolean) => { setP({ ...p!, paused: v }); go(() => api().saveProfile({ paused: v }), v ? "Profile paused. Chats stay." : "You're back in Discover"); };
-  const logout = async () => { await api().signOut(); location.href = "/start"; };
+  const logout = async () => { await api().signOut(); location.href = "/login"; };
   const g = settings?.grievance_officer;
   const [device, setDevice] = useState<ReturnType<typeof pushState>>("unsupported");
   useEffect(() => { setDevice(pushState()); }, []);
