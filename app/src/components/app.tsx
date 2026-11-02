@@ -62,6 +62,17 @@ export function useTried() {
 /** Price label from the member's own price list (after tier discount). */
 export const price = (p: Prices, key: string, fallback: number) => p[key] ?? fallback;
 
+/** True on laptop-width screens (1024px+), where the app shows a sidebar and split views. False until mounted. */
+export function useDesk(): boolean {
+  const [desk, setDesk] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(min-width: 1024px)");
+    const on = () => setDesk(m.matches); on();
+    m.addEventListener("change", on); return () => m.removeEventListener("change", on);
+  }, []);
+  return desk;
+}
+
 // ---------------------------------------------------------------- bottom navigation
 const I = {
   home: <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />,
@@ -83,6 +94,7 @@ export function BottomNav() {
   const { home } = useApp();
   return (
     <nav className="nav" aria-label="Main">
+      <Link href="/home" className="nav-brand" aria-label="Likha home">Likha<span>.</span></Link>
       {TABS.map((t, i) => {
         const on = path === t.href || t.also.some((a) => path.startsWith(a));
         const badge = t.href === "/likes" ? home?.likes_count : t.href === "/matches" ? home?.unread : 0;

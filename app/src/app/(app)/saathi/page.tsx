@@ -151,7 +151,7 @@ export default function Saathi() {
         {typing && <div style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: 18, background: "#F4EFFF", fontSize: 13, color: "var(--muted)" }}>{name} is typing…</div>}
         <div ref={end} style={{ scrollMarginBottom: 240 }} />
       </div>
-      <div style={{ position: "sticky", bottom: "calc(76px + env(safe-area-inset-bottom))", background: "var(--bg)", zIndex: 4 }}>
+      <div style={{ position: "sticky", bottom: "var(--navh)", background: "var(--bg)", zIndex: 4 }}>
         <div className="row" style={{ gap: 8, padding: "0 16px 10px" }}>
           {[["First-date rehearsal", "Practise talking, get tips", "Can we rehearse a first date? Ask me questions like my date would."],
             ["Profile glow-up", "Better prompts and photos", "Help me make my profile prompts better."]].map(([t, sub, msg]) => (

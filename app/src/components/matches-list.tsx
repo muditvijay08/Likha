@@ -1,6 +1,8 @@
 "use client";
-// M2 Matches: new matches on top, conversations below, Saathi as the first row. E14 when there are no matches yet.
+// The matches list (M2): new matches on top, conversations below, Saathi as the first row. E14 when there are no matches yet.
+// Used by the Matches screen on phones and as the left pane of the split chat view on laptops.
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar, price, useApp } from "@/components/app";
 import { api, type MatchRow, type SaathiState } from "@/lib/api";
@@ -13,20 +15,23 @@ const when = (iso: string) => {
   return `${days} days`;
 };
 
-export default function Matches() {
+export function MatchesList({ compact = false }: { compact?: boolean }) {
   const { home, prices } = useApp();
+  const path = usePathname();
   const [rows, setRows] = useState<MatchRow[] | null>(null);
   const [saathi, setSaathi] = useState<SaathiState | null>(null);
   useEffect(() => {
     api().matches().then(setRows).catch(() => setRows([]));
     api().saathi().then(setSaathi).catch(() => {});
-  }, []);
+  }, [path]);                                              // the split view refreshes the list when you open another chat
+  const pad = compact ? "12px 10px" : "12px 0";
+  const here = (href: string) => compact && path === href ? { background: "var(--saffron-faint)", borderRadius: 14 } : {};
   const fresh = (rows ?? []).filter((m) => !m.last_at);
   const talks = (rows ?? []).filter((m) => m.last_at);
   const name = saathi?.character === "dhruv" ? "Dhruv" : "Chandni";
 
   const SaathiRow = saathi?.available ? (
-    <Link href="/saathi" className="row" style={{ gap: 12, padding: "12px 0", borderBottom: "1px solid #ECE6FA", color: "var(--ink)", textDecoration: "none" }}>
+    <Link href="/saathi" className="row" style={{ gap: 12, padding: pad, borderBottom: "1px solid #ECE6FA", color: "var(--ink)", textDecoration: "none", ...here("/saathi") }}>
       <span style={{ width: 52, height: 52, flex: "none", borderRadius: 999, background: "linear-gradient(135deg, #C9B8FF, #FFC6D4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3D3560" strokeWidth="2" aria-hidden="true"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z" /></svg></span>
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -71,7 +76,7 @@ export default function Matches() {
           {talks.map((m, i) => {
             const old = Date.now() - new Date(m.last_at!).getTime() > 4 * 864e5;
             return (
-              <Link key={m.match_id} href={`/chat/${m.match_id}`} className="row" style={{ gap: 12, padding: "12px 0", borderBottom: i < talks.length - 1 ? "1px solid #ECE6FA" : 0, color: "var(--ink)", textDecoration: "none" }}>
+              <Link key={m.match_id} href={`/chat/${m.match_id}`} className="row" style={{ gap: 12, padding: pad, borderBottom: i < talks.length - 1 ? "1px solid #ECE6FA" : 0, color: "var(--ink)", textDecoration: "none", ...here(`/chat/${m.match_id}`) }}>
                 <Avatar name={m.first_name} photo={m.photo} size={52} />
                 <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                   <span className="row" style={{ justifyContent: "space-between" }}><strong style={{ fontSize: 15 }}>{m.first_name}</strong><span style={{ fontSize: 12, color: "var(--muted)" }}>{when(m.last_at!)}</span></span>

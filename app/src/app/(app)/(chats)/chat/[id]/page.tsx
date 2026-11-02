@@ -67,9 +67,9 @@ function Chat() {
   const lastMineSeen = [...c.messages].reverse().find((m) => m.mine && m.read_at);
 
   return (
-    <div className="app-body flush" style={{ paddingBottom: "calc(76px + env(safe-area-inset-bottom))", minHeight: "calc(100dvh - 26px)" }}>
+    <div className="app-body flush" style={{ paddingBottom: "var(--navh)", minHeight: "calc(100dvh - 26px)" }}>
       <header className="row" style={{ gap: 10, padding: "16px 16px 12px", borderBottom: "1px solid #ECE6FA", background: "#fff", position: "sticky", top: 0, zIndex: 5 }}>
-        <button type="button" aria-label="Back" className="iconbtn tip" data-tip="Back to chats" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push("/matches")}>
+        <button type="button" aria-label="Back" className="iconbtn tip desk-hide" data-tip="Back to chats" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push("/matches")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
         <Link href={`/profile/${c.other.id}`} className="row" style={{ gap: 10, flex: 1, minWidth: 0, color: "var(--ink)", textDecoration: "none" }}>
           <Avatar name={c.other.first_name} photo={c.other.photo} size={40} />
@@ -107,7 +107,7 @@ function Chat() {
         <div ref={end} style={{ scrollMarginBottom: 240 }} />
       </div>
 
-      <div style={{ position: "sticky", bottom: "calc(76px + env(safe-area-inset-bottom))", background: "var(--bg)", zIndex: 4 }}>
+      <div style={{ position: "sticky", bottom: "var(--navh)", background: "var(--bg)", zIndex: 4 }}>
         <div className="row" style={{ gap: 8, padding: "10px 32px 10px 16px", overflowX: "auto", scrollbarWidth: "none", borderTop: "1px solid #ECE6FA",
           maskImage: "linear-gradient(to right, #000 calc(100% - 40px), transparent)", WebkitMaskImage: "linear-gradient(to right, #000 calc(100% - 40px), transparent)" }}>
           {[[`/guru/${c.match_id}`, "Ask Guru Ji", "#E4F4EE", "#1F5E49"], [`/universe/${c.match_id}`, "Our Universe", "#EDE6FF", "#3D3560"], [`/story/${c.match_id}`, "Our Story", "#FFF0F4", "#A3164C"],

@@ -1,5 +1,5 @@
 /* Likha design tokens (from the design canvas) */
-:root {
+:root { --navh: calc(76px + env(safe-area-inset-bottom));
   --ink: #1E1838; --muted: #5E5780; --line: #E7E1F5; --line-soft: #F0ECF8; --track: #ECE6FA;
   --bg: #FBF8FF; --card: #FFFFFF;
   --saffron: #FFB020; --saffron-soft: #FFF3D6; --saffron-faint: #FFF9EC; --saffron-ink: #8A4300; --link: #B5590A;
@@ -213,3 +213,36 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 @keyframes sk { to { background-position: -200% 0; } }
 .toast { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 50; max-width: 360px;
   padding: 10px 14px; border-radius: 12px; background: var(--ink); color: #fff; font: 600 13px var(--sans); box-shadow: 0 8px 24px rgba(30,24,56,.25); }
+
+/* ======================= Laptop and desktop (1024px+): sidebar, wider screens, split chats ======================= */
+.nav a.nav-brand, .desk-only { display: none; }
+@media (min-width: 1024px) {
+  :root { --navh: 0px; --side: 248px; }
+  .app { max-width: none; width: auto; margin: 0 0 0 var(--side); }
+  .app-body { width: 100%; max-width: 760px; margin: 0 auto; padding: 32px 40px 48px; }
+  .app-body.flush { padding: 0 0 32px; }
+  .app-body.wide { max-width: 1160px; }
+  .nav { left: 0; top: 0; bottom: 0; transform: none; width: var(--side); max-width: none; height: auto; flex-direction: column;
+    justify-content: flex-start; align-items: stretch; gap: 4px; padding: 28px 16px; border-top: 0; border-right: 1px solid #ECE6FA; font: 600 15px var(--sans); }
+  .nav a.nav-brand { display: block; padding: 0 14px 24px; font-family: var(--serif); font-size: 30px; font-weight: 600; color: var(--ink); text-decoration: none; }
+  .nav a.nav-brand span { color: var(--saffron); }
+  .nav a:not(.nav-brand) { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 12px 14px; border-radius: 14px; min-width: 0; }
+  .nav a:not(.nav-brand):hover { background: #F6F2FF; }
+  .nav a[aria-current="page"] { background: var(--saffron-faint); }
+  .nav a .dot { display: none; }
+  .nav a.tip::after { display: none; }
+  .nav .badge { position: static; margin-left: auto; }
+  .toast { left: calc(50% + var(--side) / 2); }
+  .desk-hide { display: none !important; }
+  .desk-only { display: flex; }
+  /* Chats: list on the left, the open conversation on the right */
+  .split { display: grid; grid-template-columns: 360px minmax(0, 1fr); min-height: 100dvh; }
+  .split-list { position: sticky; top: 0; height: 100dvh; overflow-y: auto; border-right: 1px solid #ECE6FA; background: #fff; }
+  .split-list .app-body { max-width: none; padding: 24px 16px; }
+  .split-main { min-width: 0; display: flex; flex-direction: column; }
+  .split-main .app-body { max-width: none; }
+  /* Discover: photo on the left, details on the right */
+  .disc-card { flex-direction: row !important; }
+  .disc-card > :first-child { width: 50%; height: 600px !important; }
+  .disc-card > :nth-child(2) { flex: 1; justify-content: center; padding: 32px !important; gap: 14px !important; }
+}

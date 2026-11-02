@@ -41,10 +41,10 @@ export default function Discover() {
 
   const city = home?.city?.name ?? "your city";
   return (
-    <div className="app-body flush">
+    <div className="app-body flush wide">
       <header className="row" style={{ justifyContent: "space-between", padding: "20px 20px 12px" }}>
-        <div className="wordmark" style={{ fontSize: 24 }}>Likha<span>.</span></div>
-        <div className="row">
+        <div className="wordmark desk-hide" style={{ fontSize: 24 }}>Likha<span>.</span></div>
+        <div className="row" style={{ marginLeft: "auto" }}>
           <CreditsPill label="credits" />
           <Link href="/filters" className="iconbtn tip tip-r" data-tip="Filters" aria-label="Filters">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
@@ -68,7 +68,7 @@ export default function Discover() {
         )}
 
         {cards === null ? <div className="skel" style={{ height: 460 }} /> : card ? <>
-          <article style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <article className="disc-card" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <PhotoBlock name={card.first_name} photos={card.photos} height={300}>
               <div style={{ position: "absolute", top: 14, left: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
                 {card.jodi_score != null ? (

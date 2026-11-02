@@ -63,7 +63,7 @@ export default function Guru() {
         <div ref={end} style={{ scrollMarginBottom: 240 }} />
       </div>
 
-      <div style={{ position: "sticky", bottom: "calc(76px + env(safe-area-inset-bottom))", background: "#fff", borderTop: `1px solid ${G.line}`, zIndex: 4 }}>
+      <div style={{ position: "sticky", bottom: "var(--navh)", background: "#fff", borderTop: `1px solid ${G.line}`, zIndex: 4 }}>
         <ErrorNote error={error} />
         {g && g.left <= 0 ? (
           <div className="stack" style={{ padding: "12px 16px", gap: 8 }}>
