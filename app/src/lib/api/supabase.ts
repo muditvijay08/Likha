@@ -332,7 +332,8 @@ export class SupabaseApi implements Api {
   }
   async saveFilters(f: Filters) {
     const id = await this.uid();
-    const { error } = await this.sb.from("preferences").upsert({ user_id: id, ...f }, { onConflict: "user_id" });
+    // The voice-intro filter was retired (it emptied Discover early on); saving clears it for anyone who had it on.
+    const { error } = await this.sb.from("preferences").upsert({ user_id: id, ...f, has_voice_intro: false }, { onConflict: "user_id" });
     fail(error, "Saving filters");
   }
   async compatReport(otherId: string): Promise<Reading> {

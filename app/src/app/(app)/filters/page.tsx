@@ -98,8 +98,6 @@ export default function FiltersPage() {
       <div className="listcard">
         <label htmlFor="f-active" style={{ padding: "12px 16px" }}>Active this week
           <input id="f-active" type="checkbox" checked={f.active_this_week} onChange={(e) => set({ active_this_week: e.target.checked })} style={{ width: 22, height: 22, margin: 0, accentColor: "var(--link)" }} /></label>
-        <label htmlFor="f-voice" style={{ padding: "12px 16px" }}>Has a voice intro
-          <input id="f-voice" type="checkbox" checked={f.has_voice_intro} onChange={(e) => set({ has_voice_intro: e.target.checked })} style={{ width: 22, height: 22, margin: 0, accentColor: "var(--link)" }} /></label>
       </div>
       <span className="small">Manglik status shows on profiles. It&apos;s never used as a filter.</span>
       <ErrorNote error={error} />
