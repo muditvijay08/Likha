@@ -127,6 +127,19 @@ function Why({ gender, credits, onGo, onBack }: { gender: Gender; credits: numbe
           </li>
         ))}
       </ul>
+      <div className="stack" style={{ gap: 10, padding: 16, borderRadius: 20, background: "linear-gradient(150deg, #241C46, #3A2A6B)", color: "#fff" }}>
+        <span style={{ font: "800 11px var(--sans)", letterSpacing: ".14em", color: "#FFD98A" }}>YOUR DATING SIDEKICKS</span>
+        <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
+          <span aria-hidden="true" style={{ fontSize: 26 }}>👵</span>
+          <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 15 }}>Rishta Maasi</strong>
+            <span style={{ fontSize: 13, opacity: .85 }}>{gender === "man" ? "\u201cBeta, she\u2019s a Pisces Moon.\u201d" : "\u201cBeta, he\u2019s a Pisces Moon.\u201d"} 3 hand-picked people, every Sunday. <em>Maasi plan</em></span></span>
+        </div>
+        <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
+          <span aria-hidden="true" style={{ fontSize: 26 }}>🌙</span>
+          <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 15 }}>Saathi</strong>
+            <span style={{ fontSize: 13, opacity: .85 }}>Talk anytime, warm up before a date. A virtual companion, not a real person.</span></span>
+        </div>
+      </div>
       {credits > 0 && (
         <div className="row" style={{ gap: 14, padding: "14px 18px", borderRadius: 18, background: "linear-gradient(120deg, #FFE7A8, #FFC94D)", border: "2px dashed rgba(120,70,0,.35)" }}>
           <strong style={{ font: "700 40px/1 var(--serif)", color: "#5A3300" }}>{credits}</strong>
