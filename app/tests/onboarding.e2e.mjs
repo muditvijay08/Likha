@@ -29,6 +29,10 @@ page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connec
   await page.waitForURL("**/start");
   await shot("01-start");
   await click(gender === "woman" ? "Woman" : "Man");
+  await page.getByText("WHY LIKHA").waitFor();
+  ok(await page.getByText(gender === "woman" ? "You set the pace" : "Know before you like").isVisible(), `${name}: why-Likha points for ${gender}`);
+  await shot("01b-why");
+  await click("Continue");
   await page.waitForURL("**/phone");
   ok(await page.evaluate(() => document.documentElement.dataset.gender) === gender, `${name}: gender colour set to ${gender}`);
   await page.fill("#phone", phone);

@@ -18,11 +18,17 @@ export default function Start() {
   const [fresh, setFresh] = useState(false);
   useEffect(() => { setFresh(new URLSearchParams(window.location.search).get("new") === "1"); }, []);
 
-  async function choose(g: Gender) {
+  // Picking sets the app's colours, then shows what Likha does for them before the phone step.
+  const [picked, setPicked] = useState<Gender | null>(null);
+  function choose(g: Gender) {
     setDraft({ gender: g, inviteCode: code.trim() || undefined });
     document.documentElement.dataset.gender = g;
-    router.push((await api().signedIn()) ? "/consent" : "/phone");
+    setPicked(g);
+    window.scrollTo({ top: 0 });
   }
+  async function go() { router.push((await api().signedIn()) ? "/consent" : "/phone"); }
+  const credits = picked ? (settings?.onboarding_step_credits?.[picked] ?? []).reduce((a, b) => a + b, 0) : 0;
+  if (picked) return <Why gender={picked} credits={credits} onGo={go} onBack={() => setPicked(null)} />;
 
   const card = (g: Gender, label: string, icon: React.ReactNode, bg: string, bd: string, fg: string) => (
     <button type="button" onClick={() => choose(g)} style={{ height: 92, borderRadius: 18, background: bg, border: `2px solid ${bd}`, color: fg,
@@ -75,5 +81,51 @@ function Hero() {
       <span style={{ position: "absolute", left: 14, bottom: 14, padding: "6px 12px", borderRadius: 999, background: "rgba(30,24,56,.78)", color: "#FFD98A", font: "700 12px var(--sans)" }}>Written in the stars</span>
       <span style={{ position: "absolute", right: 12, bottom: 16, fontSize: 10, color: "rgba(255,255,255,.85)", textShadow: "0 1px 2px rgba(0,0,0,.5)" }}>Models · Pexels</span>
     </div>
+  );
+}
+
+// Why Likha, for the person who just picked. Every line is a real feature; credits come from Admin > Onboarding.
+const WHY: Record<string, { title: string; points: [string, string][] }> = {
+  woman: { title: "Made for you to feel safe and in control", points: [
+    ["You set the pace", "Message first only if you want to. Go incognito, so only people you like can see you."],
+    ["Real, verified people", "Everyone takes a selfie check. Numbers and links stay hidden in first messages."],
+    ["Safe dates, built in", "Share your date with someone you trust. Likha checks in afterwards, and SOS is one tap away."],
+    ["See who likes you, free", "And your kundli match on every profile, before you decide."],
+  ] },
+  man: { title: "Better matches. Better conversations.", points: [
+    ["Know before you like", "Your Jodi Score and 36-Guna match on every profile, from both real charts."],
+    ["Stand out", "Send a Cosmic Like with a note. Cupid suggests openers better than \u201chey\u201d."],
+    ["Text at the right time", "Golden Hours show when your stars line up to talk."],
+    ["See who likes you, free", "No paywall on your likes."],
+  ] },
+};
+
+function Why({ gender, credits, onGo, onBack }: { gender: Gender; credits: number; onGo(): void; onBack(): void }) {
+  const w = WHY[gender] ?? WHY.woman;
+  return (
+    <Screen style={{ gap: 18 }}>
+      <button type="button" className="linkbtn" onClick={onBack} style={{ alignSelf: "flex-start", fontSize: 14 }}>‹ Change</button>
+      <div className="stack" style={{ gap: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: "var(--g-ink)" }}>WHY LIKHA</span>
+        <h1 className="h1 big" style={{ margin: 0 }}>{w.title}</h1>
+      </div>
+      <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+        {w.points.map(([t, d], i) => (
+          <li key={t} className="row" style={{ gap: 14, alignItems: "flex-start", padding: 14, borderRadius: 18, background: "#fff", border: "1px solid var(--line)" }}>
+            <span aria-hidden="true" style={{ width: 32, height: 32, flex: "none", borderRadius: 999, background: "var(--g-soft)", color: "var(--g-ink)", display: "flex", alignItems: "center", justifyContent: "center", font: "700 14px var(--sans)" }}>{i + 1}</span>
+            <span className="stack" style={{ gap: 3 }}><strong style={{ fontSize: 15 }}>{t}</strong><span style={{ fontSize: 13, lineHeight: 1.45, color: "var(--muted)" }}>{d}</span></span>
+          </li>
+        ))}
+      </ol>
+      {credits > 0 && (
+        <div className="row" style={{ gap: 10, padding: "12px 14px", borderRadius: 16, background: "var(--saffron-soft)", fontSize: 14 }}>
+          <strong style={{ fontFamily: "var(--serif)", fontSize: 22, color: "var(--saffron-ink)" }}>{credits}</strong>
+          <span>free credits as you set up your profile</span>
+        </div>
+      )}
+      <div className="grow" />
+      <button type="button" className="btn" onClick={onGo}>Continue</button>
+      <span className="small" style={{ textAlign: "center" }}>Takes about 3 minutes.</span>
+    </Screen>
   );
 }
