@@ -256,3 +256,12 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
   .disc-card > :first-child { width: 50%; height: 600px !important; }
   .disc-card > :nth-child(2) { flex: 1; justify-content: center; padding: 32px !important; gap: 14px !important; }
 }
+
+/* Live popups (components/live.tsx) */
+@keyframes live-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.live-in { animation: live-in .35s ease both; }
+.live-pop { position: fixed; z-index: 45; left: 16px; right: 16px; margin: 0 auto; bottom: calc(var(--navh) + 14px); max-width: 420px;
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; background: #fff; border: 1px solid var(--line);
+  box-shadow: 0 12px 30px rgba(30,24,56,0.18); animation: live-in .4s ease both; }
+@media (min-width: 1024px) { .live-pop { left: auto; right: 28px; bottom: 28px; width: 380px; margin: 0; } }
+@media (prefers-reduced-motion: reduce) { .live-in, .live-pop { animation: none; } }

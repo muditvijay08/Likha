@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Avatar, Chevron, Coin, Info, price, useApp } from "@/components/app";
+import { LivePopup } from "@/components/live";
 import { api, type Announcement, type ConsentReq, type DueCheckin, type MatchRow } from "@/lib/api";
 import { KIND_TITLE } from "@/components/couple";
 import { clock, dayPlan, fmt, goldenHours, localParts, range } from "@/lib/panchang";
@@ -162,6 +163,7 @@ export default function Home() {
         <Chevron />
       </Link>
       </div></div>
+      <LivePopup />
     </div>
   );
 }

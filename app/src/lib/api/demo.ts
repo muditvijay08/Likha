@@ -8,7 +8,7 @@ import type {
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   CityCounter, WaitlistJoin, WaitlistResult,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
-  MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
+  MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
 } from "./types";
 import { SAMPLES, sampleProfile } from "./samples";
 import { dayPlan, range } from "../panchang";
@@ -295,6 +295,10 @@ export class DemoApi implements Api {
     return n;
   }
   async pulse(): Promise<Pulse | null> { return { city: this.load().city?.name ?? "Jaipur", matches_last_hour: 2, top_score: 94, minutes_ago: 2 }; }
+  async live(): Promise<Live | null> {          // demo numbers (the demo banner says sample)
+    const city = this.load().city?.name ?? "Jaipur";
+    return { city, pulse: await this.pulse(), online_now: 18, joined_today: 7, views_today: 3, new_high_match: true };
+  }
   async profile(id: string): Promise<ProfileFull> {
     await wait(150);
     const db = this.load();

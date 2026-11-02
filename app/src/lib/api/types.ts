@@ -142,6 +142,8 @@ export interface HomeData {
   notices?: number;
 }
 export interface Pulse { city: string; matches_last_hour: number; top_score: number | null; minutes_ago: number }
+/** Live popups: real activity only. City counts are null under 3; views and new_high_match are about the member. */
+export interface Live { city: string | null; pulse: Pulse | null; online_now: number | null; joined_today: number | null; views_today: number; new_high_match: boolean }
 export interface Filters {
   age_min: number; age_max: number; distance: "same_city" | "any_city"; diets: string[]; goals: Goal[]; languages: string[];
   height_min_cm: number | null; height_max_cm: number | null; active_this_week: boolean; has_voice_intro: boolean;
@@ -293,6 +295,7 @@ export interface Api {
   discover(offset?: number): Promise<Card[]>;
   discoverCount(anyCity?: boolean): Promise<number>;
   pulse(): Promise<Pulse | null>;
+  live(): Promise<Live | null>;
   profile(id: string): Promise<ProfileFull>;
   like(id: string, kind?: "like" | "cosmic_like", note?: string): Promise<LikeResult>;
   pass(id: string): Promise<void>;

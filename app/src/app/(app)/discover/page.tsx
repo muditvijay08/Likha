@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ErrorNote, useAction } from "@/components/ui";
 import { CreditsPill, GOAL_LABEL, Info, PhotoBlock, SampleTag, TIER_LABEL, price, useApp } from "@/components/app";
-import { api, type Card, type Filters, type Pulse, type SaathiState } from "@/lib/api";
+import { api, type Card, type Filters, type SaathiState } from "@/lib/api";
+import { LiveStrip } from "@/components/live";
 
 const COACH = "likha-coach-jodi";
 const seen = () => { try { return localStorage.getItem(COACH) === "1"; } catch { return true; } };
@@ -15,13 +16,12 @@ export default function Discover() {
   const { home, prices, reload } = useApp();
   const [cards, setCards] = useState<Card[] | null>(null);
   const [filters, setFilters] = useState<Filters | null>(null);
-  const [pulse, setPulse] = useState<Pulse | null>(null);
   const [coach, setCoach] = useState(false);
   const { busy, error, run } = useAction();
 
   const load = useCallback(async () => {
-    const [c, f, p] = await Promise.all([api().discover(0), api().filters(), api().pulse()]);
-    setCards(c); setFilters(f); setPulse(p);
+    const [c, f] = await Promise.all([api().discover(0), api().filters()]);
+    setCards(c); setFilters(f);
   }, []);
   useEffect(() => { load().catch(() => setCards([])); setCoach(!seen()); }, [load]);
 
@@ -59,13 +59,7 @@ export default function Discover() {
       )}
 
       <main style={{ flex: 1, padding: "14px 20px 0", display: "flex", flexDirection: "column", gap: 14 }}>
-        {pulse && (
-          <div role="status" className="row" style={{ gap: 10, padding: "10px 12px", borderRadius: 14, background: "#fff", border: "1px solid var(--line)", boxShadow: "0 6px 18px rgba(30,24,56,0.08)", fontSize: 13 }}>
-            <span style={{ width: 8, height: 8, flex: "none", borderRadius: 999, background: "#2F9E6E", boxShadow: "0 0 0 4px var(--green-soft)" }} />
-            <span style={{ flex: 1 }}><strong>Live in {pulse.city}:</strong> {pulse.matches_last_hour === 1 ? "two people just matched" : `${pulse.matches_last_hour} new matches`}{pulse.top_score ? ` at ${pulse.top_score}%` : ""} · {pulse.minutes_ago < 1 ? "just now" : `${pulse.minutes_ago} min ago`}</span>
-            <Info cls="tip-r" text="Real matches from the last hour, no names. Never made up." />
-          </div>
-        )}
+        <LiveStrip />
 
         {cards === null ? <div className="skel" style={{ height: 460 }} /> : card ? <>
           <article className="disc-card" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column" }}>

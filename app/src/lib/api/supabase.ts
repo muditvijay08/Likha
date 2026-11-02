@@ -6,7 +6,7 @@ import type {
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   CityCounter, WaitlistJoin, WaitlistResult,
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
-  MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Reading, Refresh, SelfieResult,
+  MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
 } from "./types";
 
 /** Errors the database raises on purpose, in member words. */
@@ -304,6 +304,7 @@ export class SupabaseApi implements Api {
   async discover(offset = 0): Promise<Card[]> { return this.sign(await this.rpc<Card[]>("discover_cards", { p_limit: 10, p_offset: offset })); }
   async discoverCount(anyCity = false): Promise<number> { return this.rpc<number>("discover_count", { p_any_city: anyCity }); }
   async pulse(): Promise<Pulse | null> { return (await this.rpc<Pulse | null>("city_pulse")) ?? null; }
+  async live(): Promise<Live | null> { return (await this.rpc<Live | null>("live_signals")) ?? null; }
   async profile(id: string): Promise<ProfileFull> {
     const p = await this.rpc<ProfileFull & { voice_intro_path?: string | null }>("profile_view", { p_user: id }, "Profile");
     const [signed] = await this.sign([p]);
