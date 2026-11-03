@@ -1,0 +1,314 @@
+{
+ "input": {
+  "boy": {
+   "date": "1995-03-14",
+   "time": "06:30",
+   "lat": 26.9124,
+   "lng": 75.7873,
+   "tz": "Asia/Kolkata",
+   "gender": "man"
+  },
+  "girl": {
+   "date": "1997-11-02",
+   "time": "21:15",
+   "lat": 28.6139,
+   "lng": 77.209,
+   "tz": "Asia/Kolkata",
+   "gender": "woman"
+  }
+ },
+ "result": {
+  "boy": {
+   "summary": {
+    "lagna": "Aquarius",
+    "moon_sign": "Cancer",
+    "nakshatra": "Ashlesha",
+    "pada": 2,
+    "nakshatra_index": 8,
+    "venus_sign": 9,
+    "moon_sign_index": 3,
+    "manglik": false,
+    "manglik_reason": null,
+    "borderline": false,
+    "current_dasha": "Venus\u2013Saturn",
+    "engine_version": "likha-kundli-2.0"
+   },
+   "manglik": {
+    "present": false,
+    "effective": false,
+    "strength": "none",
+    "from_lagna": 6,
+    "from_moon": 1,
+    "cancelled_by": null,
+    "reason": null
+   },
+   "borderline": false,
+   "planets": [
+    {
+     "planet": "Sun",
+     "lon": 329.190631,
+     "sign": "Aquarius",
+     "deg": 29.1906,
+     "nakshatra": "Purva Bhadrapada",
+     "pada": 3,
+     "retro": false,
+     "house": 1
+    },
+    {
+     "planet": "Moon",
+     "lon": 111.411653,
+     "sign": "Cancer",
+     "deg": 21.4117,
+     "nakshatra": "Ashlesha",
+     "pada": 2,
+     "retro": false,
+     "house": 6
+    },
+    {
+     "planet": "Mars",
+     "lon": 110.090403,
+     "sign": "Cancer",
+     "deg": 20.0904,
+     "nakshatra": "Ashlesha",
+     "pada": 2,
+     "retro": true,
+     "house": 6
+    },
+    {
+     "planet": "Mercury",
+     "lon": 304.994675,
+     "sign": "Aquarius",
+     "deg": 4.9947,
+     "nakshatra": "Dhanishta",
+     "pada": 4,
+     "retro": false,
+     "house": 1
+    },
+    {
+     "planet": "Jupiter",
+     "lon": 231.061063,
+     "sign": "Scorpio",
+     "deg": 21.0611,
+     "nakshatra": "Jyeshtha",
+     "pada": 2,
+     "retro": false,
+     "house": 10
+    },
+    {
+     "planet": "Venus",
+     "lon": 289.321428,
+     "sign": "Capricorn",
+     "deg": 19.3214,
+     "nakshatra": "Shravana",
+     "pada": 3,
+     "retro": false,
+     "house": 12
+    },
+    {
+     "planet": "Saturn",
+     "lon": 322.196576,
+     "sign": "Aquarius",
+     "deg": 22.1966,
+     "nakshatra": "Purva Bhadrapada",
+     "pada": 1,
+     "retro": false,
+     "house": 1
+    },
+    {
+     "planet": "Rahu",
+     "lon": 194.159696,
+     "sign": "Libra",
+     "deg": 14.1597,
+     "nakshatra": "Swati",
+     "pada": 3,
+     "retro": true,
+     "house": 9
+    },
+    {
+     "planet": "Ketu",
+     "lon": 14.159696,
+     "sign": "Aries",
+     "deg": 14.1597,
+     "nakshatra": "Bharani",
+     "pada": 1,
+     "retro": true,
+     "house": 3
+    }
+   ]
+  },
+  "girl": {
+   "summary": {
+    "lagna": "Gemini",
+    "moon_sign": "Scorpio",
+    "nakshatra": "Anuradha",
+    "pada": 3,
+    "nakshatra_index": 16,
+    "venus_sign": 8,
+    "moon_sign_index": 7,
+    "manglik": true,
+    "manglik_reason": "Mars in house 7 from Lagna and 2 from Moon",
+    "borderline": false,
+    "current_dasha": "Ketu\u2013Saturn",
+    "engine_version": "likha-kundli-2.0"
+   },
+   "manglik": {
+    "present": true,
+    "effective": true,
+    "strength": "high",
+    "from_lagna": 7,
+    "from_moon": 2,
+    "cancelled_by": null,
+    "reason": "Mars in house 7 from Lagna and 2 from Moon"
+   },
+   "borderline": false,
+   "planets": [
+    {
+     "planet": "Sun",
+     "lon": 196.433146,
+     "sign": "Libra",
+     "deg": 16.4331,
+     "nakshatra": "Swati",
+     "pada": 3,
+     "retro": false,
+     "house": 5
+    },
+    {
+     "planet": "Moon",
+     "lon": 222.136167,
+     "sign": "Scorpio",
+     "deg": 12.1362,
+     "nakshatra": "Anuradha",
+     "pada": 3,
+     "retro": false,
+     "house": 6
+    },
+    {
+     "planet": "Mars",
+     "lon": 241.255757,
+     "sign": "Sagittarius",
+     "deg": 1.2558,
+     "nakshatra": "Mula",
+     "pada": 1,
+     "retro": false,
+     "house": 7
+    },
+    {
+     "planet": "Mercury",
+     "lon": 208.534362,
+     "sign": "Libra",
+     "deg": 28.5344,
+     "nakshatra": "Vishakha",
+     "pada": 3,
+     "retro": false,
+     "house": 5
+    },
+    {
+     "planet": "Jupiter",
+     "lon": 289.322484,
+     "sign": "Capricorn",
+     "deg": 19.3225,
+     "nakshatra": "Shravana",
+     "pada": 3,
+     "retro": false,
+     "house": 8
+    },
+    {
+     "planet": "Venus",
+     "lon": 243.419167,
+     "sign": "Sagittarius",
+     "deg": 3.4192,
+     "nakshatra": "Mula",
+     "pada": 2,
+     "retro": false,
+     "house": 7
+    },
+    {
+     "planet": "Saturn",
+     "lon": 351.320108,
+     "sign": "Pisces",
+     "deg": 21.3201,
+     "nakshatra": "Revati",
+     "pada": 2,
+     "retro": true,
+     "house": 10
+    },
+    {
+     "planet": "Rahu",
+     "lon": 143.042826,
+     "sign": "Leo",
+     "deg": 23.0428,
+     "nakshatra": "Purva Phalguni",
+     "pada": 3,
+     "retro": true,
+     "house": 3
+    },
+    {
+     "planet": "Ketu",
+     "lon": 323.042826,
+     "sign": "Aquarius",
+     "deg": 23.0428,
+     "nakshatra": "Purva Bhadrapada",
+     "pada": 1,
+     "retro": true,
+     "house": 9
+    }
+   ]
+  },
+  "milan": {
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 1.0,
+    "tara": 3.0,
+    "yoni": 3.0,
+    "graha_maitri": 4.0,
+    "gana": 0.0,
+    "bhakoot": 0.0,
+    "nadi": 8.0
+   },
+   "total": 20.0,
+   "doshas": {
+    "bhakoot": {
+     "present": true,
+     "cancelled": false,
+     "reason": null,
+     "pair": "5/9"
+    },
+    "gana": {
+     "present": true,
+     "cancelled": false,
+     "reason": null
+    }
+   },
+   "adjusted_total": 20.0,
+   "details": {
+    "boy": {
+     "sign": "Cancer",
+     "nakshatra": "Ashlesha",
+     "pada": 2,
+     "varna": "Brahmin",
+     "vashya": "Jalachara",
+     "yoni": "Cat",
+     "sign_lord": "Moon",
+     "gana": "Rakshasa",
+     "nadi": "Antya"
+    },
+    "girl": {
+     "sign": "Scorpio",
+     "nakshatra": "Anuradha",
+     "pada": 3,
+     "varna": "Brahmin",
+     "vashya": "Keeta",
+     "yoni": "Deer",
+     "sign_lord": "Mars",
+     "gana": "Deva",
+     "nadi": "Madhya"
+    }
+   },
+   "rules_version": "ak-2.0"
+  },
+  "jodi_score": 52,
+  "borderline": false,
+  "engine": "likha-kundli-2.0",
+  "rules": "ak-2.0"
+ }
+}

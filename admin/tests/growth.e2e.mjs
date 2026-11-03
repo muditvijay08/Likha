@@ -161,6 +161,26 @@ await shot("social");
 await page.setViewportSize({ width: 390, height: 844 });
 await nav("Be a Cupid");
 ok(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 0, "Cupid: no sideways scroll at phone width");
+// engine check: two births in, positions, kootas, doshas and Jodi Score out (demo: the real engine's sample pair)
+await nav("Engine check");
+await page.getByLabel("Girl place").selectOption("other");
+ok(await seen(page.getByLabel("Girl time zone")), "Engine: Other place asks for latitude, longitude and time zone");
+await page.getByLabel("Girl time zone").fill("Asia/Kolkata");
+await btn("Check").click();
+const kootas = page.getByRole("region", { name: "Kootas" });
+ok(await seen(kootas) && (await kootas.locator("tbody tr").count()) === 9, "Engine: eight kootas plus total");
+ok(await seen(kootas.getByRole("row").filter({ hasText: "Nadi" }).getByText("8 / 8")) && await seen(kootas.getByText("20 / 36")), "Engine: sample scores shown (Nadi 8/8, total 20/36)");
+ok(await seen(page.getByRole("region", { name: "Boy positions" }).getByText("Ashlesha 2")), "Engine: boy's Moon nakshatra and pada");
+ok(await seen(page.getByRole("region", { name: "Doshas" }).getByText("Bhakoot dosha")), "Engine: Bhakoot dosha listed");
+ok(await seen(page.getByText(/Demo admin: there is no kundli service here/)), "Engine: demo says it's the sample pair");
+await page.getByLabel("Boy time").fill("");
+await btn("Check").click();
+ok(await seen(page.getByRole("alert").filter({ hasText: /24-hour/ })), "Engine: a bad time gets a plain message");
+await page.setViewportSize({ width: 390, height: 844 });
+ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "Engine: no sideways scroll at phone width");
+await shot("engine-phone");
+await page.setViewportSize({ width: 1360, height: 900 });
+
 ok(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 await browser.close();
 console.log(`\n${pass} passed, ${fail} failed`);

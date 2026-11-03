@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { BirthInput, EngineCheck } from "./types";
 import type { AdminApi, Ai, Keys, Me, MfaState, Model, TestResult, Overview, UserList, UserDetail, ModAction, TokenInfo, ReportRow, ReportDetail, Appeal,
   SelfieQueue, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate,
   SettingValue, SettingVersion, Cities, CupidAdmin, AiSpend, Fraud, Health, Team, AuditRow,
@@ -212,6 +213,7 @@ export class SupabaseAdmin implements AdminApi {
   async verification() { return this.rpc<Verification>("admin_verification"); }
   async setVerification(check: string, mode: string, url: string | null, note: string) { await this.rpc("admin_set_verification", { p_check: check, p_mode: mode, p_url: url, p_note: note }); }
   async testVerification(check: string) { return this.fn<{ ok: boolean; note: string }>({ action: "test_verify", check }, "admin-ops"); }
+  async engineCheck(boy: BirthInput, girl: BirthInput) { return this.fn<EngineCheck>({ action: "engine_check", boy, girl }, "admin-ops"); }
   async pushStats() { return this.rpc<PushStats>("admin_push_stats"); }
   async securityAudit() { return this.rpc<SecurityAudit>("admin_security_audit"); }
   async photoQueue() { return this.rpc<PhotoQueue>("admin_photo_queue"); }

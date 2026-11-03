@@ -3,10 +3,12 @@
 //   {action:"send_refund", refund_id}        refunds.large   send an approved bank refund to Razorpay
 //   {action:"invite_member", email, name, role}  team.manage  email invite to the admin; they set up an authenticator on first sign-in
 //   {action:"test_verify", check:"selfie"|"photos"}  settings.write  one sample call to the verification API set in Settings > Verification
+//   {action:"engine_check", boy, girl}         ai.view        two births -> both charts and the Guna Milan from the kundli service (nothing stored)
 import { admin, asUser, rpc } from "../_shared/db.ts";
 import { key, loadKeys } from "../_shared/keys.ts";
 import { callVerify, parsePhotoReply, parseSelfieReply } from "../_shared/verify.ts";
 import { orderPayments, refundPayment } from "../_shared/razorpay.ts";
+import { cleanBirth, engineCheck } from "../_shared/engine_check.ts";
 
 const H = { "access-control-allow-origin": Deno.env.get("LIKHA_ADMIN_SITE") ?? "*", "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
   "access-control-allow-methods": "POST, OPTIONS", "content-type": "application/json" };
@@ -78,6 +80,18 @@ Deno.serve(async (req) => {
       }
       await rpc("svc_add_team_member", { p_user: id, p_name: name, p_role: role, p_by: u.userId });
       return json({ ok: true, note: `Invited ${name}. They sign in with their email and set up an authenticator app.` });
+    }
+    if (body.action === "engine_check") {
+      if (!(await allowed("ai.view"))) return json({ error: "not allowed" }, 403);
+      const boy = cleanBirth(body.boy), girl = cleanBirth(body.girl);
+      if (typeof boy === "string") return json({ error: `Boy: ${boy}` }, 400);
+      if (typeof girl === "string") return json({ error: `Girl: ${girl}` }, 400);
+      const url = key("KUNDLI_URL"), k = key("KUNDLI_KEY");
+      if (!url || !k) return json({ error: "Set KUNDLI_URL and KUNDLI_KEY on Keys and integrations first." }, 409);
+      const out = await engineCheck(url, k, boy, girl);
+      // audit that a check ran, never the births
+      await u.client.rpc("admin_engine_check_log", { p_rules: out.rules }).then(() => {}, () => {});
+      return json(out);
     }
     return json({ error: "unknown action" }, 400);
   } catch (e) {

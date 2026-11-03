@@ -1,0 +1,7 @@
+# Only for tools/crosscheck_pyjhora.py and tests/test_crosscheck.py (not needed to run the service)
+PyJHora
+pyswisseph
+geocoder
+pytz
+timezonefinder
+geopy

@@ -15,7 +15,7 @@ const NAV: [string, Item[]][] = [
     ["/support", "Support inbox", ["support.reply"]], ["/grievances", "Grievances", ["grievances.manage"]], ["/data-requests", "Data requests", ["data.manage"]]]],
   ["Money", [["/payments", "Payments and refunds", ["payments.read"]], ["/readings", "Readings", ["users.read"]], ["/ai-spend", "AI spend and limits", ["ai.view"]]]],
   ["Growth", [["/cities", "Cities and waitlist", []], ["/cupid", "Be a Cupid", ["cupid.manage", "payouts.manage"]], ["/maasi", "Rishta Maasi picks", ["users.moderate"]], ["/social", "Social media", ["social.manage"]]]],
-  ["Trust", [["/fraud", "Fraud and abuse", ["fraud.manage"]], ["/health", "System health", []]]],
+  ["Trust", [["/fraud", "Fraud and abuse", ["fraud.manage"]], ["/health", "System health", []], ["/engine", "Engine check", ["ai.view"]]]],
   ["Settings", [["/settings/pricing", "Pricing and credits", []], ["/settings/features", "Features, matching, safety", []], ["/settings/comms", "Notifications, Saathi, AI", []],
     ["/settings/onboarding", "Onboarding", []], ["/settings/verification", "Verification", []], ["/settings/content", "Content", []], ["/settings/payments", "Payments and tax", []], ["/settings/general", "General and legal", []],
     ["/settings/security", "Security and data", []], ["/ai-ceo/rules", "AI CEO rules", []], ["/keys", "Keys and integrations", ["keys.manage"]], ["/ai", "AI models", ["ai.view", "settings.write"]],

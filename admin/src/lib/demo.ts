@@ -6,7 +6,8 @@ import type { AiSpend, Cities, CupidAdmin, Fraud, Health, Team } from "./types";
 import type { AiCeo, AppString, Catalog, Consents, Content, Flag, Pricing, Security, PhotoQueue, PhotoRow, Verification, VerifyMode } from "./types";
 import { CONSENT_MEMBERS, SEED, UNUSED, seedConf, type Conf } from "./demo-settings";
 import { demoSocial } from "./demo-social";
-import type { SocialPlatform } from "./types";
+import type { BirthInput, EngineCheck, SocialPlatform } from "./types";
+import ENGINE_SAMPLE from "./engine-sample.json";
 
 type Slot = [string, KeySlot["mode"], string, string, string | null, boolean, boolean, boolean, string | null];
 const SLOTS: Slot[] = [
@@ -814,6 +815,12 @@ export class DemoAdmin implements AdminApi {
     const note = "Demo admin: no calls leave this browser. On the live admin this sends one labelled sample request and shows the answer.";
     this.vEdit((v) => { v.tests[check] = { at: new Date().toISOString(), ok: "false", note }; });
     return { ok: false, note };
+  }
+  // No kundli service in the demo admin: every check returns the one sample pair the real engine computed (engine-sample.json).
+  async engineCheck(boy: BirthInput, girl: BirthInput) {
+    await wait(400);
+    for (const b of [boy, girl]) if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(b.time)) throw new Error("Use a date like 1995-03-14 and a 24-hour time like 06:30.");
+    return { ...(ENGINE_SAMPLE.result as unknown as EngineCheck), sample: true };
   }
   async pushStats() {
     await wait(120); const d = this.load();

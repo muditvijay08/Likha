@@ -240,6 +240,8 @@ export interface AdminApi {
   verification(): Promise<Verification>;
   setVerification(check: "selfie" | "photos", mode: VerifyMode, url: string | null, note: string): Promise<void>;
   testVerification(check: "selfie" | "photos"): Promise<{ ok: boolean; note: string }>;
+  // engine check: two births straight through the kundli service (nothing stored)
+  engineCheck(boy: BirthInput, girl: BirthInput): Promise<EngineCheck>;
   photoQueue(): Promise<PhotoQueue>;
   decidePhoto(id: string, approve: boolean, reason: string | null): Promise<void>;
   /** Live checks of the database's protections (Security and data). */
@@ -285,3 +287,18 @@ export interface Agent { key: string; label: string; acting: boolean; can_do: st
 export interface Approval { id: string; agent: string; title: string; detail: string | null; amount_paise: number | null; status: "pending" | "approved" | "declined" | "expired"; at: string; expires_at: string; decided_by: string | null }
 export interface AgentAction { id: number; at: string; agent: string; action: string; target: string | null; reason: string | null; after: Record<string, unknown> | null; undone: boolean; undoable: boolean }
 export interface AiCeo { can_decide: boolean; paused: boolean; limits: Record<string, unknown>; agents: Agent[]; approvals: Approval[]; actions: AgentAction[] }
+
+// Admin > Engine check
+export interface BirthInput { date: string; time: string; lat: number; lng: number; tz: string; gender: "man" | "woman" }
+export interface EnginePlanet { planet: string; lon: number; sign: string; deg: number; nakshatra: string; pada: number; retro: boolean; house: number }
+export interface EngineChart {
+  summary: { lagna: string; moon_sign: string; nakshatra: string; pada: number; manglik: boolean; manglik_reason: string | null; current_dasha: string | null; borderline: boolean };
+  manglik: { present: boolean; effective: boolean; strength: string; from_lagna: number; from_moon: number; cancelled_by: string | null; reason: string | null };
+  borderline: boolean; planets: EnginePlanet[];
+}
+export interface EngineDosha { present: boolean; cancelled: boolean; reason: string | null; pair?: string }
+export interface EngineCheck {
+  boy: EngineChart; girl: EngineChart; jodi_score: number; borderline: boolean; engine: string | null; rules: string | null; sample?: boolean;
+  milan: { kootas: Record<string, number>; total: number; adjusted_total: number; doshas: Record<string, EngineDosha>; rules_version: string;
+    details: Record<"boy" | "girl", Record<string, string | number>> };
+}
