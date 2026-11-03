@@ -1,0 +1,43 @@
+# Likha's changes to the official Supabase self-hosting stack. stack.sh copies this next to docker-compose.yml and
+# .env loads both (COMPOSE_FILE). Values come from <Likha folder>/.supabase/.env (root-only, never in git).
+# Nothing here is reachable from the internet except the API, through Caddy or nginx on the API domain.
+services:
+  api-gw:
+    ports: !override
+      - "127.0.0.1:8000:8000/tcp"           # only Caddy/nginx on this server reach the API
+
+  supavisor:
+    ports: !override                         # database: from this server only (backups, psql); never public
+      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:6543:6543"
+
+  auth:
+    environment:
+      # Phone login codes go out through our sms-hook function (MSG91, DLT). host.docker.internal is the functions
+      # container on the internal network (alias below): GoTrue only allows plain http to that name or localhost.
+      GOTRUE_HOOK_SEND_SMS_ENABLED: "true"
+      GOTRUE_HOOK_SEND_SMS_URI: http://host.docker.internal:9000/sms-hook
+      GOTRUE_HOOK_SEND_SMS_SECRETS: ${SEND_SMS_HOOK_SECRET:?set SEND_SMS_HOOK_SECRET}
+      GOTRUE_SMS_OTP_EXP: "300"
+      GOTRUE_SMS_OTP_LENGTH: "6"
+      GOTRUE_SMS_MAX_FREQUENCY: 60s
+      GOTRUE_RATE_LIMIT_SMS_SENT: ${LIKHA_SMS_PER_HOUR:-300}
+      GOTRUE_SMS_TEST_OTP: ${LIKHA_TEST_OTP:-}         # team test numbers, "919999900001:123456,..."; empty for none
+      # Team: email code + authenticator app (aal2).
+      GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"
+      GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"
+      GOTRUE_MAILER_OTP_EXP: "600"
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ${LIKHA_MAGIC_LINK_TEMPLATE:-}
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Your Likha sign-in code"
+
+  functions:
+    environment:
+      LIKHA_SITE: ${LIKHA_SITE:?set LIKHA_SITE}
+      LIKHA_ADMIN_SITE: ${LIKHA_ADMIN_SITE:?set LIKHA_ADMIN_SITE}
+      LIKHA_INTERNAL_SECRET: ${LIKHA_INTERNAL_SECRET:?set LIKHA_INTERNAL_SECRET}
+      LIKHA_HASH_SALT: ${LIKHA_HASH_SALT:?set LIKHA_HASH_SALT}
+      SEND_SMS_HOOK_SECRET: ${SEND_SMS_HOOK_SECRET:?set SEND_SMS_HOOK_SECRET}
+      LIKHA_JWT_FUNCTIONS: ${LIKHA_JWT_FUNCTIONS:-}
+    networks:
+      default:
+        aliases: [host.docker.internal]

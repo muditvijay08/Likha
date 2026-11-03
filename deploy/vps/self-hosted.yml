@@ -1,0 +1,14 @@
+# Added when Supabase runs on this server (install.sh, self-hosted mode, with Caddy). Caddy joins Supabase's network
+# to serve the API domain (supabase/api.caddy) and the Cupid links straight from the gateway.
+services:
+  caddy:
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN}
+    volumes:
+      - ./supabase/api.caddy:/etc/caddy/extra/api.caddy:ro
+    networks: [default, supabase]
+
+networks:
+  supabase:
+    external: true
+    name: supabase_default

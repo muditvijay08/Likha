@@ -1,0 +1,15 @@
+# Supabase API on this server. Only the public APIs the apps use are reachable; Studio (the dashboard) is not:
+# open it through an SSH tunnel instead (README, "Supabase Studio").
+{$API_DOMAIN} {
+	import common
+	request_body {
+		max_size 25MB
+	}
+	@api path /auth/v1/* /rest/v1/* /realtime/v1/* /storage/v1/* /functions/v1/* /graphql/v1/*
+	handle @api {
+		reverse_proxy api-gw:8000
+	}
+	handle {
+		respond "Not found" 404
+	}
+}

@@ -11,7 +11,7 @@
 	import common
 	handle /c/* {
 		uri replace /c/ /functions/v1/cupid-redirect/ 1
-		reverse_proxy https://{$SUPABASE_HOST} {
+		reverse_proxy {$SUPABASE_UPSTREAM} {
 			header_up Host {$SUPABASE_HOST}
 		}
 	}
@@ -34,3 +34,6 @@
 	}
 	reverse_proxy kundli:8080
 }
+
+# Supabase on this server (self-hosted mode): the API domain, from deploy/vps/supabase/api.caddy. Nothing otherwise.
+import /etc/caddy/extra/*.caddy

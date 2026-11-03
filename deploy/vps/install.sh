@@ -7,10 +7,12 @@
 # What it does, safely re-runnable:
 #   1. Installs Docker, git and a firewall (only SSH, 80, 443 open); adds swap on small servers.
 #   2. Gets the code: makes a read-only GitHub deploy key and waits while you add it to the repo.
-#   3. Asks for the settings (domains, Supabase public values, kundli key) and keeps them in deploy/vps/.env (root-only).
+#   3. Asks for the settings (domains, kundli key, where Supabase runs) and keeps them in deploy/vps/.env (root-only).
+#      Supabase can stay on Supabase cloud, or run on this server too (self-hosted, free; needs about 8 GB RAM):
+#      then it also sets up the database, logins, files, functions, scheduled jobs, the owner login and nightly backups.
 #   4. Builds and starts the member app, admin console and kundli engine behind Caddy (automatic HTTPS).
 #   5. Installs `likha-update` and, if you want, a locked-down key so GitHub can deploy every push to main.
-# Supabase stays where it is. No provider secrets are asked for here: those stay in Admin > Keys.
+# No provider secrets are asked for here: those stay in Admin > Keys.
 set -euo pipefail
 
 REPO_SSH="git@github.com:muditvijay08/Likha.git"
@@ -47,7 +49,7 @@ if ! command -v docker >/dev/null; then curl -fsSL https://get.docker.com | sh >
 systemctl enable --now docker >/dev/null
 ok "Docker $(docker --version | cut -d' ' -f3 | tr -d ,)"
 mem_mb=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
-if [ "$mem_mb" -lt 4000 ] && ! swapon --show | grep -q .; then
+if [ "$mem_mb" -lt 8000 ] && ! swapon --show | grep -q .; then
   fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
   grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
   ok "Added 4 GB swap (server has ${mem_mb} MB RAM; building the apps needs headroom)"
@@ -82,15 +84,28 @@ git -C "$DIR" pull -q --ff-only
 ok "Code at $DIR ($(git -C "$DIR" log -1 --format='%h %s' | cut -c1-60))"
 
 say "3/5 Settings"
+SUPA_MODE="${LIKHA_SUPABASE:-}"
 if [ ! -f "$ENV_FILE" ]; then
   ip=$(curl -fsS4 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
   dash=${ip//./-}
+  echo "Where should Supabase (database, logins, files, server functions) run?"
+  echo "  cloud: stays on supabase.com (backups and upkeep done for you)"
+  echo "  self:  on this server too, free; needs about 8 GB RAM; backups run here every night"
+  def=cloud; [ "$mem_mb" -ge 7500 ] && def=self
+  SUPA_MODE=$(ask "Supabase: cloud or self" "$def")
+  [ "$SUPA_MODE" = self ] || SUPA_MODE=cloud
+  [ "$SUPA_MODE" = self ] && [ "$mem_mb" -lt 7500 ] && warn "This server has ${mem_mb} MB RAM; 8 GB is recommended for Supabase + Likha. It will run on swap, slowly."
   echo "Domains: press Enter to use free sslip.io names on this server's IP ($ip) until likha.in is ready."
   site=$(ask "Member app and website domain" "app.$dash.sslip.io")
   admin=$(ask "Admin console domain" "admin.$dash.sslip.io")
   kundli=$(ask "Kundli engine domain" "kundli.$dash.sslip.io")
-  supa=$(ask "Supabase project URL" "https://mbqdohudzelrolpfwfxt.supabase.co")
-  anon=$(ask "Supabase anon (public) key, from Supabase > Project Settings > API")
+  if [ "$SUPA_MODE" = self ]; then
+    api=$(ask "Supabase API domain" "api.$dash.sslip.io")
+    supa="https://$api"; anon="pending"   # filled in by the Supabase setup below
+  else
+    supa=$(ask "Supabase project URL" "https://mbqdohudzelrolpfwfxt.supabase.co")
+    anon=$(ask "Supabase anon (public) key, from Supabase > Project Settings > API")
+  fi
   echo "Kundli key: paste the KUNDLI_KEY already set in Admin > Keys to keep it, or press Enter to make a new one."
   kkey=$(ask "Kundli key" ""); new_key=0
   if [ -z "$kkey" ]; then kkey=$(openssl rand -hex 32); new_key=1; fi
@@ -104,16 +119,25 @@ SUPABASE_HOST=${supa#https://}
 SUPABASE_ANON_KEY=$anon
 LIKHA_KUNDLI_KEY=$kkey
 EOT
+  [ "$SUPA_MODE" = self ] && echo "API_DOMAIN=$api" >> "$ENV_FILE"
   chmod 600 "$ENV_FILE"
   ok "Saved $ENV_FILE (root-only)"
   [ "$new_key" = 1 ] && warn "New kundli key made. Set it in Admin > Keys > KUNDLI_KEY (shown once): $kkey"
 else
   ok "Using existing $ENV_FILE"
 fi
+[ -n "$SUPA_MODE" ] || SUPA_MODE=$(grep -q '^API_DOMAIN=' "$ENV_FILE" && echo self || echo cloud)
+extra=""; [ -f /etc/likha.conf ] && extra=$(grep -E '^LIKHA_BACKUP_' /etc/likha.conf || true)
+printf 'LIKHA_DIR=%q\nLIKHA_MODE=%s\nLIKHA_SUPABASE=%s\n' "$DIR" "$MODE" "$SUPA_MODE" > /etc/likha.conf
+[ -n "$extra" ] && echo "$extra" >> /etc/likha.conf
+if [ "$SUPA_MODE" = self ]; then
+  set -a; . "$ENV_FILE"; set +a
+  bash "$DIR/deploy/vps/supabase/stack.sh" install "$SITE_DOMAIN" "$ADMIN_DOMAIN" "$API_DOMAIN"
+fi
 set -a; . "$ENV_FILE"; set +a
-printf 'LIKHA_DIR=%q\nLIKHA_MODE=%s\n' "$DIR" "$MODE" > /etc/likha.conf
 COMPOSE=(docker compose -f "$DIR/deploy/vps/docker-compose.yml" --env-file "$ENV_FILE")
 if [ "$MODE" = nginx ]; then COMPOSE+=(-f "$DIR/deploy/vps/behind-nginx.yml"); else COMPOSE+=(--profile caddy); fi
+[ "$SUPA_MODE" = self ] && [ "$MODE" = caddy ] && COMPOSE+=(-f "$DIR/deploy/vps/self-hosted.yml")
 
 say "4/5 Build and start (first build takes 5-10 minutes)"
 "${COMPOSE[@]}" up -d --build
@@ -123,10 +147,16 @@ if [ "$MODE" = nginx ]; then
   sed -e "s|{SITE_DOMAIN}|$SITE_DOMAIN|g" -e "s|{ADMIN_DOMAIN}|$ADMIN_DOMAIN|g" -e "s|{KUNDLI_DOMAIN}|$KUNDLI_DOMAIN|g" \
       -e "s|{SUPABASE_HOST}|$SUPABASE_HOST|g" "$DIR/deploy/vps/nginx-likha.conf" > "$conf"
   ln -sf "$conf" /etc/nginx/sites-enabled/likha.conf
+  domains=(-d "$SITE_DOMAIN" -d "$ADMIN_DOMAIN" -d "$KUNDLI_DOMAIN")
+  if [ "$SUPA_MODE" = self ]; then
+    sed -e "s|{API_DOMAIN}|$API_DOMAIN|g" "$DIR/deploy/vps/supabase/nginx-api.conf" > /etc/nginx/sites-available/likha-api.conf
+    ln -sf /etc/nginx/sites-available/likha-api.conf /etc/nginx/sites-enabled/likha-api.conf
+    domains+=(-d "$API_DOMAIN")
+  fi
   nginx -t && systemctl reload nginx
   apt-get install -y -qq certbot python3-certbot-nginx >/dev/null
-  certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email --redirect \
-    -d "$SITE_DOMAIN" -d "$ADMIN_DOMAIN" -d "$KUNDLI_DOMAIN" || warn "Certificate not issued yet: check the domains point here, then run: certbot --nginx -d $SITE_DOMAIN -d $ADMIN_DOMAIN -d $KUNDLI_DOMAIN"
+  certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email --redirect "${domains[@]}" \
+    || warn "Certificate not issued yet: check the domains point here, then run: certbot --nginx ${domains[*]}"
   ok "nginx: Likha's sites added in $conf (HTTPS by certbot, renews by itself)"
 fi
 for _ in $(seq 1 60); do curl -fsS "https://$KUNDLI_DOMAIN/health" >/dev/null 2>&1 && break; sleep 5; done
@@ -137,6 +167,13 @@ curl -fsS -o /dev/null "https://$ADMIN_DOMAIN/login" 2>/dev/null && ok "Admin: h
 say "5/5 Updates"
 install -m 0755 "$DIR/deploy/vps/update.sh" /usr/local/bin/likha-update
 ok "Run 'sudo likha-update' any time to deploy the latest main"
+if [ "$SUPA_MODE" = self ]; then
+  install -m 0755 "$DIR/deploy/vps/supabase/backup.sh" /usr/local/bin/likha-backup
+  install -m 0755 "$DIR/deploy/vps/supabase/restore.sh" /usr/local/bin/likha-restore
+  echo '30 21 * * * root /usr/local/bin/likha-backup >> /var/log/likha-backup.log 2>&1' > /etc/cron.d/likha-backup   # 03:00 IST
+  chmod 644 /etc/cron.d/likha-backup
+  likha-backup >/dev/null && ok "Backups: every night at 03:00 IST in $DIR/backups (14 days). First one made now."
+fi
 yn=$(ask "Let GitHub deploy automatically on every push to main? (y/n)" "y")
 if [ "$yn" = y ]; then
   id likha-deploy >/dev/null 2>&1 || useradd -m -s /bin/bash likha-deploy
@@ -157,8 +194,18 @@ if [ "$yn" = y ]; then
   echo
 fi
 
-say "Done. Three settings to point at this server:"
-echo "  1. Admin > Keys: KUNDLI_URL = https://$KUNDLI_DOMAIN  (and KUNDLI_KEY if a new one was made), press Test"
-echo "  2. Supabase > Authentication > URL Configuration: Site URL https://$SITE_DOMAIN; add https://$ADMIN_DOMAIN/** to Redirect URLs"
-echo "  3. Supabase > Edge Functions > Secrets: LIKHA_SITE = https://$SITE_DOMAIN, LIKHA_ADMIN_SITE = https://$ADMIN_DOMAIN"
+if [ "$SUPA_MODE" = self ]; then
+  say "Done. Supabase runs on this server too. Next:"
+  echo "  1. Open https://$ADMIN_DOMAIN, sign in with the owner email (code by email), set up the authenticator app."
+  echo "  2. Admin > Keys: KUNDLI_URL = https://$KUNDLI_DOMAIN and KUNDLI_KEY (the kundli key above), press Test."
+  echo "     Then the provider keys as usual: MSG91 (login SMS), Razorpay, Gemini, Turnstile, Maps."
+  echo "  3. Check backups now and then: 'sudo likha-restore --test'. Add an off-server copy (README, Backups)."
+  echo "  Supabase Studio (dashboard): from your computer run  ssh -L 8000:localhost:8000 root@<this server>"
+  echo "  then open http://localhost:8000 (user supabase, password: DASHBOARD_PASSWORD in $DIR/.supabase/.env)."
+else
+  say "Done. Three settings to point at this server:"
+  echo "  1. Admin > Keys: KUNDLI_URL = https://$KUNDLI_DOMAIN  (and KUNDLI_KEY if a new one was made), press Test"
+  echo "  2. Supabase > Authentication > URL Configuration: Site URL https://$SITE_DOMAIN; add https://$ADMIN_DOMAIN/** to Redirect URLs"
+  echo "  3. Supabase > Edge Functions > Secrets: LIKHA_SITE = https://$SITE_DOMAIN, LIKHA_ADMIN_SITE = https://$ADMIN_DOMAIN"
+fi
 echo "  Real domains later: point A records at this server, edit $ENV_FILE, run 'sudo likha-update'."

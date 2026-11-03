@@ -1,5 +1,5 @@
 # Likha on one VPS: member app + website, admin console, kundli engine, behind Caddy (automatic HTTPS).
-# Supabase (database, logins, storage, server functions) stays on Supabase. Settings come from deploy/vps/.env,
+# Supabase runs on Supabase cloud, or on this server too (self-hosted.yml + supabase/). Settings come from deploy/vps/.env,
 # written by install.sh. Only Caddy is reachable from outside; the three services listen on the internal network.
 x-hardening: &hardening
   restart: unless-stopped
@@ -60,6 +60,7 @@ services:
       ADMIN_DOMAIN: ${ADMIN_DOMAIN:?set ADMIN_DOMAIN}
       KUNDLI_DOMAIN: ${KUNDLI_DOMAIN:?set KUNDLI_DOMAIN}
       SUPABASE_HOST: ${SUPABASE_HOST:?set SUPABASE_HOST}
+      SUPABASE_UPSTREAM: ${SUPABASE_UPSTREAM:-https://${SUPABASE_HOST}}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

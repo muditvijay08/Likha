@@ -1,0 +1,9 @@
+<!-- Email body for team sign-in codes on a self-hosted Supabase (deploy/vps/supabase). GoTrue fetches this file
+     (GOTRUE_MAILER_TEMPLATES_MAGIC_LINK) and fills {{ .Token }}. On Supabase cloud, the same text is set in
+     Authentication > Emails > Magic Link. -->
+<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:440px;margin:0 auto;padding:24px;color:#1e1838">
+  <p style="font:700 22px Georgia,serif;margin:0 0 16px">Likha<span style="color:#e0457b">.</span></p>
+  <p style="margin:0 0 12px">Your sign-in code:</p>
+  <p style="font:700 32px/1 ui-monospace,Menlo,monospace;letter-spacing:6px;margin:0 0 16px">{{ .Token }}</p>
+  <p style="margin:0;color:#6b6585;font-size:13px">It works for 10 minutes. If you didn't ask for it, you can ignore this email.</p>
+</div>
