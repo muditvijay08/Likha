@@ -21,3 +21,6 @@ export const GUIDES = [
   { href: "/moon-sign-calculator", title: "Find your Moon sign", sub: "Your rashi from your date of birth" },
   { href: "/compatibility", title: "Rashi compatibility", sub: "All 78 Moon-sign pairs" },
 ] as const;
+
+/** IndexNow key (public by design): lets Bing and other engines re-read changed pages quickly. Served at /indexnow.txt. */
+export const INDEXNOW_KEY = "bf5269c9bc999cb1e7da600ef81dc262";

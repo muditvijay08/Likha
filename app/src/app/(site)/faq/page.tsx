@@ -8,6 +8,10 @@ export const metadata: Metadata = {
 };
 
 const ITEMS: [string, string][] = [
+  ["What is Likha?", "A kundli-first dating app for India. You make your birth chart free, and every profile shows your 36-Guna Milan and Jodi Score with that person before you like them. Members are real people who sign up with their own number and a selfie."],
+  ["How is Likha different from other dating apps?", "Compatibility comes first: your kundli match is on every profile, worked out from both real birth charts. Women can choose to message first, numbers and links are held back in first messages, and dating is free, including seeing who liked you."],
+  ["How accurate is the kundli?", "Charts use NASA JPL's planetary data and the Lahiri ayanamsa, the Indian standard, so positions match the Rashtriya Panchang to under a second of arc. Guna Milan follows the classical Ashtakoota rules. A score is a guide, not a promise."],
+  ["Who runs Likha?", "Young Attitude Ventures Private Limited, in Jaipur, Rajasthan. The founder is Mudit Dudhoria."],
   ["Is Likha free?", "Yes. Making your kundli, liking, matching and chatting are free. Some extras, like detailed readings, Check With Anyone and Boost, use credits, and plans add more features. You always see the price before you pay."],
   ["Who can join?", "Anyone 18 or older with a mobile number, in a city where Likha is open. Other cities can join the Founding Members list."],
   ["Why do you need my birth time and place?", "To work out your real birth chart. The Moon changes nakshatra about once a day, and your ascendant every two hours, so the time matters. Your birth details are never shown to anyone."],

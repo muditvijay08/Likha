@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Cta, Faq, JsonLd, RashiLinks } from "@/components/site/chrome";
 import { CityUnlocks, SignedInRedirect, WaitlistForm } from "@/components/site/client";
 import { GUIDES, SITE_URL, TAGLINE } from "@/lib/site";
+import { appLd, organizationLd } from "@/lib/about";
 import { StockPhoto } from "@/components/stock-photo";
 
 export const metadata: Metadata = {
@@ -68,9 +69,8 @@ export default function Home() {
     <>
       <SignedInRedirect />
       <JsonLd data={[
-        { "@context": "https://schema.org", "@type": "Organization", name: "Likha", url: SITE_URL, logo: `${SITE_URL}/icons/icon-512.png`,
-          parentOrganization: { "@type": "Organization", name: "Young Attitude Group" }, address: { "@type": "PostalAddress", addressLocality: "Jaipur", addressRegion: "Rajasthan", addressCountry: "IN" } },
-        { "@context": "https://schema.org", "@type": "WebSite", name: "Likha", url: SITE_URL, inLanguage: "en-IN" },
+        organizationLd(), appLd(),
+        { "@context": "https://schema.org", "@type": "WebSite", name: "Likha", url: SITE_URL, inLanguage: "en-IN", publisher: { "@id": `${SITE_URL}/#organization` } },
       ]} />
 
       <section className="night home-hero">

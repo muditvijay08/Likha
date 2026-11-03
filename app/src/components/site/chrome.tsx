@@ -36,7 +36,7 @@ export function SiteFooter() {
           </div>
           <div><h4>Likha</h4>
             <Link href="/how-it-works">How it works</Link><Link href="/safety">Safety</Link><Link href="/check-your-crush">Check your crush</Link>
-            <Link href="/faq">Questions</Link><Link href="/get-the-app">Get the app</Link><Link href="/login">Log in</Link></div>
+            <Link href="/about">About</Link><Link href="/faq">Questions</Link><Link href="/get-the-app">Get the app</Link><Link href="/login">Log in</Link></div>
           <div><h4>Guides</h4>{GUIDES.map((g) => <Link key={g.href} href={g.href}>{g.title}</Link>)}
             <Link href="/rashi">All 12 rashis</Link></div>
           <div><h4>Cities</h4>{CITY_PAGES.map((c) => <Link key={c.slug} href={`/dating/${c.slug}`}>Dating in {c.name}</Link>)}</div>

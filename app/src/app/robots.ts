@@ -9,6 +9,14 @@ const PRIVATE = ["/open", "/home", "/discover", "/likes", "/matches", "/match/",
   "/account-status", "/basics", "/birth", "/bonus", "/consent", "/goal", "/lifestyle", "/phone", "/photos", "/preferences", "/selfie", "/vibe", "/kundli",
   "/waitlist", "/tour/", "/install", "/login", "/offline", "/g/", "/i/", "/k/", "/s/"];
 
+// AI assistants and their search crawlers are welcome on the website (same rules as everyone), named so it's explicit.
+const AI_BOTS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User",
+  "Google-Extended", "Applebot-Extended", "Bingbot", "meta-externalagent", "CCBot"];
+
 export default function robots(): MetadataRoute.Robots {
-  return { rules: [{ userAgent: "*", allow: ["/", "/check-your-crush", "/kundli-matching"], disallow: PRIVATE }], sitemap: `${SITE_URL}/sitemap.xml`, host: SITE_URL };
+  const allow = ["/", "/llms.txt", "/about", "/check-your-crush", "/kundli-matching"];
+  return {
+    rules: [{ userAgent: "*", allow, disallow: PRIVATE }, { userAgent: AI_BOTS, allow, disallow: PRIVATE }],
+    sitemap: `${SITE_URL}/sitemap.xml`, host: SITE_URL,
+  };
 }

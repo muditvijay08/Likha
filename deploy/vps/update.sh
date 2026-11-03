@@ -36,4 +36,16 @@ for url in "${urls[@]}"; do
   for _ in $(seq 1 24); do curl -fsS -o /dev/null "$url" && break; sleep 5; done
   if curl -fsS -o /dev/null "$url"; then echo "ok   ${url%%\?*}"; else echo "FAIL ${url%%\?*}"; fail=1; fi
 done
+# Real domain? Tell search engines the site changed (IndexNow; Bing feeds ChatGPT search and Copilot).
+case "$SITE_DOMAIN" in *sslip.io|*nip.io) ;; *)
+  if [ "$fail" = 0 ]; then
+    site="https://$SITE_DOMAIN"; key=$(curl -fsS "$site/indexnow.txt" 2>/dev/null || true)
+    urls=$(curl -fsS "$site/sitemap.xml" 2>/dev/null | grep -o '<loc>[^<]*' | sed 's/<loc>//' || true)
+    if [ -n "$key" ] && [ -n "$urls" ]; then
+      body=$(printf '%s\n' "$urls" | python3 -c 'import json,sys; u=[l.strip() for l in sys.stdin if l.strip()]; print(json.dumps({"host":sys.argv[1],"key":sys.argv[2],"keyLocation":sys.argv[3],"urlList":u[:10000]}))' "$SITE_DOMAIN" "$key" "$site/indexnow.txt")
+      code=$(curl -s -o /dev/null -w '%{http_code}' -X POST https://api.indexnow.org/indexnow -H 'content-type: application/json; charset=utf-8' -d "$body" || true)
+      echo "IndexNow: $(printf '%s\n' "$urls" | wc -l) URLs, HTTP $code"
+    fi
+  fi;;
+esac
 exit $fail

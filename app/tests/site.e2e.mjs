@@ -10,7 +10,7 @@ let pass = 0, fail = 0;
 const ok = (c, msg) => { if (c) { pass++; console.log("PASS |", msg); } else { fail++; console.log("FAIL |", msg); } };
 
 // 1. server HTML (what a search engine sees, no JavaScript)
-const pages = ["/", "/how-it-works", "/safety", "/check-your-crush", "/faq", "/kundli-matching", "/manglik-dosha", "/moon-sign-calculator",
+const pages = ["/", "/about", "/how-it-works", "/safety", "/check-your-crush", "/faq", "/kundli-matching", "/manglik-dosha", "/moon-sign-calculator",
   "/rashi", "/rashi/aries", "/rashi/pisces", "/compatibility", "/compatibility/aries-and-pisces", "/compatibility/leo-and-capricorn", "/compatibility/cancer-and-cancer",
   "/dating/jaipur", "/dating/dubai", "/get-the-app"];
 for (const p of pages) {
@@ -29,11 +29,21 @@ ok(/<b>0<\/b>/.test(lc) && /no classical cancellation/.test(lc), "Simha and Maka
 ok((await fetch(BASE + "/compatibility/pisces-and-aries")).status === 404, "reversed pair is not a second page");
 ok((await fetch(BASE + "/rashi/pluto")).status === 404, "unknown rashi is 404");
 const sitemap = await (await fetch(BASE + "/sitemap.xml")).text();
-ok((sitemap.match(/<url>/g) ?? []).length === 110, "sitemap lists 110 pages");
+ok((sitemap.match(/<url>/g) ?? []).length === 111, "sitemap lists 111 pages");
 ok(!/\/home<|\/chat|\/open</.test(sitemap), "sitemap has no app screens");
 const robots = await (await fetch(BASE + "/robots.txt")).text();
 ok(/Disallow: \/home/.test(robots) && /Disallow: \/chat\//.test(robots) && /Sitemap: https:\/\/likha.in\/sitemap.xml/.test(robots), "robots keeps app screens out and points to the sitemap");
 ok((await fetch(BASE + "/opengraph-image")).headers.get("content-type") === "image/png", "link preview image");
+// AI assistants: llms.txt, named crawlers, structured data, IndexNow key
+const llms = await (await fetch(BASE + "/llms.txt")).text();
+ok(/^# Likha\n\n> Likha is a kundli-first dating app/.test(llms) && /Young Attitude Ventures Private Limited/.test(llms) && /\[About Likha\]\(https:\/\/likha.in\/about\)/.test(llms), "llms.txt: summary, company, links");
+ok(!/\bAI\b|guaranteed|100%/.test(llms), "llms.txt follows the copy rules (no AI, no guarantees)");
+ok(/User-Agent: GPTBot/.test(robots) && /User-Agent: ClaudeBot/.test(robots) && /User-Agent: PerplexityBot/.test(robots), "robots names AI crawlers");
+ok((robots.match(/Disallow: \/home/g) ?? []).length === 2, "AI crawlers get the same private-screen rules");
+const about = await (await fetch(BASE + "/about")).text();
+ok(/"legalName":"Young Attitude Ventures Private Limited"/.test(about) && /"@type":"WebApplication"/.test(about) && /"@type":"AboutPage"/.test(about), "about page carries Organization, app and AboutPage data");
+ok(/"@type":"FAQPage"/.test(await (await fetch(BASE + "/faq")).text()), "FAQ structured data");
+ok(/^[a-f0-9]{32}$/.test((await (await fetch(BASE + "/indexnow.txt")).text()).trim()), "IndexNow key served");
 const manifest = await (await fetch(BASE + "/manifest.webmanifest")).json();
 ok(manifest.start_url === "/open", "installed app opens the app, not the website");
 ok(manifest.icons.some((i) => i.purpose === "maskable") && manifest.icons.some((i) => i.purpose === "any" && i.sizes === "512x512"), "manifest has full-bleed and maskable icons");
