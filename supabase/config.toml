@@ -33,6 +33,9 @@ verify_jwt = false
 verify_jwt = false
 
 # public website form (Turnstile + per-IP limit in code) and its cron
+[functions.social-worker]
+verify_jwt = false        # cron (internal secret), the team (checks social.manage itself), and /social-card (card token)
+
 [functions.waitlist]
 verify_jwt = false
 

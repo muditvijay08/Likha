@@ -7,7 +7,7 @@ const PRIVATE = ["/open", "/home", "/discover", "/likes", "/matches", "/match/",
   "/saathi", "/guru/", "/maasi", "/couple", "/universe", "/story", "/together/", "/seven/", "/imagine/", "/golden/", "/ask/", "/boost", "/travel",
   "/cupid", "/invite", "/trusted", "/share-date", "/sos", "/safety/report", "/checkin/", "/check", "/gift", "/why", "/why-not", "/my-kundli", "/filters",
   "/account-status", "/basics", "/birth", "/bonus", "/consent", "/goal", "/lifestyle", "/phone", "/photos", "/preferences", "/selfie", "/vibe", "/kundli",
-  "/waitlist", "/tour/", "/install", "/login", "/offline", "/g/", "/i/", "/k/", "/s/"];
+  "/waitlist", "/tour/", "/install", "/login", "/offline", "/g/", "/i/", "/k/", "/s/", "/social-card/", "/social/"];
 
 // AI assistants and their search crawlers are welcome on the website (same rules as everyone), named so it's explicit.
 const AI_BOTS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User",

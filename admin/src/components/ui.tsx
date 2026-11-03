@@ -50,7 +50,7 @@ export function NoteAction({ label: text, tone = "ghost", placeholder, days, onR
 
 export function Page({ title, sub, actions, children }: { title: string; sub?: string; actions?: ReactNode; children: ReactNode }) {
   return <>
-    <div className="row" style={{ alignItems: "flex-end" }}><div className="stack grow" style={{ gap: 4 }}><h1>{title}</h1>{sub && <p className="sub">{sub}</p>}</div>{actions}</div>
+    <div className="row" style={{ alignItems: "flex-end", flexWrap: "wrap" }}><div className="stack grow" style={{ gap: 4, minWidth: 0, flexBasis: 260 }}><h1>{title}</h1>{sub && <p className="sub">{sub}</p>}</div>{actions}</div>
     {children}
   </>;
 }

@@ -21,6 +21,8 @@ const csp = [
 const nextConfig = {
   // Self-hosted builds (deploy/vps) set LIKHA_STANDALONE=1 for a small server bundle; Vercel builds ignore it.
   ...(process.env.LIKHA_STANDALONE === "1" ? { output: "standalone" } : {}),
+  // Social cards read their fonts from disk; make sure every build (Vercel and standalone) ships them.
+  outputFileTracingIncludes: { "/social-card/[id]": ["./src/app/social-card/fonts/**"] },
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {

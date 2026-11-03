@@ -115,3 +115,8 @@ textarea.input { height: auto; min-height: 80px; padding: 10px 12px; line-height
 .bar { height: 8px; border-radius: 999px; background: var(--line-soft); overflow: hidden; } .bar > span { display: block; height: 100%; background: var(--violet); border-radius: 999px; }
 .photo { width: 100%; aspect-ratio: 4 / 5; border-radius: 14px; background: var(--violet-soft); display: grid; place-items: center; font: 600 40px var(--serif); color: #4B3592; overflow: hidden; }
 .photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Admin > Social: card preview beside the words; stacked on a phone */
+.social-post { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.social-post .tabs button { white-space: nowrap; }
+@media (max-width: 760px) { .social-post { grid-template-columns: minmax(0, 1fr); } .social-post > [role="img"], .social-post > img { max-width: 280px; } }

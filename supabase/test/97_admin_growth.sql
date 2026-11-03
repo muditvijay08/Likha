@@ -168,7 +168,7 @@ select pg_temp.check('incident fixed with a timeline note', $q$ select (public.a
 -- ---------------------------------------------------------------- team and audit
 select pg_temp.act_as_team('d2000000-0000-0000-0000-000000000001');
 select pg_temp.check('team list, roles and the permission matrix', $q$ select jsonb_array_length(t -> 'members') = 4 and (t -> 'matrix' -> 'owner') ? 'keys.manage'
-  and jsonb_array_length(t -> 'permissions') = 23 and (t ->> 'can_manage')::boolean from (select public.admin_team() t) x $q$);
+  and jsonb_array_length(t -> 'permissions') = 24 and (t ->> 'can_manage')::boolean from (select public.admin_team() t) x $q$);
 select pg_temp.denied('owner cannot demote themselves', $q$ select public.admin_set_member('d2000000-0000-0000-0000-000000000001', 'admin', true, 'test') $q$);
 select pg_temp.step('make Asha a safety lead', $q$ select public.admin_set_member('d2000000-0000-0000-0000-000000000002', 'safety', true, 'Moved to safety') $q$);
 select pg_temp.denied('keys stay with owners', $q$ select public.admin_set_role_permission('admin', 'keys.manage', true, 'x') $q$);

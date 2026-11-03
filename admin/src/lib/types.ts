@@ -70,6 +70,14 @@ export interface DataRequest { id: string; user_id: string | null; user: string;
 export interface MaasiMember { user_id: string; user: string; age: number | null; gender: string; city: string | null; until: string;
   picks: { id: string; name: string; note: string; response: string | null }[]; last_week_interested: number }
 export interface Maasi { week_of: string; per_week: number; members: MaasiMember[] }
+export type SocialPlatform = "instagram" | "facebook" | "linkedin" | "x" | "youtube";
+export interface SocialCard { kicker?: string; headline: string; sub?: string; big?: string; facts?: [string, string][]; footer?: string; note?: string }
+export interface SocialResult { ok: boolean; id?: string; url?: string; error?: string; pending?: Record<string, unknown>; at?: string }
+export interface SocialPost { id: string; post_date: string; scheduled_at: string; kind: string; card: SocialCard; captions: Record<string, string>;
+  platforms: SocialPlatform[]; video: boolean; status: "draft" | "approved" | "dropped" | "posting" | "posted" | "partly" | "failed";
+  assets: { image?: string; tall?: string; video?: string }; results: Partial<Record<SocialPlatform, SocialResult>>; writer: string | null; problems: string[];
+  note: string | null; decided_by: string | null; decided_at: string | null }
+export interface Social { week_of: string; settings: Record<string, unknown>; can_settings: boolean; connections: Record<SocialPlatform, boolean>; weeks: string[]; posts: SocialPost[] }
 export interface Candidate { id: string; name: string; age: number | null; profession: string | null; jodi_score: number | null; gunas: number | null; moon: string | null;
   nakshatra: string | null; goal: string | null; photo: string | null }
 
@@ -166,6 +174,12 @@ export interface AdminApi {
   maasiCandidates(user: string): Promise<Candidate[]>;
   addMaasiPick(user: string, pick: string, note: string): Promise<void>;
   removeMaasiPick(id: string): Promise<void>;
+  social(week?: string): Promise<Social>;
+  socialEdit(id: string, captions: Record<string, string>, card: { headline: string; sub?: string }, platforms: SocialPlatform[], video: boolean): Promise<{ redraw: boolean }>;
+  socialDecide(id: string, status: "approved" | "dropped" | "draft", note?: string): Promise<void>;
+  socialApproveWeek(week: string): Promise<number>;
+  socialPlan(week: string): Promise<{ saved: number; writer: string }>;
+  socialRender(id: string): Promise<void>;
   photoUrl(path: string | null, bucket?: "photos" | "selfies"): Promise<string | null>;
   // growth and control
   settings(keys: string[]): Promise<Record<string, SettingValue>>;

@@ -15,6 +15,11 @@ export const SEED = {"settings": {"ai": {"usd_inr": 88, "max_words": 350, "alert
   agents: { key: string; label: string; acting: boolean; can_do: string[]; needs_approval: string[]; never: string[]; limits: Record<string, number> }[];
 };
 
+// Admin > Social (part 28), as the database starts.
+(SEED.settings as Record<string, unknown>).social = { enabled: false, post_time_ist: "19:30", plan_weekday: 0, plan_time_ist: "10:00", city: "jaipur",
+  platforms: ["instagram", "facebook", "linkedin", "x", "youtube"], video_kinds: ["panchang", "pair", "golden"], youtube_privacy: "private",
+  linkedin_version: "202510", graph_version: "v23.0", hashtags: ["#Likha", "#KundliMatching", "#Jaipur", "#DesiDating", "#Kundli"], max_hashtags: 5 };
+
 export interface ConsentDoc { key: string; version: string; title: string; body: string; required: boolean; published_at: string }
 export interface Conf {
   catalog: Catalog; catalogHistory: { id: number; note: string; at: string; by: string | null; snapshot: Catalog }[];

@@ -11,7 +11,7 @@ How the platform is protected, what the October 2026 audit found and fixed (plus
 | Team | Admin needs an authenticator app (aal2) for every request. Roles have only the permissions they need. The team changes data only through audited functions, never by editing tables. |
 | Money | Prices come from the database, never the app. Razorpay webhooks are signature-checked in constant time. Credits move only through the ledger with idempotency keys. Bank refunds need a second person. Live payments need the owner, all live keys tested, and typing LIVE. |
 | Keys | Provider keys are in Supabase Vault, write-only from Admin (last 4 shown), owner only, audited. Never in code, logs or the app. |
-| Files | All buckets are private. Members read approved photos of people they can see, and chat files only in their own matches. The team sees chat files only for reported chats; selfies only while reviewing, then they're deleted. |
+| Files | All member buckets are private (the one public bucket, `social`, holds only approved marketing cards and videos, never member data). Members read approved photos of people they can see, and chat files only in their own matches. The team sees chat files only for reported chats; selfies only while reviewing, then they're deleted. |
 | Web apps | Content Security Policy listing only the services used, no framing (clickjacking), HSTS, nosniff, camera/mic/location limited to the app itself. Admin is never indexed and has no camera/mic/location. |
 | Server functions | Member calls need a valid sign-in; scheduled jobs need a 32+ character shared secret compared in constant time. The verification API address must be a public https name (no IP addresses or internal hosts). |
 

@@ -52,10 +52,39 @@ export function testKey(name: string, value: string, other: string | undefined, 
     case "LIKHA_ALERT_WEBHOOK":
       return probe(fetcher, value, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: "Likha admin: test alert. You can ignore this." }) },
         "Webhook", [200, 201, 202, 204]);
+    // ---- social (Admin > Social). Read-only checks; LinkedIn's only proof of posting rights is reserving an upload slot.
+    case "META_PAGE_TOKEN":
+      return probe(fetcher, `https://graph.facebook.com/v23.0/me?fields=id,name&access_token=${encodeURIComponent(value)}`, {}, "Meta");
+    case "LINKEDIN_TOKEN":
+      if (!other) return Promise.resolve({ ok: false, note: "Set the LinkedIn author (page or person) first" });
+      return probe(fetcher, "https://api.linkedin.com/rest/images?action=initializeUpload", { method: "POST",
+        headers: { authorization: `Bearer ${value}`, "LinkedIn-Version": "202510", "X-Restli-Protocol-Version": "2.0.0", "content-type": "application/json" },
+        body: JSON.stringify({ initializeUploadRequest: { owner: other } }) }, "LinkedIn");
+    case "X_ACCESS_SECRET":
+      return (async (): Promise<KeyTest> => {
+        const o = JSON.parse(other ?? "{}") as Record<string, string>;
+        if (!o.X_API_KEY || !o.X_API_SECRET || !o.X_ACCESS_TOKEN) return { ok: false, note: "Set the other three X keys first" };
+        const { oauth1 } = await import("./social_publish.ts");
+        const url = "https://api.x.com/2/users/me";
+        const auth = await oauth1("GET", url, { key: o.X_API_KEY, secret: o.X_API_SECRET, token: o.X_ACCESS_TOKEN, tokenSecret: value });
+        return probe(fetcher, url, { headers: { authorization: auth } }, "X");
+      })();
+    case "YOUTUBE_REFRESH_TOKEN":
+      return (async (): Promise<KeyTest> => {
+        const o = JSON.parse(other ?? "{}") as Record<string, string>;
+        if (!o.YOUTUBE_CLIENT_ID || !o.YOUTUBE_CLIENT_SECRET) return { ok: false, note: "Set the YouTube client id and secret first" };
+        const { youtubeToken } = await import("./social_publish.ts");
+        const token = await youtubeToken(fetcher, { clientId: o.YOUTUBE_CLIENT_ID, clientSecret: o.YOUTUBE_CLIENT_SECRET, refresh: value }).catch(() => null);
+        if (!token) return { ok: false, note: "Google refused the refresh token" };
+        return probe(fetcher, "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true", { headers: { authorization: `Bearer ${token}` } }, "YouTube");
+      })();
     default:
       return Promise.resolve({ ok: false, note: "No direct test for this key" });
   }
 }
 
 /** Which other key a test needs, if any. */
-export const PAIRED: Record<string, string> = { RAZORPAY_KEY_SECRET: "RAZORPAY_KEY_ID", RAZORPAYX_KEY_SECRET: "RAZORPAYX_KEY_ID", KUNDLI_KEY: "KUNDLI_URL", ONESIGNAL_REST_API_KEY: "ONESIGNAL_APP_ID" };
+/** A list means the test gets all of them, as a JSON object. */
+export const PAIRED: Record<string, string | string[]> = { RAZORPAY_KEY_SECRET: "RAZORPAY_KEY_ID", RAZORPAYX_KEY_SECRET: "RAZORPAYX_KEY_ID", KUNDLI_KEY: "KUNDLI_URL",
+  ONESIGNAL_REST_API_KEY: "ONESIGNAL_APP_ID", LINKEDIN_TOKEN: "LINKEDIN_AUTHOR_URN", X_ACCESS_SECRET: ["X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN"],
+  YOUTUBE_REFRESH_TOKEN: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET"] };

@@ -48,14 +48,14 @@ export function SettingsForm({ title, fields, canEdit, onSaved }: { title: strin
     <section className="card stack" style={{ gap: 12 }} aria-label={title}>
       <div className="row"><h2 className="grow">{title}</h2>{!canEdit && <span className="pill off">Read only</span>}</div>
       <div className="stack" style={{ gap: 0 }}>{fields.map((f) => (
-        <div key={id(f)} className="row" style={{ padding: "8px 0", borderTop: "1px solid var(--line-soft)", flexWrap: "nowrap" }}>
-          <label htmlFor={`set-${id(f)}`} className="grow" style={{ fontSize: 13.5 }}>{f.label}{f.locked && <span className="pill off" style={{ marginLeft: 6 }}>Locked</span>}
+        <div key={id(f)} className="row" style={{ padding: "8px 0", borderTop: "1px solid var(--line-soft)", flexWrap: "wrap" }}>
+          <label htmlFor={`set-${id(f)}`} className="grow" style={{ fontSize: 13.5, flexBasis: 200, minWidth: 0 }}>{f.label}{f.locked && <span className="pill off" style={{ marginLeft: 6 }}>Locked</span>}
             {(f.unused || unused.includes(f.key)) && <span className="pill warn" style={{ marginLeft: 6 }} title="Saved, but nothing in the app reads this yet">Not used by the app yet</span>}
             {f.hint && <div className="small">{f.hint}</div>}</label>
           {f.unit === "bool" ? <input id={`set-${id(f)}`} type="checkbox" checked={Boolean(vals[id(f)])} disabled={!canEdit || f.locked} onChange={(e) => setVals({ ...vals, [id(f)]: e.target.checked })} />
             : f.unit === "choice" ? <select id={`set-${id(f)}`} className="input" style={{ width: 170 }} value={String(vals[id(f)] ?? "")} disabled={!canEdit || f.locked}
                 onChange={(e) => setVals({ ...vals, [id(f)]: e.target.value })}>{(f.options ?? []).map((o) => <option key={o}>{o}</option>)}</select>
-            : f.unit === "text" || f.unit === "list" ? <input id={`set-${id(f)}`} className="input" style={{ width: 280 }} value={String(vals[id(f)] ?? "")} disabled={!canEdit || f.locked}
+            : f.unit === "text" || f.unit === "list" ? <input id={`set-${id(f)}`} className="input" style={{ width: "min(280px, 100%)" }} value={String(vals[id(f)] ?? "")} disabled={!canEdit || f.locked}
                 placeholder={f.unit === "list" ? "comma, separated" : ""} onChange={(e) => setVals({ ...vals, [id(f)]: e.target.value })} />
             : f.unit === "time" ? <input id={`set-${id(f)}`} className="input" type="time" style={{ width: 120 }} value={String(vals[id(f)] ?? "")} disabled={!canEdit || f.locked}
                 onChange={(e) => setVals({ ...vals, [id(f)]: e.target.value })} />

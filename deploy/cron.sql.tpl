@@ -15,7 +15,7 @@ $$;
 revoke all on function private.call_function(text, jsonb) from public, anon, authenticated;
 
 select cron.unschedule(jobname) from cron.job where jobname in ('kundli-worker','kick-tick','payment-recheck','payouts','tiers','readings','safety','push','waitlist-sms',
-  'kick-catchup','kundli-warm','lift-suspensions','city-unlocks','fraud-scan','crush-expiry','plan-reminders','retention','ai-close-stale');
+  'kick-catchup','kundli-warm','lift-suspensions','city-unlocks','fraud-scan','crush-expiry','plan-reminders','retention','ai-close-stale','social-plan','social-publish');
 
 -- Edge Functions (times are UTC; IST = UTC + 5:30)
 select cron.schedule('kundli-worker',   '* * * * *',    $$ select private.call_function('kundli-worker') where exists (select 1 from private.kundli_jobs j where j.status = 'queued' or (j.status = 'running' and j.updated_at < now() - interval '5 minutes' and j.attempts < 5)) $$);  -- queued kundlis, only when there are any
@@ -28,6 +28,8 @@ select cron.schedule('payment-recheck', '*/15 * * * *', $$ select private.call_f
 select cron.schedule('safety',          '*/5 * * * *',  $$ select private.call_function('safety-worker') $$);              -- date check-ins, selfie cleanup
 select cron.schedule('waitlist-sms',    '*/5 * * * *',  $$ select private.call_function('waitlist', '{"action":"notify"}') $$);  -- "your city is open" SMS
 select cron.schedule('payouts',         '0 * * * *',    $$ select private.call_function('payout-worker') $$);              -- Cupid UPI payouts
+select cron.schedule('social-plan',     '5 * * * *',    $$ select private.call_function('social-worker', '{"action":"plan"}') where coalesce((public.setting('social') ->> 'enabled')::boolean, false) $$);  -- next week's posts, on the planning day (Admin > Social)
+select cron.schedule('social-publish',  '*/10 * * * *', $$ select private.call_function('social-worker', '{"action":"publish"}') where exists (select 1 from public.social_posts s where s.status in ('approved','posting') and s.scheduled_at <= now()) $$);  -- approved posts whose time has come
 
 -- Database jobs
 select cron.schedule('lift-suspensions', '*/30 * * * *', $$ select private.lift_suspensions() $$);

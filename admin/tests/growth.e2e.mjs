@@ -135,6 +135,29 @@ await page.getByRole("button", { name: "AI agents" }).click();
 ok(await gone(page.getByRole("row", { name: /Role permission/ })) && await seen(page.getByRole("row", { name: /AI · safety/ })), "Audit: filter by AI agents");
 await shot("06-team");
 
+// social media: next week's drafts, edit, checks, approve, drop
+await nav("Social media");
+ok(await seen(page.getByRole("region", { name: /Aaj ka panchang/ })) && (await page.getByRole("region").filter({ has: page.getByRole("tablist") }).count()) === 7, "Social: seven drafts for next week");
+ok(await seen(page.getByText(/Posting is off/)) && await seen(page.getByText("Instagram: not yet")), "Social: says posting is off and nothing is connected");
+const pair = page.getByRole("region", { name: /Rashi jodi/ });
+ok(await seen(pair.getByRole("img", { name: /Card sketch: Mesh \+ Meen/ })), "Social: card sketch before the image is drawn");
+await pair.getByRole("tab", { name: "X", exact: true }).click();
+const xBox = pair.getByLabel(/^X/);
+await xBox.fill("Our AI says Mesh + Meen is perfect");
+await btn("Save changes", pair).click();
+ok(await seen(pair.getByText(/not saved: the text says AI/)), "Social: an edit that says AI is refused");
+await xBox.fill("Mesh + Meen: 12/12 Moon-sign points. Poora match likha.in pe");
+await btn("Save changes", pair).click();
+ok(await toast("Saved"), "Social: a clean edit saves");
+await btn("Approve", pair).click();
+ok(await toast("Approved") && await seen(pair.getByText("Approved", { exact: true })), "Social: one post approved");
+const myth = page.getByRole("region", { name: /Myth vs fact/ });
+await btn("Drop", myth).click();
+ok(await toast("Dropped") && await seen(myth.getByText("Dropped", { exact: true })), "Social: one post dropped");
+await btn("Approve all (5)").click();
+ok(await toast("5 posts approved"), "Social: approve all approves the remaining clean drafts");
+await shot("social");
+
 await page.setViewportSize({ width: 390, height: 844 });
 await nav("Be a Cupid");
 ok(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 0, "Cupid: no sideways scroll at phone width");

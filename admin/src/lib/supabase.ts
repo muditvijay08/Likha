@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { AdminApi, Ai, Keys, Me, MfaState, Model, TestResult, Overview, UserList, UserDetail, ModAction, TokenInfo, ReportRow, ReportDetail, Appeal,
   SelfieQueue, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate,
   SettingValue, SettingVersion, Cities, CupidAdmin, AiSpend, Fraud, Health, Team, AuditRow,
-  Pricing, Catalog, Flag, Consents, Content, AppString, Security, AiCeo, Verification, PhotoQueue, SecurityAudit, PushStats } from "./types";
+  Pricing, Catalog, Flag, Consents, Content, AppString, Security, AiCeo, Verification, PhotoQueue, SecurityAudit, PushStats, Social, SocialPlatform } from "./types";
 
 const FRIENDLY: [RegExp, string][] = [
   [/not allowed/, "You don't have permission for this."],
@@ -112,6 +112,25 @@ export class SupabaseAdmin implements AdminApi {
   async maasiCandidates(user: string) { return this.rpc<Candidate[]>("admin_maasi_candidates", { p_user: user }); }
   async addMaasiPick(user: string, pick: string, note: string) { await this.rpc("admin_add_maasi_pick", { p_user: user, p_pick: pick, p_note: note }); }
   async removeMaasiPick(id: string) { await this.rpc("admin_remove_maasi_pick", { p_id: id }); }
+  async social(week?: string) { return this.rpc<Social>("admin_social", { p_week: week ?? null }); }
+  async socialEdit(id: string, captions: Record<string, string>, card: { headline: string; sub?: string }, platforms: SocialPlatform[], video: boolean) {
+    const r = await this.rpc<{ redraw: boolean }>("admin_social_edit", { p_id: id, p_captions: captions, p_card: card, p_platforms: platforms, p_video: video });
+    if (r.redraw) await this.socialRender(id).catch(() => {});
+    return r;
+  }
+  async socialDecide(id: string, status: "approved" | "dropped" | "draft", note?: string) { await this.rpc("admin_social_decide", { p_id: id, p_status: status, p_note: note ?? null }); }
+  async socialApproveWeek(week: string) { return this.rpc<number>("admin_social_approve_week", { p_week: week }); }
+  private async social_fn<T>(body: Record<string, unknown>): Promise<T> {
+    const { data, error } = await this.sb.functions.invoke("social-worker", { body });
+    if (error) {
+      let msg = "That didn't work. Try again in a minute.";
+      try { const j = await (error as { context?: Response }).context?.json(); if (j?.error) msg = j.error; } catch { /* keep */ }
+      throw new Error(msg);
+    }
+    return data as T;
+  }
+  async socialPlan(week: string) { return this.social_fn<{ saved: number; writer: string }>({ action: "plan", week, force: true }); }
+  async socialRender(id: string) { await this.social_fn({ action: "render", id }); }
   async photoUrl(path: string | null, bucket: "photos" | "selfies" = "photos") {
     if (!path) return null;
     const { data } = await this.sb.storage.from(bucket).createSignedUrl(path, 600);

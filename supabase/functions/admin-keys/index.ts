@@ -43,7 +43,10 @@ Deno.serve(async (req) => {
     const value = await rpc<string | null>("svc_api_key", { p_key: body.key, p_mode: body.mode });
     if (!value) return json({ ok: false, note: "Not set" });
     const pair = PAIRED[body.key];
-    const other = pair ? (await rpc<string | null>("svc_api_key", { p_key: pair, p_mode: body.mode })) ?? (await rpc<string | null>("svc_api_key", { p_key: pair, p_mode: "any" })) ?? undefined : undefined;
+    const one = async (k: string) => (await rpc<string | null>("svc_api_key", { p_key: k, p_mode: body.mode })) ?? (await rpc<string | null>("svc_api_key", { p_key: k, p_mode: "any" })) ?? undefined;
+    const other = !pair ? undefined : Array.isArray(pair)
+      ? JSON.stringify(Object.fromEntries(await Promise.all(pair.map(async (k) => [k, await one(k)]))))
+      : await one(pair);
     const r = await testKey(body.key, value, other);
     await rpc("svc_key_tested", { p_key: body.key, p_mode: body.mode, p_ok: r.ok, p_note: r.note });
     return json(r);

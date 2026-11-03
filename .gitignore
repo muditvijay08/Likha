@@ -16,3 +16,4 @@ admin/vercel.json
 .vercel/
 /.supabase/
 /backups/
+admin/tests/shots/

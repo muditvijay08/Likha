@@ -9,8 +9,9 @@ import hmac
 import os
 from datetime import date, time
 
-from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
 from likha_kundli import ENGINE_VERSION, RULES_VERSION, Birth, BirthTimeError, compute_chart
@@ -110,6 +111,29 @@ def day(body: DayIn):
     moon = transit_moon(body.date, body.tz_name, body.lat, body.lng)
     return {"date": body.date.isoformat(), "moon": moon,
             "people": [{"id": p.id, **person_day(p.nakshatra_index, p.moon_sign_index, moon)} for p in body.people]}
+
+
+@app.post("/v1/media/short", dependencies=[Depends(auth)])
+async def media_short(request: Request, seconds: int = 10):
+    """Card PNG (request body) -> vertical MP4, for the weekly social posts (supabase/functions/social-worker)."""
+    from media import short_from_png
+    body = await request.body()
+    try:
+        mp4 = await run_in_threadpool(short_from_png, body, seconds)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return Response(content=mp4, media_type="video/mp4")
+
+
+@app.post("/v1/media/jpeg", dependencies=[Depends(auth)])
+async def media_jpeg(request: Request):
+    """Card PNG (request body) -> JPEG, for Instagram, X and LinkedIn."""
+    from media import jpeg_from_png
+    try:
+        jpg = await run_in_threadpool(jpeg_from_png, await request.body())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return Response(content=jpg, media_type="image/jpeg")
 
 
 @app.get("/v1/guna-lookup.sql", dependencies=[Depends(auth)], response_class=PlainTextResponse)

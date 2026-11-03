@@ -30,7 +30,7 @@ export const PERMISSIONS: { key: string; label: string }[] = [
   ["users.read", "See member profiles"], ["users.moderate", "Suspend, ban, review selfies and reports"], ["reports.read_chats", "Read reported chats"], ["birth.reveal", "Reveal and correct birth details"],
   ["support.reply", "Answer support"], ["grievances.manage", "Handle grievances"], ["data.manage", "Export and erase data"], ["fraud.manage", "Fraud cases"], ["refunds.small", "Refund up to ₹500"],
   ["refunds.large", "Refund above ₹500 and approve refunds"], ["credits.adjust", "Change credits and tiers"], ["payments.read", "See payments"], ["payouts.manage", "Cupid KYC, payouts and TDS"],
-  ["cupid.manage", "Run Be a Cupid"], ["cities.unlock", "Add and unlock cities"], ["campaigns.manage", "Campaigns"], ["ai.view", "See AI spend"], ["ai.limits", "Change AI caps and member limits"],
+  ["cupid.manage", "Run Be a Cupid"], ["cities.unlock", "Add and unlock cities"], ["campaigns.manage", "Campaigns"], ["social.manage", "Social media posts"], ["ai.view", "See AI spend"], ["ai.limits", "Change AI caps and member limits"],
   ["ai.approve", "Approve AI CEO requests"], ["settings.write", "Change prices and settings"], ["keys.manage", "Provider keys and live mode"], ["audit.read", "Read the audit log"], ["team.manage", "Invite people and change roles"],
 ].map(([key, label]) => ({ key, label }));
 

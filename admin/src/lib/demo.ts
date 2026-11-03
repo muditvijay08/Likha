@@ -5,6 +5,8 @@ import { PERMISSIONS, seedGrowth, type Growth } from "./demo-growth";
 import type { AiSpend, Cities, CupidAdmin, Fraud, Health, Team } from "./types";
 import type { AiCeo, AppString, Catalog, Consents, Content, Flag, Pricing, Security, PhotoQueue, PhotoRow, Verification, VerifyMode } from "./types";
 import { CONSENT_MEMBERS, SEED, UNUSED, seedConf, type Conf } from "./demo-settings";
+import { demoSocial } from "./demo-social";
+import type { SocialPlatform } from "./types";
 
 type Slot = [string, KeySlot["mode"], string, string, string | null, boolean, boolean, boolean, string | null];
 const SLOTS: Slot[] = [
@@ -69,7 +71,7 @@ const FEATURES: Feature[] = [
   { key: "imagine", label: "Imagine Us (2 images)", kind: "image", model: "gemini-nano-banana-2.1", fallback: null, enabled: true, paid: true, spent_7d_paise: 0 },
 ];
 /** Same as the Owner role in the database (04_seed, 07, 14). */
-const OWNER_PERMS = ["ai.approve", "ai.limits", "ai.view", "audit.read", "birth.reveal", "campaigns.manage", "cities.unlock", "credits.adjust", "cupid.manage", "data.manage",
+const OWNER_PERMS = ["social.manage", "ai.approve", "ai.limits", "ai.view", "audit.read", "birth.reveal", "campaigns.manage", "cities.unlock", "credits.adjust", "cupid.manage", "data.manage",
   "fraud.manage", "grievances.manage", "keys.manage", "payments.read", "payouts.manage", "refunds.large", "refunds.small", "reports.read_chats", "settings.write", "support.reply",
   "team.manage", "users.moderate", "users.read"];
 const PROVIDER_KEY: Record<string, string> = { anthropic: "ANTHROPIC_API_KEY", gemini: "GEMINI_API_KEY", openai: "OPENAI_API_KEY", fal: "FAL_KEY" };
@@ -404,6 +406,22 @@ export class DemoAdmin implements AdminApi {
       o.picks.push({ id: crypto.randomUUID(), user_id: user, pick_id: pick, name: o.users.find((u) => u.id === pick)!.first_name, note: note.trim(), response: null, week_of: w }); });
   }
   async removeMaasiPick(id: string) { await wait(); this.opsEdit((o) => { o.picks = o.picks.filter((p) => p.id !== id || p.response !== null); }); }
+  async social(week?: string) { await wait(120); const s = demoSocial.get(week); return { ...s, settings: (await this.settings(["social"])).social?.value as Record<string, unknown> ?? {} }; }
+  async socialEdit(id: string, captions: Record<string, string>, card: { headline: string; sub?: string }, platforms: SocialPlatform[], video: boolean) {
+    await wait();
+    if (!platforms.length) throw new Error("pick at least one platform");
+    if ((captions.x ?? "").length > 280) throw new Error("the X post is over 280 characters");
+    if (/\b(AI|artificial intelligence|chatbot)\b/.test(Object.values(captions).join(" ") + card.headline + (card.sub ?? ""))) throw new Error("not saved: the text says AI");
+    demoSocial.edit(id, (p) => { p.captions = captions; p.card = { ...p.card, headline: card.headline, sub: card.sub }; p.platforms = platforms; p.video = video; p.problems = []; if (p.status === "dropped") p.status = "draft"; });
+    return { redraw: false };
+  }
+  async socialDecide(id: string, status: "approved" | "dropped" | "draft", note?: string) {
+    await wait(); demoSocial.edit(id, (p) => { if (status === "approved" && p.problems.length) throw new Error(`fix the flagged text first: ${p.problems.join(", ")}`);
+      p.status = status; p.decided_by = "Demo Owner"; p.decided_at = new Date().toISOString(); p.note = note ?? p.note; });
+  }
+  async socialApproveWeek(week: string) { await wait(); return demoSocial.approveWeek(week); }
+  async socialPlan(week: string) { await wait(600); return demoSocial.replan(week); }
+  async socialRender(_id: string) { await wait(); }
   async photoUrl() { return null; }
 
   // ---------------------------------------------------------------- growth and control (sample data)

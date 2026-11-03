@@ -14,7 +14,7 @@ const NAV: [string, Item[]][] = [
   ["People", [["/users", "Users", ["users.read"]], ["/moderation", "Moderation", ["users.moderate"]], ["/selfies", "Selfie and photo review", ["users.moderate"]],
     ["/support", "Support inbox", ["support.reply"]], ["/grievances", "Grievances", ["grievances.manage"]], ["/data-requests", "Data requests", ["data.manage"]]]],
   ["Money", [["/payments", "Payments and refunds", ["payments.read"]], ["/readings", "Readings", ["users.read"]], ["/ai-spend", "AI spend and limits", ["ai.view"]]]],
-  ["Growth", [["/cities", "Cities and waitlist", []], ["/cupid", "Be a Cupid", ["cupid.manage", "payouts.manage"]], ["/maasi", "Rishta Maasi picks", ["users.moderate"]]]],
+  ["Growth", [["/cities", "Cities and waitlist", []], ["/cupid", "Be a Cupid", ["cupid.manage", "payouts.manage"]], ["/maasi", "Rishta Maasi picks", ["users.moderate"]], ["/social", "Social media", ["social.manage"]]]],
   ["Trust", [["/fraud", "Fraud and abuse", ["fraud.manage"]], ["/health", "System health", []]]],
   ["Settings", [["/settings/pricing", "Pricing and credits", []], ["/settings/features", "Features, matching, safety", []], ["/settings/comms", "Notifications, Saathi, AI", []],
     ["/settings/onboarding", "Onboarding", []], ["/settings/verification", "Verification", []], ["/settings/content", "Content", []], ["/settings/payments", "Payments and tax", []], ["/settings/general", "General and legal", []],
