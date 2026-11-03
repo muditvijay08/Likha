@@ -6,7 +6,7 @@
 // Facts are computed here (panchang, rashi pairs, kootas, real features); the writer model only words them, under the
 // same checks as readings; images go through the kundli service's media endpoints (PNG -> JPEG, PNG -> short video).
 import { key, loadKeys, mustKey } from "../_shared/keys.ts";
-import { admin, asUser, isInternal, json, preflight, rpc } from "../_shared/db.ts";
+import { admin, asUser, isInternal, rpc } from "../_shared/db.ts";
 import { callLLM } from "../_shared/llm.ts";
 import { estimateTokens } from "../_shared/core.ts";
 import {
@@ -15,6 +15,10 @@ import {
 } from "../_shared/social.ts";
 import { facebook, instagram, linkedin, x, youtube, type Result } from "../_shared/social_publish.ts";
 
+// Team calls come from the admin site (LIKHA_ADMIN_SITE); cron and the card route call server to server.
+const H = { "access-control-allow-origin": Deno.env.get("LIKHA_ADMIN_SITE") ?? "*", "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+  "access-control-allow-methods": "POST, OPTIONS" };
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...H } });
 const SITE = () => (Deno.env.get("LIKHA_SITE") ?? "https://likha.in").replace(/\/$/, "");
 const PUBLIC = () => (Deno.env.get("SUPABASE_PUBLIC_URL") ?? Deno.env.get("SUPABASE_URL")!).replace(/\/$/, "");
 
@@ -157,7 +161,7 @@ async function publish() {
 
 // ---------------------------------------------------------------- router
 Deno.serve(async (req) => {
-  const pre = preflight(req); if (pre) return pre;
+  if (req.method === "OPTIONS") return new Response("ok", { headers: H });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const body = await req.json().catch(() => ({}));
   try {
