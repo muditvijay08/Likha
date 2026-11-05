@@ -1,5 +1,5 @@
 // Public website (likha.in) in demo mode: pages render on the server with titles, canonicals and structured data,
-// the Founding Members form validates and joins, invites work, signed-in members go to the app, and no CSP errors.
+// the Founding Members form validates and joins, invites work, signed-in members are told where their sign-up stopped, and no CSP errors.
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
@@ -125,14 +125,23 @@ for (const [label, viewport] of [["desktop", { width: 1280, height: 900 }], ["ph
   await ctx.close();
 }
 
-// 3. signed-in members go to the app
+// 3. signed in but sign-up not finished: stay on the website, see where they stopped, and go back from there
 {
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.addInitScript(() => { if (!localStorage.getItem("likha-demo-db")) localStorage.setItem("likha-demo-db", JSON.stringify({ signedIn: true, consents: [], photos: [], prompts: [], interests: [], pushTokens: [] })); });
   const page = await ctx.newPage();
   await page.goto(BASE + "/");
-  await page.waitForURL((u) => !u.pathname.match(/^\/$/), { timeout: 8000 }).catch(() => {});
-  ok(new URL(page.url()).pathname === "/consent", `signed-in member is sent into the app (${new URL(page.url()).pathname})`);
+  const bar = page.getByRole("region", { name: "Continue signing up" });
+  ok(await bar.waitFor({ timeout: 8000 }).then(() => true, () => false), "unfinished sign-up: a bar on the website, not a silent jump");
+  ok(new URL(page.url()).pathname === "/" && /You stopped at Consent/.test(await bar.innerText()), "it says where they stopped, and the website stays");
+  ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "resume bar: no sideways scroll at phone width");
+  await page.screenshot({ path: `${OUT}site-resume-phone.png` });
+  await bar.getByRole("link", { name: "Continue" }).click();
+  await page.waitForURL("**/consent", { timeout: 8000 }).catch(() => {});
+  ok(new URL(page.url()).pathname === "/consent", "Continue takes them back to that step");
+  await page.goto(BASE + "/");
+  await bar.getByRole("button", { name: "Not you? Sign out" }).click();
+  ok(await bar.waitFor({ state: "hidden", timeout: 4000 }).then(() => true, () => false) && !(await page.evaluate(() => localStorage.getItem("likha-demo-db"))), "Not you? signs out and the bar goes");
   await ctx.close();
 }
 await browser.close();

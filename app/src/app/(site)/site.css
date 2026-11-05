@@ -294,3 +294,13 @@
 .about-facts dt { font-weight: 700; margin-bottom: 4px; }
 .about-facts dd { margin: 0; color: var(--muted, #5F5878); font-size: 15px; line-height: 1.5; }
 @media (min-width: 760px) { .about-facts { grid-template-columns: 1fr 1fr; } }
+
+/* Signed in, sign-up not finished: where they stopped, and the way back */
+.resume-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); pointer-events: none; }
+.resume-in { pointer-events: auto; max-width: 760px; margin: 0 auto; background: #fff; color: var(--ink); border-radius: 18px; box-shadow: 0 12px 40px rgba(28, 20, 66, .28);
+  padding: 14px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.resume-text { flex: 1 1 260px; display: flex; flex-direction: column; gap: 2px; font: 500 14px var(--sans); }
+.resume-text strong { font-size: 16px; }
+.resume-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.resume-x { background: none; border: 0; padding: 6px; color: #6B6390; font: 600 13px var(--sans); cursor: pointer; }
+.resume-x:hover { color: var(--ink); }

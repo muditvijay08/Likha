@@ -1,6 +1,6 @@
 "use client";
 // Website pieces that run in the browser: the Founding Members form, live city counters, the Moon sign finder,
-// the pair picker, and sending signed-in members straight into the app.
+// the pair picker, and sending signed-in members into the app (or back to where their sign-up stopped).
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -11,15 +11,48 @@ import { RASHIS, pairSlug } from "@/lib/rashi";
 import { installState, onInstallChange, promptInstall } from "@/lib/install";
 import { InstallSteps } from "@/components/install";
 
-/** Members who are signed in go to their app, not the website. */
+// Where an unfinished sign-up stopped, in words. Keys are resumePath() results.
+const LEFT_AT: Record<string, string> = {
+  "/consent": "Consent", "/basics": "Basics", "/lifestyle": "Lifestyle", "/birth": "Birth details", "/photos": "Photos",
+  "/selfie": "Selfie check", "/vibe": "Your vibe", "/goal": "What you're looking for", "/preferences": "Preferences",
+  "/kundli": "Your kundli", "/install": "Install the app",
+};
+
+/** Signed in and done: straight into the app. Signed in but not done: stay on the website, with a bar that says
+ *  where they stopped and takes them back there. Never a silent jump to the middle of sign-up. */
 export function SignedInRedirect() {
   const router = useRouter();
+  const [left, setLeft] = useState<{ path: string; name?: string } | null>(null);
+  const [hide, setHide] = useState(false);
   useEffect(() => {
     let live = true;
-    (async () => { if (await api().signedIn() && live) router.replace(resumePath(await api().state())); })().catch(() => {});
+    (async () => {
+      if (!(await api().signedIn()) || !live) return;
+      const st = await api().state(); const path = resumePath(st);
+      if (!live) return;
+      if (path === "/home") router.replace(path);
+      else setLeft({ path, name: st.first_name });
+    })().catch(() => {});
     return () => { live = false; };
   }, [router]);
-  return null;
+  if (!left || hide) return null;
+  const hi = left.name ? `Welcome back, ${left.name}!` : "Welcome back!";
+  const waiting = left.path === "/waitlist";
+  return (
+    <aside className="resume-bar" role="region" aria-label="Continue signing up">
+      <div className="resume-in">
+        <div className="resume-text">
+          <strong>{hi}</strong>
+          <span>{waiting ? "Your city isn't open yet. See your spot in line." : <>You stopped at <b>{LEFT_AT[left.path] ?? "sign-up"}</b>. Bas thoda sa baaki.</>}</span>
+        </div>
+        <div className="resume-actions">
+          <Link className="pill-btn" href={left.path}>{waiting ? "See my spot" : "Continue"}</Link>
+          <button type="button" className="resume-x" onClick={async () => { await api().signOut().catch(() => {}); setHide(true); }}>Not you? Sign out</button>
+          <button type="button" className="resume-x" aria-label="Close" onClick={() => setHide(true)}>✕</button>
+        </div>
+      </div>
+    </aside>
+  );
 }
 
 export function CityUnlocks() {
