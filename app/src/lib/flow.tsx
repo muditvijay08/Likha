@@ -66,23 +66,13 @@ export function FlowProvider({ children }: { children: ReactNode }) {
 
   const gender: Gender = state?.gender ?? draft.gender ?? "woman";
 
-  useEffect(() => {
-    const root = document.documentElement;
-    root.dataset.gender = gender;
-    // Admin > Onboarding > accent colour. Darker and lighter shades are mixed from it.
-    const c = settings?.gender_theme?.[gender];
-    const standard = { woman: "#e0457b", man: "#2f6fe0" }[gender];          // the hand-tuned shades in globals.css
-    if (c && /^#[0-9a-f]{6}$/i.test(c) && c.toLowerCase() !== standard) {
-      root.style.setProperty("--g", c);
-      root.style.setProperty("--g-ink", `color-mix(in srgb, ${c} 72%, #000)`);
-      root.style.setProperty("--g-soft", `color-mix(in srgb, ${c} 9%, #fff)`);
-    } else { ["--g", "--g-ink", "--g-soft"].forEach((v) => root.style.removeProperty(v)); }
-  }, [gender, settings]);
+  // One look for everyone: the accent no longer changes with gender (review panel). data-gender stays for copy only.
+  useEffect(() => { document.documentElement.dataset.gender = gender; }, [gender]);
 
   const value = useMemo<Flow>(() => ({
     draft, setDraft, gender, settings, state, reload,
     credits(step: number) {
-      const list = settings?.onboarding_step_credits?.[gender] ?? (gender === "woman" ? [19, 19, 18, 19, 19, 18, 19, 19] : [9, 9, 8, 9, 9, 8, 9, 9]);
+      const list = settings?.onboarding_step_credits?.[gender] ?? (gender === "man" ? [9, 9, 8, 9, 9, 8, 9, 9] : [19, 19, 18, 19, 19, 18, 19, 19]);
       return { earnedBefore: list.slice(0, step - 1).reduce((a, b) => a + b, 0), thisStep: list[step - 1] ?? 0,
                total: list.reduce((a, b) => a + b, 0) };
     },

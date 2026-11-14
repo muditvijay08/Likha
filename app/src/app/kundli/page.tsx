@@ -67,6 +67,7 @@ export default function Kundli() {
           <div className="stack">
             <span className="kicker">YOUR KUNDLI IS READY</span>
             <h1 className="h1">Meet your cosmic self, {s?.first_name}</h1>
+            {chart.time_approx && <p className="sample-note" role="note">Worked out from an approximate time of day. Your matches see &ldquo;Approx. time&rdquo;. Add the exact time once in My Kundli when you find it.</p>}
             {chart.sample_birth && <p className="sample-note" role="note">Sample chart (demo mode): worked out by the real engine for {chart.sample_birth.date}, {chart.sample_birth.time}, {chart.sample_birth.place}, not from the details you typed.</p>}
           </div>
           <div className="card" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, borderRadius: 22 }}>

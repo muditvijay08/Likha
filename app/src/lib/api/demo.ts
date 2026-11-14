@@ -7,7 +7,7 @@ import type {
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   CityCounter, WaitlistJoin, WaitlistResult,
-  Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
+  Api, Basics, Birth, Card, City, CityQueue, Filters, FamilyPage, FamilyShareStatus, FamilyShares, Gender, Goal, MaritalStatus, MarriageTimeline, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
 } from "./types";
 import { SAMPLE_CHART, SAMPLES, sampleProfile } from "./samples";
@@ -33,6 +33,7 @@ interface Db {
   phone?: string; signedIn: boolean;
   profile?: Record<string, unknown> & { first_name: string; gender: Gender; onboarding_step: number; selfie_status: OnboardingState["selfie_status"]; created: number };
   consents: string[]; city?: City; birth?: Birth; photos: Photo[]; prompts: { key: string; answer: string }[];
+  family?: { id: string; token: string; match: string | null; status: FamilyShareStatus; answerAt: number; expires_at: string }[];
   interests: number[]; prefs?: Prefs; bonus?: number; kundliAt?: number; pushTokens: string[];
   // member app
   spent?: number; likes?: string[]; passes?: string[]; matches?: { id: string; other: string; at: number }[];
@@ -104,8 +105,8 @@ export class DemoApi implements Api {
   async signOut() { localStorage.removeItem(KEY); }
 
   async settings(): Promise<PublicSettings> {
-    return { onboarding_step_credits: { woman: [19, 19, 18, 19, 19, 18, 19, 19], man: [9, 9, 8, 9, 9, 8, 9, 9] },
-             welcome_bonus: { woman: 150, man: 70, expiry_days: 90 },
+    return { onboarding_step_credits: { woman: [19, 19, 18, 19, 19, 18, 19, 19], man: [9, 9, 8, 9, 9, 8, 9, 9], other: [19, 19, 18, 19, 19, 18, 19, 19] },
+             welcome_bonus: { woman: 150, man: 70, other: 150, expiry_days: 90 },
              grievance_officer: { name: "[NAME]", email: "grievance@likha.in", phone: "[NUMBER]", ack_hours: 24, resolve_days: 15 },
              company: { legal_name: "[COMPANY NAME] Private Limited", gstin: "[GSTIN]", cin: "[CIN]", address: "[ADDRESS], Jaipur, Rajasthan" },
              app: { maintenance: !!adminView().maintenance, maintenance_message: adminView().maintenance, support_email: "support@likha.in", min_app_version: adminView().minVersion ?? "1.0.0" },
@@ -189,7 +190,7 @@ export class DemoApi implements Api {
     await wait(); this.edit((d) => { d.prompts = prompts.filter((p) => p.answer.trim()); d.interests = ids; });
   }
   async uploadVoice() { await wait(); this.edit((d) => { this.me(d).voice = true; }); }
-  async saveGoal(goal: Goal) { await wait(); this.edit((d) => { this.me(d).goal = goal; }); }
+  async saveGoal(goal: Goal, life?: { marital_status: MaritalStatus | null; marriage_timeline: MarriageTimeline | null }) { await wait(); this.edit((d) => { Object.assign(this.me(d), { goal, ...(life ?? {}) }); }); }
   async savePrefs(p: Prefs) { await wait(); this.edit((d) => { d.prefs = p; }); }
   async setStep(step: number) { this.edit((d) => { const p = this.me(d); p.onboarding_step = Math.max(p.onboarding_step, step); }); }
   async refresh(): Promise<Refresh> {
@@ -210,17 +211,23 @@ export class DemoApi implements Api {
     const db = this.load();
     if (!db.kundliAt || Date.now() < db.kundliAt) return null;
     const { birth, ...c } = SAMPLE_CHART;      // real engine output for one example birth, labelled as a sample
-    return { ...c, sample_birth: birth };
+    return { ...c, sample_birth: birth, time_approx: !!this.load().birth?.approx };
+  }
+  async setExactBirthTime(time: string) {
+    await wait();
+    if (!this.load().birth?.approx) throw new Error("Your exact time is already saved. For other changes, write to Help.");
+    this.edit((d) => { if (d.birth) d.birth = { ...d.birth, time, approx: false }; });
   }
   async savePushToken(t: string) { this.edit((d) => { d.pushTokens.push(t); }); }
   async releasePushToken(token: string) { this.edit((d) => { d.pushTokens = d.pushTokens.filter((t) => t !== token); }); }
 
   // ---------------------------------------------------------------- member app (sample profiles, clearly labelled)
+  private wants(db: Db): string[] { const g = db.profile?.gender; return g === "man" ? ["woman"] : g === "woman" ? ["man"] : ["woman", "man"]; }
   private pool(db: Db): Card[] {
-    const want = db.profile?.gender === "man" ? "woman" : "man";
-    return SAMPLES.filter((x) => x.gender === want).map(({ gender: _g, likesYou: _l, ...c }) => ({ ...c, is_sample: true }));
+    const want = this.wants(db);
+    return SAMPLES.filter((x) => want.includes(x.gender)).map(({ gender: _g, likesYou: _l, ...c }) => ({ ...c, is_sample: true }));
   }
-  private likers(db: Db) { const want = db.profile?.gender === "man" ? "woman" : "man"; return SAMPLES.filter((x) => x.gender === want && x.likesYou); }
+  private likers(db: Db) { const want = this.wants(db); return SAMPLES.filter((x) => want.includes(x.gender) && x.likesYou); }
   private balance(db: Db) { return (db.bonus ?? 0) + (db.purchased ?? 0) - (db.spent ?? 0); }
   private spend(key: string) {
     const db = this.load();
@@ -657,6 +664,48 @@ export class DemoApi implements Api {
   }
   async sosUpdate(id: string, lat: number, lng: number) { this.edit((d) => { const s = (d.sos ?? []).find((x) => x.id === id); if (s) { s.lat = lat; s.lng = lng; s.updated_at = new Date().toISOString(); } }); }
   async sosStop(id: string) { this.edit((d) => { const s = (d.sos ?? []).find((x) => x.id === id); if (s) s.share_until = new Date().toISOString(); }); }
+  // Family view (demo): a sample match "says yes" a few seconds after being asked.
+  private famLive(db: Db) {
+    return (db.family ?? []).map((f) => {
+      const waiting = f.status === "waiting" && Date.now() < f.answerAt;
+      const status: FamilyShareStatus = f.status === "waiting" ? (waiting ? "waiting" : "active") : Date.parse(f.expires_at) < Date.now() && f.status === "active" ? "expired" : f.status;
+      return { ...f, status };
+    });
+  }
+  async familyShares(): Promise<FamilyShares> {
+    await wait(); const db = this.load();
+    return { mine: this.famLive(db).map((f) => ({ id: f.id, about: f.match ? sampleProfile(db.matches?.find((m) => m.id === f.match)?.other ?? "")?.first_name ?? null : null,
+      status: f.status, token: f.status === "active" ? f.token : null, expires_at: f.expires_at, views: 0 })), requests: [] };
+  }
+  async familyShareCreate(matchId?: string) {
+    await wait();
+    const f = { id: crypto.randomUUID(), token: Math.random().toString(36).slice(2, 18), match: matchId ?? null, status: (matchId ? "waiting" : "active") as FamilyShareStatus,
+      answerAt: Date.now() + 3000, expires_at: new Date(Date.now() + 7 * 864e5).toISOString() };
+    this.edit((d) => { d.family = [f, ...(d.family ?? [])]; });
+    return { id: f.id, token: matchId ? null : f.token, status: f.status, expires_at: f.expires_at };
+  }
+  async familyShareAnswer() { await wait(); }
+  async familyShareRevoke(id: string) { await wait(); this.edit((d) => { const f = (d.family ?? []).find((x) => x.id === id); if (f) f.status = "revoked"; }); }
+  async familyView(token: string): Promise<FamilyPage | null> {
+    await wait(); const db = this.load();
+    const f = this.famLive(db).find((x) => x.token === token && x.status === "active");
+    if (!f) return null;
+    const me = db.profile!;
+    const other = f.match ? sampleProfile(db.matches?.find((m) => m.id === f.match)?.other ?? "") : null;
+    const chart = SAMPLE_CHART.summary;
+    const person = other
+      ? { first_name: other.first_name, age: other.age, city: other.city, profession: other.profession, education: other.education, goal: other.goal,
+          marital_status: other.marital_status ?? null, marriage_timeline: other.marriage_timeline ?? null, hometown: other.hometown ?? null, diet: other.diet,
+          languages: other.languages, height_cm: other.height_cm, verified: other.verified, moon_sign: other.moon_sign, nakshatra: other.nakshatra,
+          manglik: other.manglik, time_approx: false, prompts: other.prompts }
+      : { first_name: me.first_name, age: (me.age as number) ?? null, city: db.city?.name ?? null, profession: (me.profession as string) ?? null, education: (me.education as string) ?? null,
+          goal: (me.goal as Goal) ?? null, marital_status: (me.marital_status as MaritalStatus) ?? null, marriage_timeline: (me.marriage_timeline as MarriageTimeline) ?? null,
+          hometown: (me.hometown as string) ?? null, diet: (me.diet as string) ?? null, languages: (me.languages as string[]) ?? [], height_cm: (me.height_cm as number) ?? null,
+          verified: me.selfie_status === "passed", moon_sign: chart.moon_sign, nakshatra: chart.nakshatra, manglik: chart.manglik, time_approx: !!db.birth?.approx,
+          prompts: db.prompts.map((p) => ({ label: p.key === "about_you" ? "About me" : p.key === "fond_of" ? "I'm fond of" : "The planets got me right about…", answer: p.answer })) };
+    return { kind: other ? "match" : "me", shared_by: me.first_name, expires_at: f.expires_at, person,
+      match: other ? { gunas: other.gunas ?? 0, jodi_score: other.jodi_score ?? 0, kootas: other.kootas ?? {}, doshas: other.doshas } : null };
+  }
   async sosView(token: string) {
     const db = this.load(); const s = (db.sos ?? []).find((x) => x.token === token && Date.parse(x.share_until) > Date.now());
     return s ? { first_name: db.profile?.first_name ?? "", lat: s.lat, lng: s.lng, updated_at: s.updated_at, share_until: s.share_until } : null;

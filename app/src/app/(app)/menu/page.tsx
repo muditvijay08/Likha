@@ -12,7 +12,7 @@ const TILES: [string, string, string, string][] = [
   ["/story", "Our Story", "Your timeline", "#FFF0F4"], ["/couple", "Couple Mode", "For matched pairs", "#EDE6FF"], ["/matches", "Golden Hours", "Best times to talk", "#FFF3D6"],
 ];
 const LINKS: [string, string, string?][] = [
-  ["/toolkit", "Your cosmic toolkit"], ["/inbox", "Inbox"], ["/plans", "My plans"], ["/cupid", "Be a Cupid", "Earn ₹"], ["/invite", "Invite and earn credits"],
+  ["/family", "Family view", "New"], ["/toolkit", "Your cosmic toolkit"], ["/inbox", "Inbox"], ["/plans", "My plans"], ["/cupid", "Be a Cupid", "Earn ₹"], ["/invite", "Invite and earn credits"],
   ["/settings", "Settings"], ["/privacy", "Privacy and safety"], ["/why", "Why Likha"], ["/help", "Help"],
 ];
 

@@ -16,7 +16,10 @@ const LIFE = {
   drinking: opt([["never", "Never"], ["socially", "Socially"], ["regularly", "Regularly"]]), smoking: opt([["never", "Never"], ["socially", "Socially"], ["regularly", "Regularly"]]),
   workout: opt([["daily", "Daily"], ["often", "Often"], ["sometimes", "Sometimes"], ["never", "Never"]]),
   kids: opt([["want", "Want"], ["dont_want", "Don't want"], ["have", "Have"], ["not_sure", "Not sure"]]), relocate: opt([["yes", "Yes"], ["maybe", "Maybe"], ["no", "No"]]),
+  marital_status: opt([["never_married", "Never married"], ["divorced", "Divorced"], ["separated", "Separated"], ["widowed", "Widowed"]]),
+  marriage_timeline: opt([["within_1y", "Within a year"], ["1_2y", "In 1–2 years"], ["not_sure", "When it feels right"]]),
 };
+const LIFE_LABEL: Record<string, string> = { relocate: "Open to relocating", marital_status: "Relationship history", marriage_timeline: "Hoping to marry" };
 type Section = "about" | "lifestyle" | "prompts" | "goal" | null;
 
 export default function EditProfile() {
@@ -108,7 +111,7 @@ export default function EditProfile() {
               })}</div></div>
             </div>}
             {open === "lifestyle" && key === "lifestyle" && <div className="stack" style={{ gap: 10 }}>
-              {(Object.keys(LIFE) as (keyof typeof LIFE)[]).map((k) => <Chips key={k} small label={k === "relocate" ? "Open to relocating" : k[0].toUpperCase() + k.slice(1)} options={LIFE[k]} value={(v(k) as string) ?? null} onChange={(x) => setF({ ...f, [k]: x })} />)}
+              {(Object.keys(LIFE) as (keyof typeof LIFE)[]).map((k) => <Chips key={k} small label={LIFE_LABEL[k] ?? k[0].toUpperCase() + k.slice(1)} options={LIFE[k]} value={(v(k) as string) ?? null} onChange={(x) => setF({ ...f, [k]: x })} />)}
             </div>}
             {open === "prompts" && key === "prompts" && <div className="stack" style={{ gap: 10 }}>
               {p.prompts.map((q) => <div key={q.key} className="field"><label className="label" htmlFor={`e-p-${q.key}`}>{q.label}</label>

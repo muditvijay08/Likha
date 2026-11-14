@@ -74,10 +74,9 @@ await btn("Shoot your shot").click();
 // M1 Match
 await page.waitForURL("**/match/**");
 ok(await seen(page.getByText("You both said yes.")), "Like on someone who liked you: it's a match");
-ok(await seen(page.getByText("Golden Hours")) && await seen(btn("Unlock all · 19 credits")), "Golden Hours: first window free, rest locked");
+ok(await seen(page.getByText("A good time to say hi", { exact: false })) && !(await page.locator(".app-body").getByText(/credits/).count()), "Match screen: a free Golden Hour and no prices");
+ok(await seen(page.getByText(/of 36 Gunas/)), "Match screen: Gunas first");
 await shot("05-match");
-await btn("Unlock all · 19 credits").click();
-ok(await seen(page.getByText("Unlocked for both of you.")), "Golden Hours unlocked");
 ok(await seen(page.getByRole("link", { name: "Say hi to Sanya" })), "Say hi button");
 
 // D5 Likes
@@ -117,24 +116,25 @@ await page.waitForTimeout(900);
 await page.goto(`${BASE}/discover`);
 await seen(btn("Not my nakshatra"));
 for (let i = 0; i < 4 && await btn("Not my nakshatra").isVisible().catch(() => false); i++) { await btn("Not my nakshatra").click(); await page.waitForTimeout(600); }
-ok(await seen(page.getByText("You've seen every star in Jaipur tonight")), "Empty Discover offers ways to widen the sky");
+ok(await seen(page.getByText("That's everyone in Jaipur for now")), "Empty Discover says so plainly");
+ok(await seen(page.getByRole("region", { name: "Bring your people" })) && !(await page.getByText(/Live in Jaipur/).count()), "Empty Discover: invites first, no live pop-up");
 await shot("11-empty");
 
 // Not enough credits
-ok(await credits() === 17, "Spends add up: 70 − 10 + 5 − 19 − 0 (free Cosmic Like) − 29 = 17");
+ok(await credits() === 36, "Spends add up: 70 − 10 + 5 − 0 (free Cosmic Like) − 29 = 36 (nothing sold on the match screen)");
 await page.goto(`${BASE}/profile/s-tanvi`);
 await btn("Cosmic Like · 9").click();
 await page.waitForTimeout(800);
 await page.goto(`${BASE}/home`);
-ok(await credits() === 8, "Second Cosmic Like this week costs 9");
-await page.goto(`${BASE}/profile/s-nidhi`);
-await btn("Cosmic Like · 9").click();
+ok(await credits() === 27, "Second Cosmic Like this week costs 9");
+await page.goto(`${BASE}/report/s-tanvi`);
+await btn("Read it · 29 credits").click();                    // 27 left, the reading costs 29
 ok(await seen(page.getByText("Not enough credits. Top up your wallet to continue.")), "Not enough credits is explained, nothing charged");
 
 // N1 Menu and Chats
 await page.getByRole("link", { name: "Menu" }).click();
 await page.waitForURL("**/menu");
-ok(await seen(page.getByText("8 credits")) && await seen(page.getByRole("link", { name: /Be a Cupid/ })), "Menu: wallet and every link");
+ok(await seen(page.getByText("27 credits")) && await seen(page.getByRole("link", { name: /Be a Cupid/ })) && await seen(page.getByRole("link", { name: /Family view/ })), "Menu: wallet and every link, Family view included");
 const inst = page.getByRole("region", { name: "Add Likha to your home screen" });
 ok(await seen(inst), "Menu: Add to home screen for people who skipped it");
 await inst.getByRole("button", { name: "How" }).click();
@@ -151,6 +151,24 @@ await page.goto(`${BASE}/universe`);
 ok(await seen(page.getByRole("link", { name: /Meera/ })) && await seen(page.getByRole("link", { name: /Sanya/ })), "Our Universe asks which match");
 await page.goto(`${BASE}/no-such-screen`);
 ok(await seen(page.getByText("This part is on its way")), "Unknown screens show a friendly page");
+
+// F1/F2 Family view: own page at once; a match's page only after their yes. The family page shows no photos or birth details.
+await page.goto(`${BASE}/family`);
+await page.getByRole("button", { name: /Share my own page/ }).click();
+ok(await seen(page.getByRole("link", { name: "Send on WhatsApp" })), "Family view: own page is live at once");
+const famHref = await page.getByRole("link", { name: "Send on WhatsApp" }).first().getAttribute("href");
+const famToken = decodeURIComponent(famHref).match(/\/f\/([a-z0-9]+)/)[1];
+await page.getByRole("button", { name: /Share Sanya's page/ }).click();
+ok(await seen(page.getByText("Waiting for their yes")), "Family view: Sanya is asked first");
+ok(await page.getByText("Live").nth(1).waitFor({ timeout: 9000 }).then(() => true, () => false), "Family view: live once she says yes (demo: a few seconds)");
+await shot("14-family");
+const fam = await page.context().newPage();                    // demo data lives in this browser; the real backend works anywhere
+await fam.goto(`${BASE}/f/${famToken}`);
+ok(await fam.getByText(/FOR THE FAMILY/).waitFor({ timeout: 8000 }).then(() => true, () => false) && !(await fam.locator("img").count()), "Family page opens without signing in, with no photos");
+await fam.screenshot({ path: `${OUT}App-15-family-page.png`, fullPage: true });
+await fam.goto(`${BASE}/f/not-a-token`);
+ok(await fam.getByText("This family page has ended").waitFor({ timeout: 8000 }).then(() => true, () => false), "A wrong or old link shows that it has ended");
+await fam.close();
 
 ok(errors.length === 0, `no page errors ${errors.join(" | ")}`);
 await browser.close();

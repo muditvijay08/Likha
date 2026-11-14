@@ -11,18 +11,17 @@ import { api, type Gender } from "@/lib/api";
 export default function Start() {
   const router = useRouter();
   const { setDraft, draft, settings } = useFlow();
-  const options = settings?.gender_options ?? ["woman", "man"];          // Admin > Onboarding
+  const options = settings?.gender_options ?? ["woman", "man", "other"];          // Admin > Onboarding
   const [invite, setInvite] = useState(false);
   const [code, setCode] = useState(draft.inviteCode ?? "");
   // Arrived from Log in with a number that has no account yet (already signed in): just pick, then carry on.
   const [fresh, setFresh] = useState(false);
   useEffect(() => { setFresh(new URLSearchParams(window.location.search).get("new") === "1"); }, []);
 
-  // Picking sets the app's colours, then shows what Likha does for them before the phone step.
+  // Picking shows what Likha does for them before the phone step. The app looks the same for everyone.
   const [picked, setPicked] = useState<Gender | null>(null);
   function choose(g: Gender) {
     setDraft({ gender: g, inviteCode: code.trim() || undefined });
-    document.documentElement.dataset.gender = g;
     setPicked(g);
     window.scrollTo({ top: 0 });
   }
@@ -30,8 +29,8 @@ export default function Start() {
   const credits = picked ? (settings?.onboarding_step_credits?.[picked] ?? []).reduce((a, b) => a + b, 0) : 0;
   if (picked) return <Why gender={picked} credits={credits} onGo={go} onBack={() => setPicked(null)} />;
 
-  const card = (g: Gender, label: string, icon: React.ReactNode, bg: string, bd: string, fg: string) => (
-    <button type="button" onClick={() => choose(g)} style={{ height: 92, borderRadius: 18, background: bg, border: `2px solid ${bd}`, color: fg,
+  const card = (g: Gender, label: string, icon: React.ReactNode) => (
+    <button type="button" onClick={() => choose(g)} style={{ height: 92, borderRadius: 18, background: "var(--card)", border: "1.5px solid var(--line)", color: "var(--ink)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, font: "700 16px var(--sans)" }}>
       {icon}{label}
     </button>
@@ -49,11 +48,12 @@ export default function Start() {
       <div className="stack" style={{ gap: 10 }}>
         {fresh && <div className="note" role="status"><span>No account with that number yet. Pick one below to set it up.</span></div>}
         <span className="label" style={{ fontWeight: 700 }}>I am a</span>
-        <div className={options.length > 1 ? "grid2" : "stack"} style={{ gap: 10 }}>
-          {options.includes("woman") && card("woman", "Woman", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="9" r="5" /><path d="M12 14v7M9 18h6" /></svg>, "#FFF0F4", "#E0457B", "#A3164C")}
-          {options.includes("man") && card("man", "Man", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10" cy="14" r="5" /><path d="M14 10l6-6M15 4h5v5" /></svg>, "#EAF1FF", "#2F6FE0", "#1F4FA8")}
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(options.length, 3)}, minmax(0, 1fr))`, gap: 10 }}>
+          {options.includes("woman") && card("woman", "Woman", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="9" r="5" /><path d="M12 14v7M9 18h6" /></svg>)}
+          {options.includes("man") && card("man", "Man", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10" cy="14" r="5" /><path d="M14 10l6-6M15 4h5v5" /></svg>)}
+          {options.includes("other") && card("other", "Non-binary", <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="13" r="5" /><path d="M12 8V2M9 4.5l6-2M9 2.5l6 2" /></svg>)}
         </div>
-        <span className="small" style={{ textAlign: "center" }}>Your pick sets the app&apos;s colours: rose for women, blue for men.</span>
+        <span className="small" style={{ textAlign: "center" }}>You choose who you see next. Everyone gets the same app.</span>
         {invite ? (
           <div className="row">
             <label htmlFor="invite" className="sr">Invite code</label>
@@ -87,6 +87,13 @@ function Hero() {
 // Why Likha, for the person who just picked. Ad-style, but every line is a real feature; credits come from Admin > Onboarding.
 type Pitch = { photo: "her" | "him"; kicker: string; title: string; sub: string; points: [string, string][] };
 const WHY: Record<string, Pitch> = {
+  other: { photo: "her", kicker: "FOR YOU", title: "Dating, your way.", sub: "Show yourself as you are. Choose who you see.", points: [
+    ["\u2728", "Pick who you see: women, men or everyone."],
+    ["\ud83d\udd2e", "Know if the stars agree, before you say hi."],
+    ["\ud83d\ude48", "Go incognito. Only people you like see you."],
+    ["\ud83d\udee1\ufe0f", "No numbers in first chats. One-tap SOS on dates."],
+    ["\ud83d\udc8c", "See who likes you. Free."],
+  ] },
   woman: { photo: "her", kicker: "FOR HER", title: "Dating, on your terms.", sub: "Safe. Real. Written in your stars.", points: [
     ["\u2728", "You make the first move. Or don\u2019t."],
     ["\ud83d\udd2e", "Know if the stars agree, before you say hi."],
@@ -132,7 +139,7 @@ function Why({ gender, credits, onGo, onBack }: { gender: Gender; credits: numbe
         <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
           <span aria-hidden="true" style={{ fontSize: 26 }}>👵</span>
           <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 15 }}>Rishta Maasi</strong>
-            <span style={{ fontSize: 13, opacity: .85 }}>{gender === "man" ? "\u201cBeta, she\u2019s a Pisces Moon.\u201d" : "\u201cBeta, he\u2019s a Pisces Moon.\u201d"} 3 hand-picked people, every Sunday. <em>Maasi plan</em></span></span>
+            <span style={{ fontSize: 13, opacity: .85 }}>{gender === "man" ? "\u201cBeta, she\u2019s a Pisces Moon.\u201d" : gender === "woman" ? "\u201cBeta, he\u2019s a Pisces Moon.\u201d" : "\u201cBeta, this one\u2019s a Pisces Moon.\u201d"} 3 hand-picked people, every Sunday. <em>Maasi plan</em></span></span>
         </div>
         <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
           <span aria-hidden="true" style={{ fontSize: 26 }}>🌙</span>

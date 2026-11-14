@@ -60,6 +60,7 @@ function Kundli() {
             <span><span style={{ color: "var(--muted)" }}>Nakshatra</span> <strong>{c.summary.nakshatra} {c.summary.pada}</strong></span>
             <span><span style={{ color: "var(--muted)" }}>Manglik</span> <strong>{c.summary.manglik ? "Yes" : "No"}</strong></span>
           </div>
+          {c.time_approx && <ExactTime onSaved={() => api().myChart().then(setC)} />}
           {c.sample_birth && <p className="sample-note" role="note">Sample chart (demo mode): worked out by the real engine for {c.sample_birth.date}, {c.sample_birth.time}, {c.sample_birth.place}.</p>}
           {c.summary.borderline && <span className="small">Your birth time is near a boundary: a few minutes could change one detail.</span>}
         </div>
@@ -111,3 +112,24 @@ function Kundli() {
   );
 }
 export default function MyKundli() { return <Suspense><Kundli /></Suspense>; }
+
+/** Worked out from an approximate time: let the member add the exact time once. The kundli is rebuilt in the background. */
+function ExactTime({ onSaved }: { onSaved(): void }) {
+  const [t, setT] = useState("");
+  const [done, setDone] = useState(false);
+  const { busy, error, run } = useAction();
+  if (done) return <p className="sample-note" role="status">Saved. Your kundli is being rebuilt with the exact time; it takes a minute.</p>;
+  return (
+    <form className="stack" style={{ gap: 8, padding: 14, borderRadius: 16, background: "var(--saffron-faint)", border: "1px dashed var(--saffron)" }}
+      onSubmit={(e) => { e.preventDefault(); run(async () => { if (!t) throw new Error("Add the time from your birth certificate."); await api().setExactBirthTime(t); setDone(true); onSaved(); }); }}>
+      <strong style={{ fontSize: 15 }}>Approx. birth time</strong>
+      <span style={{ fontSize: 13 }}>This kundli uses a rough time of day, and your matches see &ldquo;Approx. time&rdquo;. Found the exact time? Add it once here.</span>
+      <div className="row" style={{ gap: 8 }}>
+        <label htmlFor="exact-tob" className="sr-only">Exact birth time</label>
+        <input id="exact-tob" type="time" className="input" value={t} onChange={(e) => setT(e.target.value)} style={{ flex: 1 }} />
+        <button className="btn" style={{ width: "auto", padding: "0 18px" }} disabled={busy}>{busy ? "Saving…" : "Save"}</button>
+      </div>
+      <ErrorNote error={error} />
+    </form>
+  );
+}

@@ -121,7 +121,8 @@ def main():
             "birth": {"date": d.isoformat(), "time": t.strftime("%H:%M"), "place": "Jaipur"},
             "moon_sign": s["moon_sign"], "nakshatra": s["nakshatra"], "pada": s["pada"], "lagna": s["lagna"], "manglik": s["manglik"],
             "gunas": float(m.total), "adjusted_gunas": float(m.adjusted_total), "jodi_score": j,
-            "kootas": kootas, "doshas": doshas(m), "summary": summary_line(kootas),
+            "kootas": kootas, "doshas": {**doshas(m), "manglik_match": member["manglik"]["effective"] == c["manglik"]["effective"]},
+            "summary": summary_line(kootas),
         })
         print(f"{name:7} {gender:5} jodi {j:3} (target {target})  gunas {m.total:>4}  {s['moon_sign']:11} {s['nakshatra']}")
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "app/src/lib/api/samples.generated.json")

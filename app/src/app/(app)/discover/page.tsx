@@ -129,13 +129,31 @@ function EmptySky({ city, filters, onWiden }: { city: string; filters: Filters |
   return (
     <section className="stack" style={{ gap: 16 }} aria-label="Nobody new right now">
       <div className="empty" style={{ padding: "12px 8px 4px" }}>
-        <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 26, fontWeight: 600, lineHeight: 1.2 }}>You&apos;ve seen every star in {city} tonight</h1>
-        <p className="sub">New ones rise tomorrow. Or widen your sky now:</p>
+        <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 26, fontWeight: 600, lineHeight: 1.2 }}>That&apos;s everyone in {city} for now</h1>
+        <p className="sub">New people join every day. The fastest way to more matches is bringing your own people.</p>
+      </div>
+      <section aria-label="Bring your people" className="stack" style={{ gap: 10, padding: 16, borderRadius: 20, background: "var(--ink)", color: "#fff" }}>
+        <strong style={{ fontSize: 16 }}>Bring your people</strong>
+        <Link href="/check" className="row" style={{ gap: 12, padding: 12, borderRadius: 14, background: "rgba(255,255,255,.08)", color: "#fff", textDecoration: "none" }}>
+          <span className="stack" style={{ gap: 2, flex: 1 }}><strong style={{ fontSize: 14 }}>Check your crush</strong><span style={{ fontSize: 12, color: "#CFC6F2" }}>Send a link. See your Gunas once they join and say yes.</span></span><span aria-hidden="true">→</span></Link>
+        <Link href="/invite" className="row" style={{ gap: 12, padding: 12, borderRadius: 14, background: "rgba(255,255,255,.08)", color: "#fff", textDecoration: "none" }}>
+          <span className="stack" style={{ gap: 2, flex: 1 }}><strong style={{ fontSize: 14 }}>Invite single friends from {city}</strong><span style={{ fontSize: 12, color: "#CFC6F2" }}>You both get credits when they finish sign-up.</span></span><span aria-hidden="true">→</span></Link>
+      </section>
+      <div className="stack" style={{ gap: 10 }}>
+        {filters?.distance === "same_city" && (
+          <button type="button" className="rowlink" onClick={widen} style={{ textAlign: "left", font: "inherit" }}>
+            <span className="t"><strong>Switch to Any city</strong><span>{more === null ? "People in other live cities" : more > 0 ? `+${more} people in other cities` : "Nobody new there yet either"}</span></span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#1F5E49" }}>Free</span>
+          </button>
+        )}
+        <Link href="/filters" className="rowlink"><span className="t"><strong>Adjust your filters</strong><span>Age, languages, height and more</span></span><span style={{ fontSize: 12, fontWeight: 700, color: "#1F5E49" }}>Free</span></Link>
+        <Link href="/tiers" className="rowlink"><span className="t"><strong>Top matches across India</strong><span>Highest Jodi Scores, any city</span></span><span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{price(prices, "top_matches_india", 49)} / week</span></Link>
+        <Link href="/travel" className="rowlink"><span className="t"><strong>Travel Mode</strong><span>Going somewhere soon? Match there first</span></span><span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{price(prices, "travel_mode", 29)} / trip</span></Link>
       </div>
       {saathi?.available && (
         <div className="stack" style={{ gap: 10, padding: 16, borderRadius: 20, background: "#F6F2FF", border: "1px solid var(--line)" }}>
           <div className="stack" style={{ gap: 2 }}>
-            <strong style={{ fontSize: 15 }}>While new stars rise, talk to Saathi</strong>
+            <strong style={{ fontSize: 15 }}>Want to talk while you wait?</strong>
             <span style={{ fontSize: 12, color: "var(--muted)" }}>A virtual companion, not a real person. {saathi.free_per_day} free messages a day.</span>
           </div>
           <div className="grid2" style={{ gap: 10 }}>
@@ -151,17 +169,6 @@ function EmptySky({ city, filters, onWiden }: { city: string; filters: Filters |
           </div>
         </div>
       )}
-      <div className="stack" style={{ gap: 10 }}>
-        {filters?.distance === "same_city" && (
-          <button type="button" className="rowlink" onClick={widen} style={{ textAlign: "left", font: "inherit" }}>
-            <span className="t"><strong>Switch to Any city</strong><span>{more === null ? "People in other live cities" : more > 0 ? `+${more} people in other cities` : "Nobody new there yet either"}</span></span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#1F5E49" }}>Free</span>
-          </button>
-        )}
-        <Link href="/filters" className="rowlink"><span className="t"><strong>Adjust your filters</strong><span>Age, languages, height and more</span></span><span style={{ fontSize: 12, fontWeight: 700, color: "#1F5E49" }}>Free</span></Link>
-        <Link href="/tiers" className="rowlink"><span className="t"><strong>Top matches across India</strong><span>Highest Jodi Scores, any city</span></span><span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{price(prices, "top_matches_india", 49)} / week</span></Link>
-        <Link href="/travel" className="rowlink"><span className="t"><strong>Travel Mode</strong><span>Going somewhere soon? Match there first</span></span><span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{price(prices, "travel_mode", 29)} / trip</span></Link>
-      </div>
     </section>
   );
 }

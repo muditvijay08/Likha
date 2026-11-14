@@ -65,6 +65,10 @@ export function useTried() {
   }, [reload, toast]);
 }
 
+/** The one place that says how the two scores relate (Gunas first, Jodi explained). Matches kundli/likha_kundli/milan.py jodi_score(). */
+export const GUNA_INFO = "Guna Milan: the traditional 36-point kundli match. 18 or more is traditionally acceptable, 25 or more good.";
+export const JODI_INFO = "Likha's Jodi Score, out of 100, is mostly your Gunas (with any classically cancelled dosha counted back), plus whether your Manglik status fits and how each person's Venus sits with the other's Moon.";
+
 /** Price label from the member's own price list (after tier discount). */
 export const price = (p: Prices, key: string, fallback: number) => p[key] ?? fallback;
 

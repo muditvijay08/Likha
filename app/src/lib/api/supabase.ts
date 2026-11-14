@@ -5,7 +5,7 @@ import type {
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
   ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
   CityCounter, WaitlistJoin, WaitlistResult,
-  Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
+  Api, Basics, Birth, Card, City, CityQueue, Filters, FamilyPage, FamilyShares, Gender, Goal, MaritalStatus, MarriageTimeline, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
 } from "./types";
 
@@ -150,7 +150,7 @@ export class SupabaseApi implements Api {
   async saveBirth(b: Birth) {
     const { error } = await this.sb.rpc("save_birth_details", {
       p_date: b.date, p_time: b.time, p_place: b.place.label, p_place_id: b.place.place_id ?? null,
-      p_lat: b.place.lat, p_lng: b.place.lng, p_tz: b.tz, p_offset_min: b.offsetMinutes,
+      p_lat: b.place.lat, p_lng: b.place.lng, p_tz: b.tz, p_offset_min: b.offsetMinutes, p_approx: !!b.approx,
     });
     if (error?.message.includes("birth_details_locked")) return;          // already saved earlier: fine
     if (error?.message.includes("under_age")) throw new Error("Likha is for people 18 and older.");
@@ -222,9 +222,9 @@ export class SupabaseApi implements Api {
     fail(error, "Saving voice intro");
   }
 
-  async saveGoal(goal: Goal) {
+  async saveGoal(goal: Goal, life?: { marital_status: MaritalStatus | null; marriage_timeline: MarriageTimeline | null }) {
     const id = await this.uid();
-    const { error } = await this.sb.from("profiles").update({ goal }).eq("id", id);
+    const { error } = await this.sb.from("profiles").update({ goal, ...(life ?? {}) }).eq("id", id);
     fail(error, "Saving goal");
   }
 
@@ -252,9 +252,14 @@ export class SupabaseApi implements Api {
   }
 
   async myChart(): Promise<MyChart | null> {
-    const { data, error } = await this.sb.rpc("my_chart");
+    const [{ data, error }, approx] = await Promise.all([this.sb.rpc("my_chart"), this.sb.rpc("birth_time_approx")]);
     fail(error, "Kundli");
-    return (data as MyChart) ?? null;
+    return data ? { ...(data as MyChart), time_approx: approx.data === true } : null;
+  }
+  async setExactBirthTime(time: string) {
+    const { error } = await this.sb.rpc("set_exact_birth_time", { p_time: time });
+    if (error?.message.includes("birth_details_locked")) throw new Error("Your exact time is already saved. For other changes, write to Help.");
+    fail(error, "Saving your birth time");
   }
 
   async savePushToken(token: string) { await this.rpc("claim_push_token", { p_token: token }); }
@@ -568,6 +573,13 @@ export class SupabaseApi implements Api {
   }
   async sosUpdate(sid: string, lat: number, lng: number) { await this.rpc("sos_update", { p_id: sid, p_lat: lat, p_lng: lng }); }
   async sosStop(sid: string) { await this.rpc("sos_stop", { p_id: sid }); }
+  async familyShares() { return this.rpc<FamilyShares>("my_family_shares", {}, "Family view"); }
+  async familyShareCreate(matchId?: string) {
+    return this.rpc<Awaited<ReturnType<Api["familyShareCreate"]>>>("family_share_create", { p_match: matchId ?? null }, "Family view");
+  }
+  async familyShareAnswer(id: string, yes: boolean) { await this.rpc("family_share_answer", { p_id: id, p_yes: yes }, "Family view"); }
+  async familyShareRevoke(id: string) { await this.rpc("family_share_revoke", { p_id: id }, "Family view"); }
+  async familyView(token: string) { return (await this.rpc<FamilyPage | null>("family_view", { p_token: token }, "Family page")) ?? null; }
   async sosView(token: string) { return (await this.rpc<Awaited<ReturnType<Api["sosView"]>>>("sos_view", { p_token: token })) ?? null; }
 
   // ---------------------------------------------------------------- inbox, history, help, account

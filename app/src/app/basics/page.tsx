@@ -22,7 +22,7 @@ export default function Basics() {
   const router = useRouter();
   const { draft, gender } = useFlow();
   const [f, setF] = usePersisted("basics", {
-    first_name: "", show: (gender === "man" ? "women" : "men") as ShowMe, height_cm: "" as number | "", mother_tongue: "", education: "",
+    first_name: "", show: (gender === "man" ? "women" : gender === "woman" ? "men" : "everyone") as ShowMe, height_cm: "" as number | "", mother_tongue: "", education: "",
     profession: "", languages: "", college: "", company: "", hometown: "", city: null as Place | null, more: false,
   });
   const [gps, setGps] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export default function Basics() {
       await api().createProfile(name, g, consents);
       await attachReferrer(draft.inviteCode);
     }
-    const showMe: Gender[] = f.show === "everyone" ? ["woman", "man"] : f.show === "men" ? ["man"] : ["woman"];
+    const showMe: Gender[] = f.show === "everyone" ? ["woman", "man", "other"] : f.show === "men" ? ["man"] : ["woman"];
     await api().saveBasics({ first_name: name, show_me: showMe, height_cm: Number(f.height_cm), mother_tongue: f.mother_tongue,
       education: f.education, profession: f.profession.trim(), college: f.college, company: f.company, hometown: f.hometown,
       languages: f.languages.split(",").map((x) => x.trim()).filter(Boolean) });

@@ -162,7 +162,8 @@
      "present": true,
      "cancelled": true,
      "reason": "Moon sign lords Saturn and Venus are friends"
-    }
+    },
+    "manglik_match": true
    },
    "summary": "Different Nadi: the classical sign of good health together."
   },
@@ -199,7 +200,8 @@
      "present": true,
      "cancelled": true,
      "reason": "both Moon signs ruled by Saturn"
-    }
+    },
+    "manglik_match": true
    },
    "summary": "Different Nadi: the classical sign of good health together."
   },
@@ -231,7 +233,9 @@
     "bhakoot": 7.0,
     "nadi": 8.0
    },
-   "doshas": {},
+   "doshas": {
+    "manglik_match": true
+   },
    "summary": "Different Nadi: the classical sign of good health together."
   },
   {
@@ -267,7 +271,8 @@
      "present": true,
      "cancelled": false,
      "reason": null
-    }
+    },
+    "manglik_match": true
    },
    "summary": "Different Nadi: the classical sign of good health together."
   },
@@ -304,7 +309,8 @@
      "present": true,
      "cancelled": false,
      "reason": null
-    }
+    },
+    "manglik_match": true
    },
    "summary": "Different Nadi: the classical sign of good health together."
   },
@@ -336,7 +342,9 @@
     "bhakoot": 7.0,
     "nadi": 8.0
    },
-   "doshas": {},
+   "doshas": {
+    "manglik_match": false
+   },
    "summary": "Different Nadi: the classical sign of good health together."
   },
   {
@@ -372,7 +380,8 @@
      "present": true,
      "cancelled": true,
      "reason": "same Moon sign, different nakshatra"
-    }
+    },
+    "manglik_match": true
    },
    "summary": "Your Moon signs sit well with each other."
   },
@@ -404,7 +413,9 @@
     "bhakoot": 7.0,
     "nadi": 8.0
    },
-   "doshas": {},
+   "doshas": {
+    "manglik_match": true
+   },
    "summary": "Different Nadi: the classical sign of good health together."
   },
   {
@@ -440,7 +451,8 @@
      "present": true,
      "cancelled": true,
      "reason": "both Moon signs ruled by Saturn"
-    }
+    },
+    "manglik_match": true
    },
    "summary": "Different Nadi: the classical sign of good health together."
   },
@@ -477,7 +489,8 @@
      "present": true,
      "cancelled": false,
      "reason": null
-    }
+    },
+    "manglik_match": true
    },
    "summary": "Your Moon signs sit well with each other."
   },
@@ -519,7 +532,8 @@
      "present": true,
      "cancelled": false,
      "reason": null
-    }
+    },
+    "manglik_match": true
    },
    "summary": "Same temperament (Gana): you'll get each other's moods."
   }

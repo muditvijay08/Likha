@@ -114,4 +114,4 @@ select pg_temp.denied('members cannot read the SMS queue', $q$ select count(*) f
 select pg_temp.act_as_server();
 select pg_temp.check('Turnstile and city-open key slots exist; only the site key is public', $q$ select (select count(*) from public.api_key_slots where key in ('TURNSTILE_SITE_KEY','TURNSTILE_SECRET_KEY','MSG91_CITY_TEMPLATE_ID')) = 3
   and (select is_public from public.api_key_slots where key = 'TURNSTILE_SITE_KEY') and not (select is_public from public.api_key_slots where key = 'TURNSTILE_SECRET_KEY') $q$);
-select pg_temp.check('visitors can call exactly five functions', $q$ select count(*) = 5 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute') $q$);
+select pg_temp.check('visitors can call exactly six functions (family pages added in part 30)', $q$ select count(*) = 6 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute') $q$);

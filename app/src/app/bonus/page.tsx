@@ -15,7 +15,7 @@ export default function Bonus() {
 
   useEffect(() => { (async () => { setR(await api().refresh()); setS(await reload()); })().catch(() => {}); }, [reload]);
 
-  const bonus = settings?.welcome_bonus?.[gender] ?? (gender === "woman" ? 150 : 70);
+  const bonus = (gender === "other" ? settings?.welcome_bonus?.other : settings?.welcome_bonus?.[gender]) ?? (gender === "man" ? 70 : 150);
   const pct = r?.pct ?? s?.pct ?? 0;
   const done = pct >= 100;
   const items: [string, boolean, string][] = s ? [

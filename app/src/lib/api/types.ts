@@ -1,5 +1,7 @@
 // The one interface every screen uses. Two implementations: Supabase (real) and Demo (in the browser).
-export type Gender = "woman" | "man";
+export type Gender = "woman" | "man" | "other";
+export type MaritalStatus = "never_married" | "divorced" | "separated" | "widowed";
+export type MarriageTimeline = "within_1y" | "1_2y" | "not_sure";
 export type Goal = "dating" | "matchmaking";
 
 export interface City { id: string; slug: string; name: string; status: "live" | "waitlist" | "locked" }
@@ -23,8 +25,8 @@ export interface OnboardingState {
 }
 
 export interface PublicSettings {
-  onboarding_step_credits: Record<Gender, number[]>;
-  welcome_bonus: { woman: number; man: number; expiry_days: number };
+  onboarding_step_credits: Partial<Record<Gender, number[]>>;
+  welcome_bonus: { woman: number; man: number; other?: number; expiry_days: number };
   grievance_officer?: { name: string; email: string; phone: string; ack_hours: number; resolve_days: number };
   company?: { legal_name: string; gstin: string; cin: string; address: string };
   /** Browser-safe keys set in Admin > Keys (Maps browser key, Razorpay key id in use). */
@@ -75,7 +77,7 @@ export interface Lifestyle {
   religion: string | null; show_religion: boolean;
 }
 
-export interface Birth { date: string; time: string; place: Place; tz: string; offsetMinutes: number }
+export interface Birth { date: string; time: string; place: Place; tz: string; offsetMinutes: number; approx?: boolean }
 
 export interface Photo { id: string; position: number; url: string; status: "pending" | "approved" | "rejected" }
 
@@ -94,6 +96,8 @@ export interface MyChart {
   mahadashas?: { lord: string; start: string; end: string }[];
   /** Demo mode only: the chart is one example birth, not the member's own. Screens say so. */
   sample_birth?: { date: string; time: string; place: string };
+  /** Worked out from an approximate birth time (part of the day). The member can set the exact time once. */
+  time_approx?: boolean;
 }
 
 export interface CityQueue {
@@ -122,6 +126,7 @@ export interface ProfileFull extends Card {
   kootas: Record<string, number> | null;
   doshas: { nadi?: Dosha; bhakoot?: Dosha; gana?: Dosha; manglik_match?: boolean } | null;
   i_liked: boolean; match_id: string | null;
+  time_approx?: boolean; hometown?: string | null; relocate?: string | null; marital_status?: MaritalStatus | null; marriage_timeline?: MarriageTimeline | null;
 }
 export interface LikeCard extends Card { liked_at: string; kind: "like" | "cosmic_like"; note: string | null; new: boolean }
 export interface MatchRow {
@@ -198,6 +203,7 @@ export interface MyProfile {
   languages: string[]; education: string | null; profession: string | null; company: string | null; college: string | null; hometown: string | null;
   diet: string | null; drinking: string | null; smoking: string | null; workout: string | null; kids: string | null; relocate: string | null;
   religion: string | null; show_religion: boolean; goal: Goal | null; bio: string | null; voice_intro_path: string | null;
+  marital_status?: MaritalStatus | null; marriage_timeline?: MarriageTimeline | null;
   status: string; selfie_status: string; selfie_auto?: boolean; profile_complete_pct: number; tier: Tier;
   incognito: boolean; i_message_first: boolean; hide_company: boolean; read_receipts: boolean; show_online: boolean; paused: boolean;
   language_pref: "en" | "hinglish" | "hi";
@@ -205,7 +211,7 @@ export interface MyProfile {
   birth: { date: string; time: string; place: string } | null; balance: number; streak: number; matches: number; bonus_waiting: number | null;
 }
 export type ProfilePatch = Partial<Pick<MyProfile, "first_name" | "height_cm" | "mother_tongue" | "languages" | "education" | "profession" | "company" | "college" |
-  "hometown" | "diet" | "drinking" | "smoking" | "workout" | "kids" | "relocate" | "religion" | "show_religion" | "goal" | "bio" | "incognito" |
+  "hometown" | "diet" | "drinking" | "smoking" | "workout" | "kids" | "relocate" | "religion" | "show_religion" | "goal" | "bio" | "incognito" | "marital_status" | "marriage_timeline" |
   "i_message_first" | "hide_company" | "read_receipts" | "show_online" | "paused" | "language_pref">>;
 export interface NotifPrefs { kick_time: string; new_likes: boolean; matches: boolean; golden_hours: boolean; offers: boolean; quiet_start: string; quiet_end: string }
 export interface TrustedContact { id: string; name: string; phone: string; relation: string | null }
@@ -281,12 +287,13 @@ export interface Api {
   interests(): Promise<Interest[]>;
   saveVibe(prompts: { key: string; answer: string }[], interestIds: number[]): Promise<void>;
   uploadVoice(audio: Blob): Promise<void>;
-  saveGoal(g: Goal): Promise<void>;
+  saveGoal(g: Goal, life?: { marital_status: MaritalStatus | null; marriage_timeline: MarriageTimeline | null }): Promise<void>;
   savePrefs(p: Prefs): Promise<void>;
   setStep(step: number): Promise<void>;
   refresh(): Promise<Refresh>;
   cityQueue(): Promise<CityQueue | null>;
   myChart(): Promise<MyChart | null>;
+  setExactBirthTime(time: string, offsetMinutes?: number): Promise<void>;
   savePushToken(token: string): Promise<void>;
   releasePushToken(token: string): Promise<void>;
 
@@ -363,6 +370,12 @@ export interface Api {
   sosStart(matchId: string | null, lat: number | null, lng: number | null, flag: boolean): Promise<{ id: string; token: string; share_until: string }>;
   sosUpdate(id: string, lat: number, lng: number): Promise<void>;
   sosStop(id: string): Promise<void>;
+  // Family view: a read-only page for family, by WhatsApp link. A match's page needs their yes first.
+  familyShares(): Promise<FamilyShares>;
+  familyShareCreate(matchId?: string): Promise<{ id: string; token: string | null; status: FamilyShareStatus; expires_at: string }>;
+  familyShareAnswer(id: string, yes: boolean): Promise<void>;
+  familyShareRevoke(id: string): Promise<void>;
+  familyView(token: string): Promise<FamilyPage | null>;
   sosView(token: string): Promise<{ first_name: string; lat: number | null; lng: number | null; updated_at: string; share_until: string } | null>;
   notices(): Promise<Notice[]>;
   markAllRead(): Promise<void>;
@@ -420,3 +433,18 @@ export interface Api {
 export interface CityCounter { slug: string; name: string; status: "live" | "waitlist"; members: number | null; unlock_threshold: number; sample?: boolean }
 export interface WaitlistJoin { first_name: string; phone: string; city: string; gender: Gender; consent: boolean; invite?: string | null; token?: string | null }
 export interface WaitlistResult { existing?: boolean; position?: number; invite_code?: string; city?: string; city_live?: boolean; unlock_threshold?: number; jump_per_invite?: number }
+
+// Family view
+export type FamilyShareStatus = "waiting" | "active" | "declined" | "revoked" | "expired";
+export interface FamilyShares {
+  mine: { id: string; about: string | null; status: FamilyShareStatus; token: string | null; expires_at: string; views: number }[];
+  requests: { id: string; from: string; created_at: string }[];
+}
+export interface FamilyPage {
+  kind: "me" | "match"; shared_by: string; expires_at: string;
+  person: { first_name: string; age: number | null; city: string | null; profession: string | null; education: string | null; goal: Goal | null;
+    marital_status: MaritalStatus | null; marriage_timeline: MarriageTimeline | null; hometown: string | null; diet: string | null; languages: string[];
+    height_cm: number | null; verified: boolean; moon_sign: string | null; nakshatra: string | null; manglik: boolean | null; time_approx: boolean;
+    prompts: { label: string; answer: string }[] };
+  match: { gunas: number; jodi_score: number; kootas: Record<string, number>; doshas: ProfileFull["doshas"] } | null;
+}

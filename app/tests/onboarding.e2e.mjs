@@ -74,12 +74,16 @@ page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connec
   await page.waitForURL("**/birth");
   await page.fill("#dob", "1999-03-14");
   await click("Build my kundli");
-  ok(/Birth time is a must|birthplace/i.test(await page.locator(".error").textContent()), `${name}: birth time is required`);
-  await page.fill("#tob", tob);
+  ok(/Add your birth time|birthplace/i.test(await page.locator(".error").textContent()), `${name}: a birth time (or part of the day) is required`);
+  if (gender === "man") {                                    // Aarav doesn't know his exact time: part of the day, labelled
+    await page.getByText("Don't know the exact time?").click();
+    await click("Morning");
+  } else await page.fill("#tob", tob);
   await page.fill("#pob", "Jaip");
   await page.getByRole("option", { name: /Jaipur, Rajasthan/ }).click();
   await click("Build my kundli");
   ok(await page.getByRole("alertdialog").isVisible(), `${name}: asked to confirm birth details before they lock`);
+  if (gender === "man") ok(await page.getByText("Morning (approx.)").isVisible(), `${name}: the confirmation says the time is approximate`);
   await shot("06-birth");
   await click("Yes, build my kundli");
 
@@ -128,6 +132,7 @@ page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connec
     await page.getByText("YOUR KUNDLI IS READY").waitFor({ timeout: 15000 });
     ok(await page.getByRole("img", { name: /birth chart, Aquarius ascendant/ }).isVisible(), `${name}: chart drawn with Lagna`);
     ok(await page.getByText(/Sample chart \(demo mode\)/).isVisible(), `${name}: demo chart is labelled as a sample`);
+    if (gender === "man") ok(await page.getByText(/approximate time of day/).isVisible(), `${name}: kundli says it uses an approximate time`);
     await shot("13-kundli");
     await click("Continue");
     await page.waitForURL("**/install");

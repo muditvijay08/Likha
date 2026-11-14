@@ -5,12 +5,11 @@
   --saffron: #FFB020; --saffron-soft: #FFF3D6; --saffron-faint: #FFF9EC; --saffron-ink: #8A4300; --link: #B5590A;
   --violet: #7E5BEF; --violet-soft: #EDE6FF;
   --green: #2F7D63; --green-soft: #E4F4EE; --red: #C02660; --red-soft: #FFF0F4;
-  --g: #E0457B; --g-ink: #A3164C; --g-soft: #FFF0F4;           /* gender colour: rose for women */
+  --g: #E0457B; --g-ink: #A3164C; --g-soft: #FFF0F4;           /* accent, the same for everyone */
   --rose: #E0457B; --rose-ink: #A3164C; --rose-soft: #FFF0F4;  /* love colour in the app, same for everyone */
   --serif: Fraunces, Georgia, serif; --sans: Manrope, system-ui, sans-serif;
   color-scheme: light;
 }
-:root[data-gender="man"] { --g: #2F6FE0; --g-ink: #1F4FA8; --g-soft: #EAF1FF; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
@@ -269,3 +268,5 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 
 /* Demo mode: a chart that is an example, not the member's own */
 .sample-note { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--saffron-faint); border: 1px dashed var(--saffron); color: var(--saffron-ink); font: 600 13px/1.45 var(--sans); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }

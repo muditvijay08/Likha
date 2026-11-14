@@ -2,8 +2,8 @@
 // O10 Dating or matchmaking (step 7)
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ErrorNote, Primary, Screen, StepHeader, useAction } from "@/components/ui";
-import { api, type Goal } from "@/lib/api";
+import { Chips, ErrorNote, Primary, Screen, StepHeader, useAction } from "@/components/ui";
+import { api, type Goal, type MaritalStatus, type MarriageTimeline } from "@/lib/api";
 import { useGuard } from "@/lib/guard";
 
 const OPTIONS: { v: Goal; title: string; body: string; icon: React.ReactNode }[] = [
@@ -17,12 +17,14 @@ export default function GoalPage() {
   const s = useGuard();
   const router = useRouter();
   const [goal, setGoal] = useState<Goal | null>(null);
+  const [marital, setMarital] = useState<MaritalStatus | null>(null);
+  const [timeline, setTimeline] = useState<MarriageTimeline | null>(null);
   const { busy, error, run } = useAction();
   useEffect(() => { if (s?.goal) setGoal(s.goal); }, [s]);
 
   const submit = () => run(async () => {
     if (!goal) throw new Error("Pick one. You can change it anytime.");
-    await api().saveGoal(goal);
+    await api().saveGoal(goal, { marital_status: marital, marriage_timeline: goal === "matchmaking" ? timeline : null });
     await api().setStep(8);
     await api().refresh();
     router.push("/preferences");
@@ -46,6 +48,13 @@ export default function GoalPage() {
           </button>
         ))}
       </div>
+      {goal === "matchmaking" && (
+        <Chips small label="Hoping to marry" value={timeline} onChange={(v) => setTimeline(v as MarriageTimeline)}
+          options={[{ v: "within_1y", label: "Within a year" }, { v: "1_2y", label: "In 1–2 years" }, { v: "not_sure", label: "When it feels right" }]} />
+      )}
+      <Chips small label="Relationship history (optional)" value={marital} onChange={(v) => setMarital(v as MaritalStatus)}
+        options={[{ v: "never_married", label: "Never married" }, { v: "divorced", label: "Divorced" }, { v: "separated", label: "Separated" }, { v: "widowed", label: "Widowed" }]} />
+      <span className="small">Shown on your profile so people know where you are in life. Never used to hide anyone.</span>
       <div className="grow" />
       <ErrorNote error={error} />
       <Primary onClick={submit} busy={busy}>Continue</Primary>

@@ -18,7 +18,7 @@ export function StepHeader({ step, back, last }: { step: number; back?: string; 
   const c = credits(step);
   const earned = c.earnedBefore + c.thisStep;               // the design shows this step's credits as already in reach
   const pct = (step / 8) * 100;
-  const tip = `Welcome credits unlock as you finish each step. ${gender === "woman" ? "Women" : "Men"} get ${c.total}.`;
+  const tip = `Welcome credits unlock as you finish each step: ${c.total} in all.`;
   return (
     <div className="row" style={{ gap: 12, alignItems: "center" }}>
       <BackButton href={back} />

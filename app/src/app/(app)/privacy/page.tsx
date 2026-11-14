@@ -27,7 +27,7 @@ export default function Privacy() {
       <ErrorNote error={error} />
       <div className="listcard" style={{ padding: 0 }}>
         <Toggle id="p-incog" label="Incognito" hint="Only people you've liked can see you" checked={p.incognito} onChange={(v) => set({ incognito: v })} />
-        {p.gender === "woman" && <Toggle id="p-first" label="I message first" hint="Matches can't open the chat first." checked={p.i_message_first} onChange={(v) => set({ i_message_first: v })} />}
+        {p.gender !== "man" && <Toggle id="p-first" label="I message first" hint="Matches can't open the chat first." checked={p.i_message_first} onChange={(v) => set({ i_message_first: v })} />}
         <Toggle id="p-company" label="Hide my company" checked={p.hide_company} onChange={(v) => set({ hide_company: v })} />
         <Toggle id="p-religion" label="Show religion on profile" checked={p.show_religion} onChange={(v) => set({ show_religion: v })} />
         <Toggle id="p-read" label="Read receipts" checked={p.read_receipts} onChange={(v) => set({ read_receipts: v })} />

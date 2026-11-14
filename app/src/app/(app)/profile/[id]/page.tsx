@@ -10,6 +10,11 @@ import { api, type ProfileFull } from "@/lib/api";
 const round = { position: "absolute", top: 16, width: 44, height: 44, borderRadius: 999, background: "rgba(255,255,255,0.92)", color: "var(--ink)",
   display: "flex", alignItems: "center", justifyContent: "center", border: 0 } as const;
 
+const MARITAL: Record<string, string> = { never_married: "Never married", divorced: "Divorced", separated: "Separated", widowed: "Widowed" };
+const TIMELINE: Record<string, string> = { within_1y: "Hoping to marry within a year", "1_2y": "Hoping to marry in 1–2 years", not_sure: "Will marry when it feels right" };
+const lifeLine = (p: ProfileFull) => [p.hometown && p.hometown !== p.city ? `From ${p.hometown}` : null, p.marital_status ? MARITAL[p.marital_status] : null,
+  p.marriage_timeline ? TIMELINE[p.marriage_timeline] : null, p.relocate === "yes" ? "Open to relocating" : p.relocate === "maybe" ? "Maybe open to relocating" : null].filter(Boolean).join(" · ");
+
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -79,6 +84,7 @@ export default function Profile() {
           {p.height_cm && <span className="tag">{Math.floor(p.height_cm / 30.48)}′{Math.round((p.height_cm / 2.54) % 12)}″</span>}
           {p.liked_me && <span className="tag goal">Likes you</span>}
         </div>
+        {lifeLine(p) && <span style={{ fontSize: 13, color: "var(--muted)" }}>{lifeLine(p)}</span>}
         {(p.prompts.length ? p.prompts : p.prompt ? [p.prompt] : []).map((q) => (
           <div key={q.label} className="card stack" style={{ gap: 4, padding: "12px 14px", borderRadius: 16 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{q.label}</span>
@@ -106,6 +112,7 @@ export default function Profile() {
         )}
         {p.interests.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{p.interests.map((x) => <span key={x} className="tag" style={{ fontWeight: 600 }}>{x}</span>)}</div>}
         <Link href={`/report/${p.id}`} style={{ fontSize: 13, fontWeight: 600 }}>Full compatibility report · {price(prices, "full_report", 29)} credits</Link>
+        {p.match_id && <Link href={`/family?match=${p.match_id}`} style={{ fontSize: 13, fontWeight: 600 }}>Show your family (asks {p.first_name} first)</Link>}
         <ErrorNote error={error} />
       </div>
 

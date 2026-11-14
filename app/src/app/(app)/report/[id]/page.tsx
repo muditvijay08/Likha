@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
-import { Info, price, useApp } from "@/components/app";
+import { Info, JODI_INFO, price, useApp } from "@/components/app";
 import { api, type ProfileFull, type Reading } from "@/lib/api";
 
 const KOOTAS: [string, string, number, string][] = [
@@ -52,15 +52,21 @@ export default function Report() {
       <div className="titlebar">
         <BackButton />
         <h1>You and {p.first_name}</h1>
-        <span className="badge-soft tip tip-r" tabIndex={0} data-tip={p.borderline ? `${p.first_name}'s birth time is near a boundary: a few minutes could change one detail.` : `${p.first_name}'s birth time is clear of any sign or nakshatra boundary.`}
-          style={p.borderline ? { background: "var(--saffron-soft)", color: "var(--saffron-ink)" } : undefined}>{p.borderline ? "Approx." : "Exact"}</span>
+        <span className="badge-soft tip tip-r" tabIndex={0} data-tip={p.time_approx ? `${p.first_name} gave an approximate birth time, so some details may shift.` : p.borderline ? `${p.first_name}'s birth time is near a boundary: a few minutes could change one detail.` : `${p.first_name}'s birth time is clear of any sign or nakshatra boundary.`}
+          style={p.borderline || p.time_approx ? { background: "var(--saffron-soft)", color: "var(--saffron-ink)" } : undefined}>{p.borderline || p.time_approx ? "Approx. time" : "Exact time"}</span>
       </div>
 
       {p.kootas ? <>
         <div className="row" style={{ gap: 14, padding: "14px 16px", borderRadius: 20, background: "var(--saffron-soft)" }}>
           <span className="serif" style={{ fontSize: 44, fontWeight: 600, lineHeight: 1 }}>{g}<span style={{ fontSize: 18, color: "var(--saffron-ink)" }}>/36</span></span>
-          <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 16 }}>{title}</strong><span style={{ fontSize: 13, color: "#3D3560" }}>{line} Jodi Score {p.jodi_score}%.</span></span>
+          <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 16 }}>{title}</strong><span style={{ fontSize: 13, color: "#3D3560" }}>{line}</span></span>
         </div>
+        {p.jodi_score != null && (
+          <div className="stack" style={{ gap: 4, padding: "12px 16px", borderRadius: 16, background: "#fff", border: "1px solid var(--line)" }}>
+            <strong style={{ fontSize: 15 }}>Jodi Score {p.jodi_score} / 100</strong>
+            <span style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>{JODI_INFO}</span>
+          </div>
+        )}
         <section aria-label="Ashtakoot breakdown" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 20, padding: "10px 16px", display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
           {KOOTAS.map(([k, label, max, tip]) => {
             const v = Number(p.kootas?.[k] ?? 0);
@@ -69,7 +75,7 @@ export default function Report() {
                 <span>{label}<Info text={tip} /></span>
                 <div style={{ height: 6, borderRadius: 999, background: "#ECE6FA" }} role="meter" aria-label={`${label} ${v} of ${max}`} aria-valuemin={0} aria-valuemax={max} aria-valuenow={v}>
                   {v > 0 && <div style={{ width: `${(v / max) * 100}%`, height: 6, borderRadius: 999, background: "var(--saffron)" }} />}</div>
-                <strong style={{ textAlign: "right" }}>{v}/{max}</strong>
+                <strong style={{ textAlign: "right" }}>{Number.isInteger(v) ? v : v.toFixed(1)}/{max}</strong>
               </div>
             );
           })}
