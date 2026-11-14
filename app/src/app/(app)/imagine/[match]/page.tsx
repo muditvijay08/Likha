@@ -10,7 +10,6 @@ import { api, type Universe } from "@/lib/api";
 
 const SCENES: [string, string, string, string][] = [
   ["travel", "On a trip", "A hill-station viewpoint at golden hour", "linear-gradient(160deg, #FFB27A, #7E5BEF)"],
-  ["wedding", "Our wedding", "Marigolds and a warm mandap", "linear-gradient(160deg, #FFD36E, #E8456B)"],
   ["old_age", "At 70", "Grey hair, a cosy home, still laughing", "linear-gradient(160deg, #F6E7C8, #8A6F4E)"],
 ];
 

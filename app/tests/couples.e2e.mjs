@@ -87,7 +87,7 @@ ok(await seen(page.getByText("Two planners, one playful streak")) && await seen(
 // E2 Imagine Us
 await page.goto(`${BASE}/imagine/m-s-sanya`);
 ok(await seen(page.getByText(/Every picture is marked "Imagined, not a real photo"/)), "Imagine: labelled, consent-first");
-await page.getByRole("radio", { name: /Our wedding/ }).click();
+await page.getByRole("radio", { name: /At 70/ }).click();
 await page.getByRole("button", { name: /Ask Sanya · 49 credits/ }).click();
 await page.waitForURL("**/readings/**");
 ok(await seen(page.getByRole("img", { name: "Imagined picture 2" }), 15000), "Imagine: two pictures");

@@ -42,6 +42,9 @@ ok(await seen(page.getByText("Venus warms the 7th from your Moon")), "Love weath
 ok(await seen(page.getByText("Your day in the stars")) && await seen(page.getByText(/^Rahu Kaal/).first()), "Day timeline drawn from sunrise, horas and Rahu Kaal");
 ok(await seen(page.getByRole("link", { name: "Today's best match: Ishita" })) && await seen(page.getByText("Jodi Score 92")), "Best match first on Home (Ishita, Jodi 92 from the real engine)");
 ok(await seen(page.getByText("people like you")) && (await page.locator("text=people like you").locator("..").textContent()).includes("3"), "3 people like you");
+const ring = page.getByRole("img", { name: /of 36 Gunas/ }).first();
+const homeGunas = (await ring.getAttribute("aria-label")).split(" ")[0];
+ok((await ring.locator("text").first().textContent()) === homeGunas, "Home ring shows the real Guna number at once (no half-counted value)");
 ok(await credits() === 70, "Wallet shows the 70 welcome credits");
 await shot("01-home");
 
@@ -61,6 +64,8 @@ await page.getByRole("link", { name: "Discover" }).click();
 await page.waitForURL("**/discover");
 ok(await seen(page.getByRole("heading", { name: "Ishita, 27" })), "Discover: best Jodi Score first");
 ok(await seen(page.getByText("SAMPLE PROFILE")), "Sample profiles are labelled");
+ok((await page.locator(".disc-card .font-serif").first().textContent()) === homeGunas, `Same Gunas for Ishita on Home and Discover (${homeGunas})`);
+ok(await seen(page.getByText("Sample ·").first()), "Live strip says Sample in demo mode");
 ok(await seen(page.getByText("Live in Jaipur:")), "Live city strip shown");
 ok(await credits() === 65, "Kick charged 10 credits once, +5 first-try reward (70 → 65)");
 await btn("Got it").click();

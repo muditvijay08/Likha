@@ -32,7 +32,7 @@ SAMPLES = [
     ("s-rohan", "man", "Rohan", 36, 75), ("s-arjun", "man", "Arjun", 30, 66),
 ]
 KOOTA_LINE = {
-    "nadi": "Different Nadi: the classical sign of good health together.",
+    "nadi": "Different Nadi: the full 8 points, the koota families check first.",
     "bhakoot": "Your Moon signs sit well with each other.",
     "graha_maitri": "Your Moon sign lords are friends, so talks come easy.",
     "gana": "Same temperament (Gana): you'll get each other's moods.",

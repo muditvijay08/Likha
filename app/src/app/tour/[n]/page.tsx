@@ -36,7 +36,7 @@ export default function Tour() {
         <span className="tile" style={{ background: "#EDE6FF", border: 0 }}><span>Vibe</span><strong style={{ fontFamily: "var(--serif)", fontSize: 20 }}>7/10</strong></span>
         <span className="tile" style={{ background: "#FFF0F4", border: 0 }}><span>Date score</span><strong style={{ fontFamily: "var(--serif)", fontSize: 20, color: "#C02660" }}>8/10</strong></span>
       </div>
-      <span style={{ padding: "8px 10px", borderRadius: 10, background: "var(--saffron-soft)", fontSize: 13, fontWeight: 700 }}>Lucky window 7:40–9:10 PM</span>
+      <span style={{ padding: "8px 10px", borderRadius: 10, background: "var(--saffron-soft)", fontSize: 13, fontWeight: 700 }}>Good window 7:40–9:10 PM</span>
       <span style={{ fontSize: 13 }}>Wear yellow. Big talks after sunset.</span>
     </div>
   );
@@ -59,7 +59,7 @@ export default function Tour() {
     1: { bg: "var(--bg)", kicker: "MATCHING", title: "Your kundli finds your people", art: T1,
          body: "Every profile shows your Jodi Score, worked out from both birth charts. Tap any ⓘ to learn what a number means." },
     2: { bg: "#FFF9EC", kicker: "EVERY MORNING", title: "Your day, decoded", art: T2,
-         body: "Your Daily Kick: vibe, date score, lucky window and one small fix. Golden Hours tell you the best time to text each match." },
+         body: "Your Daily Kick: vibe, date score, good window and one small fix. Golden Hours tell you the best time to text each match." },
     3: { bg: "#FFF5F8", kicker: "FOR YOUR CRUSH", title: "Got a crush? Check together", art: T3,
          body: "Send a crush link to anyone, even outside the app. If they join and agree, you both see your score." },
   } as const;

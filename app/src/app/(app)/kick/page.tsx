@@ -52,7 +52,7 @@ export default function DailyKick() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
           <Tile label="Vibe"><span className="serif" style={{ fontSize: 24, fontWeight: 600 }}>{k.teaser.vibe}<span style={{ fontSize: 13, color: "var(--muted)" }}>/10</span></span></Tile>
           <Tile label="Date score"><span className="serif" style={{ fontSize: 24, fontWeight: 600, color: "#D6336C" }}>{k.teaser.date_score}<span style={{ fontSize: 13, color: "var(--muted)" }}>/10</span></span></Tile>
-          <Tile label="Lucky window"><span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{k.teaser.lucky_window ?? "Tonight"}</span></Tile>
+          <Tile label="Good window"><span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{k.teaser.lucky_window ?? "Tonight"}</span></Tile>
         </div>
 
         <div className="lockbox">

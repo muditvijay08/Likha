@@ -69,7 +69,6 @@ export function NightSky({ className, children, seed = 7 }: { className?: string
 export function GunaRing({ gunas, size = 112, tone = "paper", label = true }: { gunas: number; size?: number; tone?: "paper" | "night"; label?: boolean }) {
   const reduce = useReducedMotion();
   const v = useMotionValue(reduce ? gunas : 0);
-  const shown = useTransform(v, (n) => (Number.isInteger(gunas) ? Math.round(n) : Math.round(n * 2) / 2).toString());
   const dash = useTransform(v, (n) => `${(n / 36) * 289} 289`);
   useEffect(() => { if (reduce) { v.set(gunas); return; } const c = animate(v, gunas, { duration: 1.4, ease: [0.2, 0.7, 0.2, 1] }); return () => c.stop(); }, [gunas, reduce, v]);
   const ink = tone === "night" ? "#FFFFFF" : "var(--ink)";
@@ -78,7 +77,8 @@ export function GunaRing({ gunas, size = 112, tone = "paper", label = true }: { 
       <circle cx="56" cy="56" r="46" fill="none" stroke={tone === "night" ? "rgba(255,255,255,.14)" : "var(--track)"} strokeWidth="8" />
       <motion.circle cx="56" cy="56" r="46" fill="none" stroke="var(--gold)" strokeWidth="8" strokeLinecap="round"
         transform="rotate(-90 56 56)" style={{ strokeDasharray: dash }} />
-      <motion.text x="56" y={label ? 58 : 64} textAnchor="middle" fill={ink} style={{ font: "560 32px var(--serif)" }}>{shown}</motion.text>
+      {/* the number is always the real score; only the arc animates, so no screen ever shows a half-counted value */}
+      <text x="56" y={label ? 58 : 64} textAnchor="middle" fill={ink} style={{ font: "560 32px var(--serif)" }}>{Number.isInteger(gunas) ? gunas : gunas.toFixed(1)}</text>
       {label && <text x="56" y="77" textAnchor="middle" fill={tone === "night" ? "#CFC6F2" : "var(--muted)"} style={{ font: "700 10px var(--sans)", letterSpacing: ".08em" }}>OF 36 GUNAS</text>}
     </svg>
   );

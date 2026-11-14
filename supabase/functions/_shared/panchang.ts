@@ -59,7 +59,7 @@ export function horas(sun: SunDay, nextSunrise: number, weekday: number): Hora[]
 }
 
 export const fmt = (min: number) => {
-  const m = Math.round(((min % 1440) + 1440) % 1440);
+  const m = Math.floor(((min % 1440) + 1440) % 1440);           // truncate like Intl clock times, so screens agree to the minute
   const h = Math.floor(m / 60), mm = m % 60, ap = h >= 12 ? "PM" : "AM";
   return `${((h + 11) % 12) + 1}:${String(mm).padStart(2, "0")} ${ap}`;
 };

@@ -60,8 +60,7 @@ export default function Bonus() {
           </li>
         ))}
       </ul>
-      <div className="small" style={{ lineHeight: 1.5 }}>One bonus per person. Women get {settings?.welcome_bonus?.woman ?? 150} credits, men get {settings?.welcome_bonus?.man ?? 70}.
-        Bonus credits expire {settings?.welcome_bonus?.expiry_days ?? 90} days after they land and are used before purchased ones.</div>
+      <div className="small" style={{ lineHeight: 1.5 }}>One bonus per person. Bonus credits expire {settings?.welcome_bonus?.expiry_days ?? 90} days after they land and are used before purchased ones.</div>
       <div className="grow" />
       {!done && left[0] && <Link className="btn" href={left[0][2]}>Finish my profile</Link>}
       <Link className={done ? "btn" : "btn text"} href="/tour/1">{done ? "Show me around" : "Do it later"}</Link>

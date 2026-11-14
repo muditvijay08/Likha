@@ -116,7 +116,8 @@ export default function Profile() {
         <ErrorNote error={error} />
       </div>
 
-      <div className="row" style={{ gap: 10, padding: "12px 20px 24px" }}>
+      {/* sticky just above the bottom nav, so Pass / Like are always on screen */}
+      <div className="row disc-actions" style={{ gap: 10, padding: "12px 20px 14px" }}>
         {p.match_id ? (
           <Link href={`/chat/${p.match_id}`} className="btn mid">Message {p.first_name}</Link>
         ) : p.i_liked ? (

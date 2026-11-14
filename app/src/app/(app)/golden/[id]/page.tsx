@@ -48,7 +48,10 @@ export default function Golden() {
   const skip = new Set(days.filter((d) => forBoth(d).skip).map(dkey));
   const fmtDay = (d: Date, day: string) => { const date = new Intl.DateTimeFormat("en-IN", { timeZone: tz, weekday: "short", day: "numeric", month: "short" }).format(d);
     return isToday(day) ? `${day}, ${date}` : date; };
-  const list = [hours[0], hours.find((h) => h.best_for === "deep_chat" && h !== hours[0]), hours.find((h) => h.best_for === "first_date")].filter(Boolean) as typeof hours;
+  // The next window, then the next of each other kind; never the same slot twice.
+  const list: typeof hours = [];
+  for (const pick of [hours[0], hours.find((h) => h.best_for === "deep_chat" && h !== hours[0]), hours.find((h) => h.best_for === "first_date" && h !== hours[0])])
+    if (pick && !list.some((x) => +x.start === +pick.start)) list.push(pick);
   const unlock = () => run(async () => { await api().unlockGolden(id); setOpen(true); await reload(); });
   const name = m?.first_name ?? "your match";
 

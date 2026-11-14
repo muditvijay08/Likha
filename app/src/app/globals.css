@@ -36,7 +36,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .h1.big { font-size: 30px; }
 .h1.hero { font-size: 34px; line-height: 1.1; }
 .sub { margin: 0; font-size: 15px; line-height: 1.55; color: var(--muted); }
-.small { font-size: 13px; line-height: 1.45; color: var(--muted); }
+.small { font-size: 14px; line-height: 1.45; color: var(--muted); }
 .label { font-size: 13px; font-weight: 600; }
 .kicker { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--link); }
 .wordmark { font-family: var(--serif); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }

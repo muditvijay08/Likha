@@ -90,47 +90,6 @@ export default function Home() {
           </Link>
         </Rise>
       ); })()}
-      <div className="grid2" style={{ gap: 10 }}>
-        <Link href="/likes" style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--rose-soft)", color: "var(--ink)", textDecoration: "none" }}>
-          <span className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--rose)" }}>{home.likes_count}</span>
-          <strong style={{ fontSize: 14 }}>{home.likes_count === 1 ? "person likes you" : "people like you"}</strong><span style={{ fontSize: 12, color: "#8A3A55" }}>See them, it&apos;s free</span>
-        </Link>
-        {golden && matches[0] ? (
-          <Link href={`/match/${matches[0].match_id}`} style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none" }}>
-            <span className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--link)" }}>{clock(golden.start, city!.timezone).slice(0, -3)}</span>
-            <strong style={{ fontSize: 14 }}>Golden Hour with {matches[0].first_name}</strong><span style={{ fontSize: 12, color: "var(--saffron-ink)" }}>{golden.day === "Tonight" ? "Text first tonight?" : golden.day === "Today" ? "Text first today?" : `${golden.day}. Plan a chat?`}</span>
-          </Link>
-        ) : (
-          <Link href="/kick" style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none" }}>
-            <span className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--link)" }}>{love ? fmt(love.start).replace(/ (AM|PM)$/, "") : "…"}</span>
-            <strong style={{ fontSize: 14 }}>Your lucky window</strong><span style={{ fontSize: 12, color: "var(--saffron-ink)" }}>Best time today to say hi</span>
-          </Link>
-        )}
-      </div>
-      {plan && lp && (
-        <section aria-label="Your day" className="stack">
-          <div className="sec-title"><strong>Your day in the stars</strong><Link href="/kick">{k?.unlocked ? "Full Kick" : `Full Kick · ${home.kick_pass ? "Pass" : `${price(prices, "daily_kick", home.kick_price)} cr`}`}</Link></div>
-          <div style={{ position: "relative", height: 40, borderRadius: 12, background: "#fff", border: "1px solid var(--line)", overflow: "hidden" }}>
-            <span title={`Rahu Kaal ${range(plan.rahu[0], plan.rahu[1])}`} style={{ position: "absolute", left: `${pos(plan.rahu[0])}%`, width: `${pos(plan.rahu[1]) - pos(plan.rahu[0])}%`, top: 0, bottom: 0, background: "repeating-linear-gradient(45deg, #ECE6FA 0 4px, #F7F4FD 4px 8px)" }} />
-            {plan.office && <span title={k?.unlocked ? `Office best ${range(plan.office.start, plan.office.end)}` : "Office best, see times in your Kick"} style={{ position: "absolute", left: `${pos(plan.office.start)}%`, width: `${pos(plan.office.end) - pos(plan.office.start)}%`, top: 0, bottom: 0, background: "#DCEBFF" }} />}
-            {love && <span title={`Lucky love window ${range(love.start, love.end)}`} style={{ position: "absolute", left: `${pos(love.start)}%`, width: `${pos(love.end) - pos(love.start)}%`, top: 0, bottom: 0, background: "var(--saffron)" }} />}
-            {lp.minutes >= 360 && <>
-              <span style={{ position: "absolute", left: `${pos(lp.minutes)}%`, top: 0, bottom: 0, width: 2, background: "var(--ink)" }} />
-              <span style={{ position: "absolute", left: `clamp(0px, calc(${pos(lp.minutes)}% - 16px), calc(100% - 34px))`, top: 3, padding: "1px 5px", borderRadius: 6, background: "var(--ink)", color: "#fff", fontSize: 10, fontWeight: 700 }}>Now</span>
-            </>}
-          </div>
-          <div className="row" style={{ justifyContent: "space-between", fontSize: 10, color: "var(--muted)" }}><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span></div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 11, color: "#3D3560" }}>
-            {love && <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--saffron)" }} />Love window {fmt(love.start)}</span>}
-            {plan.office && <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#DCEBFF" }} />Office best</span>}
-            <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#ECE6FA" }} />Rahu Kaal<Info cls="tip-up tip-r" text={`Rahu Kaal today: ${range(plan.rahu[0], plan.rahu[1])}. About 90 minutes a day seen as unlucky for new starts.`} /></span>
-          </div>
-        </section>
-      )}
-
-
-
-      </div><div className="home-col">
       <section aria-label="Stars aligned today" className="stack" style={{ gap: 10 }}>
         <div className="sec-title"><strong>More stars aligned today</strong><Link href="/discover">See all</Link></div>
         {home.top.length ? (
@@ -147,11 +106,49 @@ export default function Home() {
           </div>
         ) : <Link href="/discover" className="small">No new people right now. Widen your filters on Discover.</Link>}
       </section>
-      <Link href="/kick" aria-label="Today's love weather" className="rowlink">
-        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-night font-serif text-lg font-[560] text-white">{vibe ?? "…"}</span>
-        <span className="t"><strong>{k?.teaser.love_weather ?? "Your Kick is being written"}</strong><span>Love weather {vibe != null ? `${vibe}/10` : ""}<Info cls="tip-r" text="Your love energy today, 1 to 10, from today's Moon and your birth star (Tara bala)." /> · {k?.teaser.line ?? "It arrives early every morning."}</span></span>
-        <Chevron />
-      </Link>
+      <div className="grid2" style={{ gap: 10 }}>
+        <Link href="/likes" style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--rose-soft)", color: "var(--ink)", textDecoration: "none" }}>
+          <span className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--rose)" }}>{home.likes_count}</span>
+          <strong style={{ fontSize: 14 }}>{home.likes_count === 1 ? "person likes you" : "people like you"}</strong><span style={{ fontSize: 12, color: "#8A3A55" }}>See them, it&apos;s free</span>
+        </Link>
+        {golden && matches[0] ? (
+          <Link href={`/match/${matches[0].match_id}`} style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none" }}>
+            <span className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--link)" }}>{clock(golden.start, city!.timezone).slice(0, -3)}</span>
+            <strong style={{ fontSize: 14 }}>Golden Hour with {matches[0].first_name}</strong><span style={{ fontSize: 12, color: "var(--saffron-ink)" }}>{golden.day === "Tonight" ? "Text first tonight?" : golden.day === "Today" ? "Text first today?" : `${golden.day}. Plan a chat?`}</span>
+          </Link>
+        ) : (
+          <Link href="/kick" style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none" }}>
+            <span className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--link)" }}>{love ? fmt(love.start).replace(/ (AM|PM)$/, "") : "…"}</span>
+            <strong style={{ fontSize: 14 }}>Your good window</strong><span style={{ fontSize: 12, color: "var(--saffron-ink)" }}>Best time today to say hi</span>
+          </Link>
+        )}
+      </div>
+      </div><div className="home-col">
+      {plan && lp && (
+        <section aria-label="Your day" className="stack">
+          <div className="sec-title"><strong>Your day in the stars</strong><Link href="/kick">{k?.unlocked ? "Full Kick" : `Full Kick · ${home.kick_pass ? "Pass" : `${price(prices, "daily_kick", home.kick_price)} cr`}`}</Link></div>
+          <div style={{ position: "relative", height: 40, borderRadius: 12, background: "#fff", border: "1px solid var(--line)", overflow: "hidden" }}>
+            <span title={`Rahu Kaal ${range(plan.rahu[0], plan.rahu[1])}`} style={{ position: "absolute", left: `${pos(plan.rahu[0])}%`, width: `${pos(plan.rahu[1]) - pos(plan.rahu[0])}%`, top: 0, bottom: 0, background: "repeating-linear-gradient(45deg, #ECE6FA 0 4px, #F7F4FD 4px 8px)" }} />
+            {plan.office && <span title={k?.unlocked ? `Office best ${range(plan.office.start, plan.office.end)}` : "Office best, see times in your Kick"} style={{ position: "absolute", left: `${pos(plan.office.start)}%`, width: `${pos(plan.office.end) - pos(plan.office.start)}%`, top: 0, bottom: 0, background: "#DCEBFF" }} />}
+            {love && <span title={`Good window ${range(love.start, love.end)}`} style={{ position: "absolute", left: `${pos(love.start)}%`, width: `${pos(love.end) - pos(love.start)}%`, top: 0, bottom: 0, background: "var(--saffron)" }} />}
+            {lp.minutes >= 360 && <>
+              <span style={{ position: "absolute", left: `${pos(lp.minutes)}%`, top: 0, bottom: 0, width: 2, background: "var(--ink)" }} />
+              <span style={{ position: "absolute", left: `clamp(0px, calc(${pos(lp.minutes)}% - 16px), calc(100% - 34px))`, top: 3, padding: "1px 5px", borderRadius: 6, background: "var(--ink)", color: "#fff", fontSize: 10, fontWeight: 700 }}>Now</span>
+            </>}
+          </div>
+          <div className="row" style={{ justifyContent: "space-between", fontSize: 10, color: "var(--muted)" }}><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span></div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 12, color: "var(--ink)" }}>
+            {love && <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--saffron)" }} />Love window {fmt(love.start)}</span>}
+            {plan.office && <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#DCEBFF" }} />Office best</span>}
+            <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#ECE6FA" }} />Rahu Kaal<Info cls="tip-up tip-r" text={`Rahu Kaal today: ${range(plan.rahu[0], plan.rahu[1])}. About 90 minutes a day seen as unlucky for new starts.`} /></span>
+          </div>
+          <Link href="/kick" aria-label="Today's love weather" className="rowlink">
+            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-night font-serif text-lg font-[560] text-white">{vibe ?? "…"}</span>
+            <span className="t"><strong>{k?.teaser.love_weather ?? "Your Kick is being written"}</strong><span>Love weather {vibe != null ? `${vibe}/10` : ""}<Info cls="tip-r" text="Your love energy today, 1 to 10, from today's Moon and your birth star (Tara bala)." /> · {k?.teaser.line ?? "It arrives early every morning."}</span></span>
+            <Chevron />
+          </Link>
+        </section>
+      )}
       <Link href="/check" className="rowlink">
         <span style={{ width: 40, height: 40, flex: "none", borderRadius: 999, background: "#F3EEFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E0457B" strokeWidth="2" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg></span>

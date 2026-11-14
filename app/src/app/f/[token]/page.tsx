@@ -81,6 +81,13 @@ export default function FamilyView() {
         </section>
       )}
 
+      <section aria-label="What next" className="stack" style={{ gap: 8, padding: 16, borderRadius: 18, background: "var(--card, #fff)", border: "1px solid var(--line)" }}>
+        <strong style={{ fontSize: 16 }}>What happens next</strong>
+        <span style={{ fontSize: 15 }}>If the family likes what you see, tell {v.shared_by} directly. Likha never contacts {p.first_name}&apos;s family for you, and nobody here can message {p.first_name}.</span>
+        <span style={{ fontSize: 15 }}>Want to see your own child&apos;s kundli first? It&apos;s free on Likha: Moon sign, nakshatra and the full chart from the birth date, time and place.</span>
+        <a href="/" className="btn" style={{ marginTop: 4 }}>How Likha works</a>
+      </section>
+
       <p className="small" style={{ margin: 0 }}>
         Read-only page from Likha (likha.in), shared with {p.first_name}&apos;s agreement. It ends on {new Date(v.expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "long" })}.
         Guidance, not a guarantee: kundli matching is one input among many. Likha never asks for or uses caste.

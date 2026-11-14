@@ -43,7 +43,7 @@ export default function Report() {
   doshaLines.push(p.manglik === null ? "" : d.manglik_match ? (p.manglik ? "Manglik: both of you, which traditionally balances out." : "Manglik: neither of you.") : "Manglik: one of you. Families often check this; it's one factor of many.");
   for (const [k, label] of [["nadi", "Nadi"], ["bhakoot", "Bhakoot"], ["gana", "Gana"]] as const) {
     const x = d[k];
-    if (x?.present) doshaLines.push(`${label}: present${x.cancelled ? `, but cancelled because ${x.reason}` : "."}`);
+    if (x?.present) doshaLines.push(`${label}: present${x.cancelled ? `, but cancelled because ${x.reason}. Its points count again in the Jodi Score` : ", and no classical cancellation applies. Many families ask a pandit about this one"}.`);
   }
   if (!d.nadi?.present && !d.bhakoot?.present) doshaLines.push("Nadi and Bhakoot: no dosha.");
   const sections = r?.content?.sections ?? [];

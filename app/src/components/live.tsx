@@ -16,6 +16,8 @@ function items(l: Live): Item[] {
   if (l.joined_today) out.push({ key: "joined", text: <><strong>{l.joined_today} new people</strong> joined {city} today</>, href: "/discover" });
   if (l.new_high_match) out.push({ key: "high", text: <>A <strong>85%+ match</strong> joined {city} this week</>, href: "/discover" });
   if (l.views_today > 0) out.push({ key: "views", text: <><strong>{l.views_today} {l.views_today === 1 ? "person" : "people"}</strong> viewed your profile today</>, href: "/me/preview" });
+  // demo mode: these are sample numbers, so say so on every line
+  if (process.env.NEXT_PUBLIC_DEMO === "1") return out.map((i) => ({ ...i, text: <><span className="font-bold">Sample · </span>{i.text}</> }));
   return out;
 }
 

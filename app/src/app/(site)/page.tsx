@@ -81,10 +81,10 @@ export default function Home() {
             <h1>{TAGLINE}</h1>
             <p className="lead">Likha is a dating app that starts with your kundli. Every profile shows how your charts match, so you meet people who suit you. Dating is free.</p>
             <div className="actions">
-              <Link className="pill-btn lg" href="#join">Join the Founding Members</Link>
-              <Link className="pill-btn lg ghost" href="/check-your-crush">Check your crush</Link>
+              <Link className="pill-btn lg" href="/start">In Jaipur? Start free</Link>
+              <Link className="pill-btn lg ghost" href="#join">Other city? Join the Founding Members</Link>
             </div>
-            <span className="live"><i aria-hidden="true" />Opening city by city, starting with Jaipur</span>
+            <span className="live"><i aria-hidden="true" />Jaipur is open now. Other cities open city by city.</span>
           </div>
           <KundliArt />
         </div>

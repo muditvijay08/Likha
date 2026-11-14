@@ -574,9 +574,9 @@ export class DemoApi implements Api {
   async myGifts() { return this.load().gifts ?? []; }
   async maasi(): Promise<MaasiState> {
     const db = this.load(); const on = (db.subs?.rishta_maasi ?? 0) > Date.now();
-    const notes = ["She's a Taurus Moon. You need someone steady. (Sample pick.)", "Two planners, one kitchen. (Sample pick.)", "Lower Gunas, but your Moons are friends. (Sample pick.)"];
     return { until: on ? new Date(db.subs!.rishta_maasi).toISOString() : null, price_paise: 29900,
-      picks: on ? this.pool(db).slice(0, 3).map((c, i) => ({ ...c, pick_id: `mp-${c.id}`, note: notes[i], response: null, week_of: today() })) : [] };
+      picks: on ? this.pool(db).slice(0, 3).map((c) => ({ ...c, pick_id: `mp-${c.id}`, response: null, week_of: today(),
+        note: `${c.moon_sign} Moon, ${c.gunas} of 36 Gunas. ${c.summary ?? ""} (Sample pick.)`.replace(/\s+/g, " ") })) : [] };
   }
   async answerMaasi(pickId: string, interested: boolean) {
     return interested ? this.like(pickId.replace(/^mp-/, "")) : { matched: false };
