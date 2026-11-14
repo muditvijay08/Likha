@@ -10,7 +10,7 @@ import type {
   Api, Basics, Birth, Card, City, CityQueue, Filters, Gender, Goal, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
 } from "./types";
-import { SAMPLES, sampleProfile } from "./samples";
+import { SAMPLE_CHART, SAMPLES, sampleProfile } from "./samples";
 import { dayPlan, range } from "../panchang";
 import { SEVEN } from "../seven";
 
@@ -113,7 +113,7 @@ export class DemoApi implements Api {
              verification_modes: adminView().verification ?? { selfie: "api", photos: "api" }, photos: { min: 2, max: 6 }, prompts: { required: 2, max_length: 300, interests_min: 3, interests_max: 10 }, saathi: { max_session_minutes: 45 } };
   }
 
-  async myFeatures() { return { love_stories: false, hindi: false, porutham: false, ...(adminView().features ?? {}) }; }
+  async myFeatures() { return { love_stories: false, hindi: false, porutham: false, why_not: false, ...(adminView().features ?? {}) }; }
   async myAnnouncement() { return adminView().announcement ?? null; }
   async consentsNeeded() {
     const c = adminView().consent; const db = this.load();
@@ -209,16 +209,8 @@ export class DemoApi implements Api {
   async myChart(): Promise<MyChart | null> {
     const db = this.load();
     if (!db.kundliAt || Date.now() < db.kundliAt) return null;
-    const P = (planet: string, sign: number, house: number) => ({ planet, sign, sign_name: "", house, retro: false, nakshatra: "" });
-    return {
-      summary: { lagna: "Leo", moon_sign: "Pisces", nakshatra: "Revati", pada: 2, manglik: false, manglik_reason: null,
-                 current_dasha: "Mercury–Venus", borderline: false },
-      planets: [P("Mars", 6, 3), P("Ketu", 9, 6), P("Sun", 10, 7), P("Mercury", 10, 7), P("Moon", 11, 8), P("Venus", 11, 8),
-                P("Saturn", 0, 9), P("Jupiter", 1, 10), P("Rahu", 3, 12)],
-      dasha: { maha: "Mercury", antar: "Venus", antar_end: "2028-04-11" },
-      mahadashas: [{ lord: "Saturn", start: "1995-06-02", end: "2014-06-02" }, { lord: "Mercury", start: "2014-06-02", end: "2031-06-02" },
-                   { lord: "Ketu", start: "2031-06-02", end: "2038-06-02" }, { lord: "Venus", start: "2038-06-02", end: "2058-06-02" }],
-    };
+    const { birth, ...c } = SAMPLE_CHART;      // real engine output for one example birth, labelled as a sample
+    return { ...c, sample_birth: birth };
   }
   async savePushToken(t: string) { this.edit((d) => { d.pushTokens.push(t); }); }
   async releasePushToken(token: string) { this.edit((d) => { d.pushTokens = d.pushTokens.filter((t) => t !== token); }); }
@@ -242,12 +234,12 @@ export class DemoApi implements Api {
     const w = (h: { start: number; end: number } | null) => h ? range(h.start, h.end) : "–";
     return {
       date: today(), unlocked: open, streak: open ? 1 : 0,
-      teaser: { vibe: 8, date_score: 7, love_weather: "Venus is flirting with your 7th house", line: "Bold first moves land well tonight.",
+      teaser: { vibe: 8, date_score: 7, love_weather: "Venus warms the 7th from your Moon", line: "A good day to send the first message.",
                 lucky_window: pl.love ? w(pl.love) : null, rahu_kaal: range(pl.rahu[0], pl.rahu[1]) },
       content: open ? {
-        fix: ["Wear something yellow today.", "Say \"Om Budhaya Namah\" 11 times before work.", "Call the friend you've been meaning to call."],
+        fix: ["Reply to the match you've been meaning to answer.", "Take a slow evening walk: no phone for 20 minutes.", "Call the friend you've been meaning to call."],
         time_windows: [{ label: "Office and meetings", time: w(pl.office) }, { label: "Travel", time: w(pl.travel) },
-                       { label: "Date or chat", time: w(pl.love) }, { label: "Avoid big money moves (Rahu Kaal)", time: range(pl.rahu[0], pl.rahu[1]) }],
+                       { label: "Date or chat", time: w(pl.love) }, { label: "Rahu Kaal (traditionally kept free of new starts)", time: range(pl.rahu[0], pl.rahu[1]) }],
         first_date_answer: "Yes, after sunset. A calm, chatty evening.", tara: "Sampat", today_moon: "Rohini in Taurus",
       } : null,
     };
@@ -447,12 +439,12 @@ export class DemoApi implements Api {
   async saathiSetup(character: SaathiChar, styles: string[]) { this.edit((d) => { d.saathi = { character, styles }; }); }
   async saathiSend(_c: SaathiChar, text: string): Promise<SaathiReply> {
     const db = this.load();
-    if (this.saathiLeft(db) <= 0) return { reply: null, topup: true, message: "That's today's free chats. Top up for 50 more." };
-    const crisis = CRISIS.test(text);
+    const crisis = CRISIS.test(text);          // answered first, never counted against the daily limit
+    if (!crisis && this.saathiLeft(db) <= 0) return { reply: null, topup: true, message: "That's today's free chats. Top up for 50 more." };
     const reply = crisis ? CRISIS_REPLY : "I hear you. Swiping can be tiring. Want to practise a reply to your newest match together? (Sample reply in demo mode.)";
     this.edit((d) => {
       const u = d.saathiUsed?.day === today() ? d.saathiUsed : { day: today(), n: 0, extra: 0 };
-      d.saathiUsed = { ...u, n: u.n + 1 };
+      if (!crisis) d.saathiUsed = { ...u, n: u.n + 1 };
       d.saathiMsgs = [...(d.saathiMsgs ?? []), { role: "user", body: text }, { role: "assistant", body: reply }];
     });
     await wait(600);

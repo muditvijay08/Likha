@@ -180,15 +180,16 @@ async function imagine(readingId: string, ctx: any) {
 async function saathi(userId: string, client: any, character: "chandni" | "dhruv", message: string) {
   const msg = String(message ?? "").slice(0, 1000);
   if (!msg.trim()) return json({ error: "empty" }, 400);
+  // A crisis is answered first, always: before the daily limit, never sent to the model, never counted, flagged for Safety.
+  if (isCrisis(msg)) {
+    await rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "user", p_body: msg, p_crisis: true });
+    await rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "assistant", p_body: CRISIS_REPLY, p_crisis: true });
+    const still = (await client.rpc("saathi_messages_left")).data ?? 0;
+    return json({ reply: CRISIS_REPLY, crisis: true, left: still });
+  }
   const left = (await client.rpc("saathi_messages_left")).data ?? 0;
   if (left <= 0) return json({ reply: null, topup: true, message: "That's today's free chats. Top up for 50 more." }, 402);
-
-  const crisis = isCrisis(msg);
-  await rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "user", p_body: msg, p_crisis: crisis });
-  if (crisis) {                                              // never to the model: fixed help reply, flagged for Safety
-    await rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "assistant", p_body: CRISIS_REPLY, p_crisis: true });
-    return json({ reply: CRISIS_REPLY, crisis: true });
-  }
+  await rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "user", p_body: msg, p_crisis: false });
   const ctx = await rpc<any>("svc_saathi_context", { p_user: userId, p_char: character, p_last: 20 });
   const facts = ctx.summary ? { first_name: cleanName(ctx.first_name), lagna: ctx.summary.lagna, moon_sign: ctx.summary.moon_sign,
     nakshatra: ctx.summary.nakshatra, dasha_now: ctx.summary.current_dasha } : { first_name: cleanName(ctx.first_name) };

@@ -138,7 +138,7 @@ export const BAND_WORD: Record<PairReading["band"], string> = {
   strong: "Very supportive Moon signs", good: "Supportive Moon signs", mixed: "Mixed, with things to work on", work: "Needs understanding",
 };
 export const KOOTAS: [string, number, string, "moon" | "nak"][] = [
-  ["Varna", 1, "Work style and ego.", "moon"], ["Vashya", 2, "Who leads, who follows.", "moon"], ["Tara", 3, "Luck and wellbeing together.", "nak"],
+  ["Varna", 1, "Outlook on work and duty, from the two Moon signs. Nothing to do with caste.", "moon"], ["Vashya", 2, "Who leads, who follows.", "moon"], ["Tara", 3, "Luck and wellbeing together.", "nak"],
   ["Yoni", 4, "Physical and emotional comfort.", "nak"], ["Graha Maitri", 5, "Friendship between your Moon signs' lords.", "moon"],
   ["Gana", 6, "Temperament.", "nak"], ["Bhakoot", 7, "Family life and growth.", "moon"], ["Nadi", 8, "Traditionally the most weighted koota.", "nak"],
 ];

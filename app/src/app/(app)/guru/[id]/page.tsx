@@ -33,7 +33,7 @@ export default function Guru() {
       <header className="row" style={{ gap: 10, padding: 16, background: "#fff", borderBottom: `1px solid ${G.line}`, position: "sticky", top: 0, zIndex: 5 }}>
         <button type="button" aria-label="Back" className="iconbtn tip" data-tip="Back to chat" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push(`/chat/${id}`)}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
-        <span className="stack" style={{ gap: 0, flex: 1 }}><strong style={{ fontSize: 15 }}>Guru Ji</strong>
+        <span className="stack" style={{ gap: 0, flex: 1 }}><span className="row" style={{ gap: 6 }}><strong style={{ fontSize: 15 }}>Guru Ji</strong><span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "var(--violet-soft)", color: "#3D3560" }}>Virtual</span></span>
           <span style={{ fontSize: 12, color: "var(--muted)" }}>{g ? `About you and ${g.other_name} · ${g.left} of ${g.allowed} questions left` : "…"}</span></span>
       </header>
 
@@ -80,7 +80,7 @@ export default function Guru() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1838" strokeWidth="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z" /></svg></button>
           </form>
         )}
-        <div style={{ padding: "0 16px 10px", fontSize: 11, color: "var(--muted)", textAlign: "center" }}>Guidance, not a verdict. {g?.other_name ?? "Your match"} sees this chat too.</div>
+        <div style={{ padding: "0 16px 10px", fontSize: 11, color: "var(--muted)", textAlign: "center" }}>Guru Ji is a virtual guide, not a real astrologer. Answers come from your two charts. Guidance, not a verdict. {g?.other_name ?? "Your match"} sees this chat too.</div>
       </div>
     </div>
   );

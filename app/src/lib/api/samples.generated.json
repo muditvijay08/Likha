@@ -1,0 +1,527 @@
+{
+ "engine": "likha-kundli-2.0",
+ "member": {
+  "summary": {
+   "lagna": "Aquarius",
+   "moon_sign": "Capricorn",
+   "nakshatra": "Shravana",
+   "pada": 1,
+   "manglik": false,
+   "manglik_reason": null,
+   "current_dasha": "Rahu\u2013Venus",
+   "borderline": true
+  },
+  "planets": [
+   {
+    "planet": "Sun",
+    "sign": 10,
+    "sign_name": "Aquarius",
+    "house": 1,
+    "retro": false,
+    "nakshatra": "Purva Bhadrapada"
+   },
+   {
+    "planet": "Moon",
+    "sign": 9,
+    "sign_name": "Capricorn",
+    "house": 12,
+    "retro": false,
+    "nakshatra": "Shravana"
+   },
+   {
+    "planet": "Mars",
+    "sign": 6,
+    "sign_name": "Libra",
+    "house": 9,
+    "retro": false,
+    "nakshatra": "Swati"
+   },
+   {
+    "planet": "Mercury",
+    "sign": 11,
+    "sign_name": "Pisces",
+    "house": 2,
+    "retro": true,
+    "nakshatra": "Uttara Bhadrapada"
+   },
+   {
+    "planet": "Jupiter",
+    "sign": 11,
+    "sign_name": "Pisces",
+    "house": 2,
+    "retro": false,
+    "nakshatra": "Uttara Bhadrapada"
+   },
+   {
+    "planet": "Venus",
+    "sign": 0,
+    "sign_name": "Aries",
+    "house": 3,
+    "retro": false,
+    "nakshatra": "Ashwini"
+   },
+   {
+    "planet": "Saturn",
+    "sign": 0,
+    "sign_name": "Aries",
+    "house": 3,
+    "retro": false,
+    "nakshatra": "Ashwini"
+   },
+   {
+    "planet": "Rahu",
+    "sign": 3,
+    "sign_name": "Cancer",
+    "house": 6,
+    "retro": true,
+    "nakshatra": "Ashlesha"
+   },
+   {
+    "planet": "Ketu",
+    "sign": 9,
+    "sign_name": "Capricorn",
+    "house": 12,
+    "retro": true,
+    "nakshatra": "Dhanishta"
+   }
+  ],
+  "dasha": {
+   "maha": "Rahu",
+   "antar": "Venus",
+   "antar_end": "2029-09-17"
+  },
+  "mahadashas": [
+   {
+    "lord": "Moon",
+    "start": "1998-02-28",
+    "end": "2008-02-29"
+   },
+   {
+    "lord": "Mars",
+    "start": "2008-02-29",
+    "end": "2015-03-01"
+   },
+   {
+    "lord": "Rahu",
+    "start": "2015-03-01",
+    "end": "2033-02-28"
+   },
+   {
+    "lord": "Jupiter",
+    "start": "2033-02-28",
+    "end": "2049-02-28"
+   },
+   {
+    "lord": "Saturn",
+    "start": "2049-02-28",
+    "end": "2068-02-29"
+   },
+   {
+    "lord": "Mercury",
+    "start": "2068-02-29",
+    "end": "2085-02-28"
+   }
+  ],
+  "birth": {
+   "date": "1999-03-14",
+   "time": "06:42",
+   "place": "Jaipur"
+  }
+ },
+ "samples": [
+  {
+   "id": "s-ishita",
+   "gender": "woman",
+   "first_name": "Ishita",
+   "age": 27,
+   "birth": {
+    "date": "1998-03-05",
+    "time": "23:15",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Taurus",
+   "nakshatra": "Mrigashira",
+   "pada": 1,
+   "lagna": "Libra",
+   "manglik": false,
+   "gunas": 27.0,
+   "adjusted_gunas": 34.0,
+   "jodi_score": 92,
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 2.0,
+    "tara": 3.0,
+    "yoni": 2.0,
+    "graha_maitri": 5.0,
+    "gana": 6.0,
+    "bhakoot": 0.0,
+    "nadi": 8.0
+   },
+   "doshas": {
+    "bhakoot": {
+     "present": true,
+     "cancelled": true,
+     "reason": "Moon sign lords Saturn and Venus are friends"
+    }
+   },
+   "summary": "Different Nadi: the classical sign of good health together."
+  },
+  {
+   "id": "s-riya",
+   "gender": "woman",
+   "first_name": "Riya",
+   "age": 26,
+   "birth": {
+    "date": "1999-03-17",
+    "time": "16:13",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Aquarius",
+   "nakshatra": "Purva Bhadrapada",
+   "pada": 3,
+   "lagna": "Leo",
+   "manglik": false,
+   "gunas": 23.5,
+   "adjusted_gunas": 30.5,
+   "jodi_score": 89,
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 1.0,
+    "tara": 1.5,
+    "yoni": 2.0,
+    "graha_maitri": 5.0,
+    "gana": 5.0,
+    "bhakoot": 0.0,
+    "nadi": 8.0
+   },
+   "doshas": {
+    "bhakoot": {
+     "present": true,
+     "cancelled": true,
+     "reason": "both Moon signs ruled by Saturn"
+    }
+   },
+   "summary": "Different Nadi: the classical sign of good health together."
+  },
+  {
+   "id": "s-sanya",
+   "gender": "woman",
+   "first_name": "Sanya",
+   "age": 24,
+   "birth": {
+    "date": "2002-09-18",
+    "time": "19:54",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Capricorn",
+   "nakshatra": "Dhanishta",
+   "pada": 2,
+   "lagna": "Aries",
+   "manglik": false,
+   "gunas": 28.0,
+   "adjusted_gunas": 28.0,
+   "jodi_score": 84,
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 1.0,
+    "tara": 3.0,
+    "yoni": 2.0,
+    "graha_maitri": 5.0,
+    "gana": 1.0,
+    "bhakoot": 7.0,
+    "nadi": 8.0
+   },
+   "doshas": {},
+   "summary": "Different Nadi: the classical sign of good health together."
+  },
+  {
+   "id": "s-meera",
+   "gender": "woman",
+   "first_name": "Meera",
+   "age": 25,
+   "birth": {
+    "date": "2000-06-04",
+    "time": "21:35",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Gemini",
+   "nakshatra": "Punarvasu",
+   "pada": 1,
+   "lagna": "Sagittarius",
+   "manglik": false,
+   "gunas": 24.5,
+   "adjusted_gunas": 24.5,
+   "jodi_score": 78,
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 1.0,
+    "tara": 1.5,
+    "yoni": 3.0,
+    "graha_maitri": 4.0,
+    "gana": 6.0,
+    "bhakoot": 0.0,
+    "nadi": 8.0
+   },
+   "doshas": {
+    "bhakoot": {
+     "present": true,
+     "cancelled": false,
+     "reason": null
+    }
+   },
+   "summary": "Different Nadi: the classical sign of good health together."
+  },
+  {
+   "id": "s-nidhi",
+   "gender": "woman",
+   "first_name": "Nidhi",
+   "age": 31,
+   "birth": {
+    "date": "1995-10-23",
+    "time": "08:13",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Virgo",
+   "nakshatra": "Hasta",
+   "pada": 4,
+   "lagna": "Libra",
+   "manglik": false,
+   "gunas": 25.0,
+   "adjusted_gunas": 25.0,
+   "jodi_score": 71,
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 1.0,
+    "tara": 3.0,
+    "yoni": 2.0,
+    "graha_maitri": 4.0,
+    "gana": 6.0,
+    "bhakoot": 0.0,
+    "nadi": 8.0
+   },
+   "doshas": {
+    "bhakoot": {
+     "present": true,
+     "cancelled": false,
+     "reason": null
+    }
+   },
+   "summary": "Different Nadi: the classical sign of good health together."
+  },
+  {
+   "id": "s-tanvi",
+   "gender": "woman",
+   "first_name": "Tanvi",
+   "age": 34,
+   "birth": {
+    "date": "1991-05-10",
+    "time": "08:27",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Pisces",
+   "nakshatra": "Purva Bhadrapada",
+   "pada": 4,
+   "lagna": "Gemini",
+   "manglik": true,
+   "gunas": 27.5,
+   "adjusted_gunas": 27.5,
+   "jodi_score": 63,
+   "kootas": {
+    "varna": 0.0,
+    "vashya": 1.0,
+    "tara": 1.5,
+    "yoni": 2.0,
+    "graha_maitri": 3.0,
+    "gana": 5.0,
+    "bhakoot": 7.0,
+    "nadi": 8.0
+   },
+   "doshas": {},
+   "summary": "Different Nadi: the classical sign of good health together."
+  },
+  {
+   "id": "s-aarav",
+   "gender": "man",
+   "first_name": "Aarav",
+   "age": 27,
+   "birth": {
+    "date": "1999-10-17",
+    "time": "23:10",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Capricorn",
+   "nakshatra": "Uttara Ashadha",
+   "pada": 2,
+   "lagna": "Gemini",
+   "manglik": false,
+   "gunas": 27.0,
+   "adjusted_gunas": 35.0,
+   "jodi_score": 91,
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 2.0,
+    "tara": 3.0,
+    "yoni": 3.0,
+    "graha_maitri": 5.0,
+    "gana": 6.0,
+    "bhakoot": 7.0,
+    "nadi": 0.0
+   },
+   "doshas": {
+    "nadi": {
+     "present": true,
+     "cancelled": true,
+     "reason": "same Moon sign, different nakshatra"
+    }
+   },
+   "summary": "Your Moon signs sit well with each other."
+  },
+  {
+   "id": "s-kabir",
+   "gender": "man",
+   "first_name": "Kabir",
+   "age": 33,
+   "birth": {
+    "date": "1992-09-15",
+    "time": "17:29",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Aries",
+   "nakshatra": "Ashwini",
+   "pada": 3,
+   "lagna": "Aquarius",
+   "manglik": false,
+   "gunas": 29.0,
+   "adjusted_gunas": 29.0,
+   "jodi_score": 86,
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 2.0,
+    "tara": 1.5,
+    "yoni": 3.0,
+    "graha_maitri": 0.5,
+    "gana": 6.0,
+    "bhakoot": 7.0,
+    "nadi": 8.0
+   },
+   "doshas": {},
+   "summary": "Different Nadi: the classical sign of good health together."
+  },
+  {
+   "id": "s-dev",
+   "gender": "man",
+   "first_name": "Dev",
+   "age": 29,
+   "birth": {
+    "date": "1997-07-23",
+    "time": "12:36",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Aquarius",
+   "nakshatra": "Purva Bhadrapada",
+   "pada": 1,
+   "lagna": "Libra",
+   "manglik": false,
+   "gunas": 23.5,
+   "adjusted_gunas": 30.5,
+   "jodi_score": 82,
+   "kootas": {
+    "varna": 0.0,
+    "vashya": 1.0,
+    "tara": 1.5,
+    "yoni": 2.0,
+    "graha_maitri": 5.0,
+    "gana": 6.0,
+    "bhakoot": 0.0,
+    "nadi": 8.0
+   },
+   "doshas": {
+    "bhakoot": {
+     "present": true,
+     "cancelled": true,
+     "reason": "both Moon signs ruled by Saturn"
+    }
+   },
+   "summary": "Different Nadi: the classical sign of good health together."
+  },
+  {
+   "id": "s-rohan",
+   "gender": "man",
+   "first_name": "Rohan",
+   "age": 36,
+   "birth": {
+    "date": "1989-01-02",
+    "time": "05:13",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Libra",
+   "nakshatra": "Swati",
+   "pada": 1,
+   "lagna": "Scorpio",
+   "manglik": false,
+   "gunas": 22.5,
+   "adjusted_gunas": 22.5,
+   "jodi_score": 74,
+   "kootas": {
+    "varna": 0.0,
+    "vashya": 1.0,
+    "tara": 1.5,
+    "yoni": 2.0,
+    "graha_maitri": 5.0,
+    "gana": 6.0,
+    "bhakoot": 7.0,
+    "nadi": 0.0
+   },
+   "doshas": {
+    "nadi": {
+     "present": true,
+     "cancelled": false,
+     "reason": null
+    }
+   },
+   "summary": "Your Moon signs sit well with each other."
+  },
+  {
+   "id": "s-arjun",
+   "gender": "man",
+   "first_name": "Arjun",
+   "age": 30,
+   "birth": {
+    "date": "1996-12-13",
+    "time": "06:28",
+    "place": "Jaipur"
+   },
+   "moon_sign": "Sagittarius",
+   "nakshatra": "Uttara Ashadha",
+   "pada": 1,
+   "lagna": "Scorpio",
+   "manglik": false,
+   "gunas": 18.0,
+   "adjusted_gunas": 18.0,
+   "jodi_score": 65,
+   "kootas": {
+    "varna": 1.0,
+    "vashya": 2.0,
+    "tara": 3.0,
+    "yoni": 3.0,
+    "graha_maitri": 3.0,
+    "gana": 6.0,
+    "bhakoot": 0.0,
+    "nadi": 0.0
+   },
+   "doshas": {
+    "bhakoot": {
+     "present": true,
+     "cancelled": false,
+     "reason": null
+    },
+    "nadi": {
+     "present": true,
+     "cancelled": false,
+     "reason": null
+    }
+   },
+   "summary": "Same temperament (Gana): you'll get each other's moods."
+  }
+ ]
+}

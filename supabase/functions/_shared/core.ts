@@ -91,6 +91,7 @@ const BANNED: [RegExp, string][] = [
   [/\bdivorce\b/i, "predicts divorce"],
   [/\b(?:illness|disease|infertil\w*)\b/i, "makes a health prediction"],
   [/\b(?:gemstone|buy a stone|paid puja|book a puja|yantra)\b/i, "sells a remedy"],
+  [/\b(?:mantra|chant\w*|jaap|japa|times before|lucky colou?r|wear (?:something )?(?:red|yellow|green|white|blue|orange|pink|black))\b|\bOm\s+\w+\s+Nama/i, "prescribes a ritual remedy"],
   [/\b(?:AI|artificial intelligence|language model|chatbot|LLM)\b/, "mentions AI (house style)"],
   [/\bcursed?\b/i, "fear language"],
 ];
@@ -208,7 +209,8 @@ export function kickPrompt(templates: string[], facts: unknown, date: string) {
     user: `<facts>\n${JSON.stringify(facts)}\n</facts>\nDate: ${date}\nTeam notes for each part:\n- ${templates.join("\n- ")}\n` +
       `Use the vibe, date score and time windows exactly as given; do not add other times or scores.\n` +
       `Reply with JSON only: {"headline": string (max 8 words, playful), "line": string (max 14 words), ` +
-      `"fix": [string, string, string] (a colour, a short traditional mantra, one kind act; max 14 words each), ` +
+      `"fix": [string, string, string] (three small, free, everyday nudges for dating and connection, e.g. a message to send, a kind act, a way to rest; ` +
+      `no mantras, colours, rituals or remedies; max 14 words each), ` +
       `"first_date_answer": string (max 20 words)}`,
   };
 }

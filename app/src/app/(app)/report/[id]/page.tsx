@@ -7,7 +7,7 @@ import { Info, price, useApp } from "@/components/app";
 import { api, type ProfileFull, type Reading } from "@/lib/api";
 
 const KOOTAS: [string, string, number, string][] = [
-  ["varna", "Varna", 1, "Work style and ego."], ["vashya", "Vashya", 2, "Who leads, who follows."], ["tara", "Tara", 3, "Luck and wellbeing together."],
+  ["varna", "Varna", 1, "Outlook on work and duty, worked out from your two Moon signs. It has nothing to do with caste, which Likha never asks."], ["vashya", "Vashya", 2, "Who leads, who follows."], ["tara", "Tara", 3, "Luck and wellbeing together."],
   ["yoni", "Yoni", 4, "Physical and emotional comfort."], ["graha_maitri", "Graha Maitri", 5, "Friendship between your Moon signs' lords."],
   ["gana", "Gana", 6, "Temperament."], ["bhakoot", "Bhakoot", 7, "Family life and growth."], ["nadi", "Nadi", 8, "Health and genes, traditionally the most weighted."],
 ];

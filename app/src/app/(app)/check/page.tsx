@@ -8,7 +8,7 @@ import { price, useApp, useTried } from "@/components/app";
 import { api, type CrushCheck } from "@/lib/api";
 import { SIGNS, moonSignsOn, previewLine } from "@/lib/moon";
 
-const REL = ["Crush", "Ex", "Partner", "Boss", "Co-founder", "Friend", "Family"];
+const REL = ["Crush", "Partner", "Friend", "Someone new"];
 
 export default function CheckAnyone() {
   const { prices, reload } = useApp();

@@ -74,7 +74,8 @@ ok(await seen(page.getByText("You're all set"), 8000), "Kick Pass active");
 await page.waitForURL("**/kick", { timeout: 8000 });
 ok(await seen(page.getByText("Kick Pass").first()) && await seen(btn("Open with Kick Pass")), "Daily Kick opens free with Kick Pass");
 await btn("Open with Kick Pass").click();
-ok(await seen(page.getByText("Today's fix")) && await seen(page.getByText("+5 credits for trying the Daily Kick")), "…and nothing was charged (only the +5 first-try reward)");
+ok(await seen(page.getByText("Today's nudges")), "…and it opens (nothing charged with Kick Pass)");
+await page.waitForTimeout(800);                                  // the first-try reward lands in the background
 ok(await balance() === 675, "Balance 670 + 5 reward");
 
 // S2 Check With Anyone
@@ -93,16 +94,10 @@ await btn("Or get a 5-pack for 119 credits").click();
 ok(await seen(page.getByRole("button", { name: /uses 1 of 5/ })), "5-pack: the next check uses a prepaid one");
 ok(await seen(page.getByText("Waiting for them to join")), "Your checks: Tanvi waiting to join");
 
-// S3 Why It Didn't Work -> reading result
+// S3 Why It Didn't Work is retired: switched off, and the store no longer lists it
 await page.goto(`${BASE}/why-not`);
-await page.fill("#wn-name", "K");
-await page.fill("#wn-dob", "1997-11-09");
-await btn("2+ years").click();
+ok(await seen(page.getByText("Not available right now")), "Why It Didn't Work is switched off");
 await shot("08-whynot");
-await btn("Get my reading · 79 credits").click();
-await page.waitForURL("**/readings/**");
-ok(await seen(page.getByText("1 · What pulled you together"), 8000), "Why It Didn't Work: reading written");
-ok(await seen(page.getByText(/People in your feed who suit you better/)), "…with people in the feed who suit better");
 await shot("09-reading");
 
 // S5 My Kundli + E5 Who Suits Me
@@ -141,9 +136,9 @@ await page.waitForURL("**/match/**", { timeout: 6000 }).catch(() => {});
 ok(page.url().includes("/match/"), "Ishita already liked Aarav: interested on both sides is a match");
 
 // money adds up: 70 + 600 − 29 − 119 − 79 − 49 − 99 = 295
-ok(await balance() === 320, "Balance adds up: 70 + 600 − 29 − 119 − 79 − 49 − 99 + 25 first-try rewards = 320");
+ok(await balance() === 399, "Balance adds up: 70 + 600 − 29 − 119 − 49 − 99 + 25 first-try rewards = 399");
 await page.goto(`${BASE}/readings`);
-ok(await seen(page.getByText(/Why It Didn't Work · K/)) && await seen(page.getByText("Who Suits Me")), "My readings lists them");
+ok(await seen(page.getByText("Who Suits Me")), "My readings lists them");
 
 ok(errors.length === 0, `no page errors ${errors.join(" | ")}`);
 await browser.close();

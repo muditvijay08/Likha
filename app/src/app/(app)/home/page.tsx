@@ -146,7 +146,7 @@ export default function Home() {
         {golden && matches[0] ? (
           <Link href={`/match/${matches[0].match_id}`} style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none" }}>
             <span className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--link)" }}>{clock(golden.start, city!.timezone).slice(0, -3)}</span>
-            <strong style={{ fontSize: 14 }}>Golden Hour with {matches[0].first_name}</strong><span style={{ fontSize: 12, color: "var(--saffron-ink)" }}>{golden.day === "Tonight" ? "Text first tonight?" : `${golden.day}. Plan a chat?`}</span>
+            <strong style={{ fontSize: 14 }}>Golden Hour with {matches[0].first_name}</strong><span style={{ fontSize: 12, color: "var(--saffron-ink)" }}>{golden.day === "Tonight" ? "Text first tonight?" : golden.day === "Today" ? "Text first today?" : `${golden.day}. Plan a chat?`}</span>
           </Link>
         ) : (
           <Link href="/kick" style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none" }}>

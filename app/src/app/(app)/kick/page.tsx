@@ -57,14 +57,14 @@ export default function DailyKick() {
 
         <div className="lockbox">
           <div className="stack" style={{ gap: 12 }} aria-hidden={!c || undefined}>
-            <section aria-label="Today's fix" style={{ background: "var(--saffron-soft)", borderRadius: 20, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-              <strong style={{ fontSize: 15 }}>Today&apos;s fix</strong>
-              {(c?.fix ?? ["A colour for today.", "A short mantra.", "One kind thing to do."]).map((f, i) => (
+            <section aria-label="Today's nudges" style={{ background: "var(--saffron-soft)", borderRadius: 20, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <strong style={{ fontSize: 15 }}>Today&apos;s nudges</strong>
+              {(c?.fix ?? ["A message worth sending.", "A small way to rest.", "One kind thing to do."]).map((f, i) => (
                 <div key={i} className="row" style={{ gap: 10, fontSize: 13 }}>{ICONS[i]}{f}</div>
               ))}
             </section>
             <section aria-label="Best times today" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 20, padding: "6px 16px", display: "flex", flexDirection: "column" }}>
-              {(c?.time_windows ?? [{ label: "Office and meetings", time: "–" }, { label: "Travel", time: "–" }, { label: "Date or chat", time: "–" }, { label: "Avoid big money moves (Rahu Kaal)", time: "–" }]).map((w, i, all) => (
+              {(c?.time_windows ?? [{ label: "Office and meetings", time: "–" }, { label: "Travel", time: "–" }, { label: "Date or chat", time: "–" }, { label: "Rahu Kaal (traditionally kept free of new starts)", time: "–" }]).map((w, i, all) => (
                 <div key={w.label} className="row" style={{ justifyContent: "space-between", padding: "10px 0", borderBottom: i < all.length - 1 ? "1px solid var(--line-soft)" : 0, fontSize: 13 }}>
                   <span>{w.label}</span><strong style={{ color: w.label.startsWith("Date") ? "#D6336C" : w.label.includes("Rahu") ? "var(--muted)" : undefined }}>{w.time}</strong>
                 </div>
@@ -79,7 +79,7 @@ export default function DailyKick() {
           {!c && (
             <div className="veil">
               <LockIcon color="#8A4300" />
-              <strong>Today&apos;s fix, best times and date answer</strong>
+              <strong>Today&apos;s nudges, best times and date answer</strong>
               <div style={{ width: "100%", maxWidth: 280 }}>
                 <Primary onClick={unlock} busy={busy}>{home.kick_pass ? "Open with Kick Pass" : `Unlock today · ${cost} credits`}</Primary>
               </div>

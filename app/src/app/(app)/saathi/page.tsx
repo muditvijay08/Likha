@@ -29,6 +29,7 @@ export default function Saathi() {
   const end = useRef<HTMLDivElement | null>(null);
   const { busy, error, run, setError } = useAction();
   const tried = useTried();
+  const [crisis, setCrisis] = useState(false);
   // Admin > Saathi > suggest a break: counted from the first message sent on this visit
   const breakAfter = useFlow().settings?.saathi?.max_session_minutes ?? 45;
   const started = useRef<number | null>(null);
@@ -59,7 +60,11 @@ export default function Saathi() {
     setS({ ...s, history: [...s.history, { role: "user", body: msg.trim() }] });
     try {
       const r = await api().saathiSend(s.character, msg.trim());
-      if (r.reply) { setS((x) => x && { ...x, left: r.left ?? x.left, history: [...x.history, { role: "assistant", body: r.reply! }] }); tried("saathi", "Saathi"); }
+      if (r.reply) {
+        setS((x) => x && { ...x, left: r.left ?? x.left, history: [...x.history, { role: "assistant", body: r.reply! }] });
+        if (r.crisis) setCrisis(true);            // crisis: no rewards, no promos, helpline stays pinned
+        else if (!crisis) tried("saathi", "Saathi");
+      }
       else { setS((x) => x && { ...x, left: r.topup ? 0 : x.left }); setError(r.message ?? "Saathi is offline for a moment."); }
     } finally { setTyping(false); }
   });
@@ -143,7 +148,12 @@ export default function Saathi() {
           style={{ width: 40, height: 40, borderRadius: 999, background: "#F3EEFF", border: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z" /></svg></button>
       </header>
-      {s.top_today > 0 && (
+      {crisis && (
+        <div role="note" style={{ margin: "12px 16px 0", padding: "12px 14px", borderRadius: 16, background: "var(--red-soft)", color: "var(--ink)", fontSize: 14, lineHeight: 1.45 }}>
+          <strong>You deserve support from a real person.</strong> Tele-MANAS: <a href="tel:14416">14416</a> (free, 24×7, many languages). In danger right now? Call <a href="tel:112">112</a>.
+        </div>
+      )}
+      {!crisis && s.top_today > 0 && (
         <Link href="/discover" className="row" style={{ gap: 10, margin: "12px 16px 0", padding: "12px 14px", borderRadius: 16, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none", fontSize: 13, lineHeight: 1.4 }}>
           <span style={{ flex: 1 }}><strong>{s.top_today} {s.top_today === 1 ? "person" : "people"} above 90% for you today.</strong> Want help saying hi?</span></Link>
       )}
@@ -158,13 +168,13 @@ export default function Saathi() {
         <div ref={end} style={{ scrollMarginBottom: 240 }} />
       </div>
       <div style={{ position: "sticky", bottom: "var(--navh)", background: "var(--bg)", zIndex: 4 }}>
-        <div className="row" style={{ gap: 8, padding: "0 16px 10px" }}>
+        {!crisis && <div className="row" style={{ gap: 8, padding: "0 16px 10px" }}>
           {[["First-date rehearsal", "Practise talking, get tips", "Can we rehearse a first date? Ask me questions like my date would."],
             ["Profile glow-up", "Better prompts and photos", "Help me make my profile prompts better."]].map(([t, sub, msg]) => (
             <button key={t} type="button" disabled={busy || s.left <= 0} onClick={() => send(msg)} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: "8px 12px", borderRadius: 12, background: "#F3EEFF", border: 0, textAlign: "left", font: "500 11px var(--sans)", color: "#3D3560" }}>
               <strong style={{ fontSize: 12, color: "var(--ink)" }}>{t}</strong>{sub}</button>
           ))}
-        </div>
+        </div>}
         {longChat && !breakClosed && (
           <div className="row" role="note" aria-label="Take a break" style={{ gap: 8, margin: "0 16px 10px", padding: "10px 12px", borderRadius: 12, background: "#FFF3D6", fontSize: 13 }}>
             <span style={{ flex: 1 }}>You&apos;ve been chatting with {name} for a while. Maybe a short break, or a hello to one of <Link href="/matches">your matches</Link>?</span>

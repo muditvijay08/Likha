@@ -59,7 +59,7 @@ export default function Discover() {
       )}
 
       <main style={{ flex: 1, padding: "14px 20px 0", display: "flex", flexDirection: "column", gap: 14 }}>
-        <LiveStrip />
+        {card && <LiveStrip />}{/* never next to "you've seen everyone" */}
 
         {cards === null ? <div className="skel" style={{ height: 460 }} /> : card ? <>
           <article className="disc-card" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column" }}>
@@ -68,7 +68,7 @@ export default function Discover() {
                 {card.jodi_score != null ? (
                   <div style={{ background: "var(--saffron)", color: "var(--ink)", borderRadius: 12, padding: "8px 12px", display: "flex", flexDirection: "column", fontFamily: "var(--sans)" }}>
                     <span className="serif" style={{ fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{card.jodi_score}%</span>
-                    <span style={{ fontSize: 11, fontWeight: 700 }}>written in the stars<Info text="Jodi Score: how well your two kundlis match, out of 100." /></span>
+                    <span style={{ fontSize: 11, fontWeight: 700 }}>Jodi Score<Info text="Jodi Score: how well your two kundlis match, out of 100." /></span>
                   </div>
                 ) : <div style={{ background: "#fff", borderRadius: 12, padding: "8px 12px", font: "700 12px var(--sans)", color: "var(--ink)" }}>Score on its way</div>}
                 {card.gunas != null && <div style={{ background: "rgba(255,255,255,0.92)", color: "var(--ink)", borderRadius: 999, padding: "6px 10px", font: "600 12px var(--sans)" }}>{card.gunas} / 36 Gunas<Info text="Guna Milan: the traditional 36-point kundli match. 18 or more is seen as good." /></div>}

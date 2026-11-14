@@ -47,7 +47,7 @@ export default function Match() {
             <svg width="30" height="30" viewBox="0 0 24 24" fill="#E0457B" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg></div>
           <Avatar name={m.first_name} photo={m.photo} size={104} ring="#FF7A9A" />
         </div>
-        <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 30, fontWeight: 600, textAlign: "center", lineHeight: 1.15 }}>The planets approve.<br />Ab baat karo!</h1>
+        <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 30, fontWeight: 600, textAlign: "center", lineHeight: 1.15 }}>You both said yes.<br />Ab baat karo!</h1>
         <div className="row">
           {m.jodi_score != null && <span style={{ padding: "6px 12px", borderRadius: 999, background: "var(--saffron)", fontSize: 13, fontWeight: 700 }}>{m.jodi_score}% match</span>}
           {m.gunas != null && <span style={{ padding: "6px 12px", borderRadius: 999, background: "#fff", border: "1px solid var(--line)", fontSize: 13, fontWeight: 600 }}>{m.gunas} / 36 Gunas</span>}

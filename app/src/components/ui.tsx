@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useFlow } from "@/lib/flow";
 
 export function BackButton({ href }: { href?: string }) {
@@ -72,6 +72,14 @@ export function ErrorNote({ error }: { error: string | null }) {
 export function useAction() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // An error goes away as soon as the person changes something, so it never sits next to a corrected field.
+  useEffect(() => {
+    if (!error) return;
+    const clear = () => setError(null);
+    document.addEventListener("input", clear, { once: true });
+    document.addEventListener("change", clear, { once: true });
+    return () => { document.removeEventListener("input", clear); document.removeEventListener("change", clear); };
+  }, [error]);
   async function run(fn: () => Promise<void>) {
     setBusy(true); setError(null);
     try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : "Something went wrong. Please try again."); }

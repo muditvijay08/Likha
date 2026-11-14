@@ -92,6 +92,8 @@ export interface MyChart {
   planets: ChartPlanet[];
   dasha: { maha: string; antar: string; antar_end: string } | null;
   mahadashas?: { lord: string; start: string; end: string }[];
+  /** Demo mode only: the chart is one example birth, not the member's own. Screens say so. */
+  sample_birth?: { date: string; time: string; place: string };
 }
 
 export interface CityQueue {

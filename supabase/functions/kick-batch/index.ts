@@ -41,7 +41,7 @@ async function buildFacts(targets: Target[], date: string): Promise<Map<string, 
       plan.office && { label: "Office and meetings", time: range(plan.office.start, plan.office.end) },
       plan.travel && { label: "Travel", time: range(plan.travel.start, plan.travel.end) },
       plan.love && { label: "Date or chat", time: range(plan.love.start, plan.love.end) },
-      { label: "Avoid big money moves (Rahu Kaal)", time: range(plan.rahu[0], plan.rahu[1]) },
+      { label: "Rahu Kaal (traditionally kept free of new starts)", time: range(plan.rahu[0], plan.rahu[1]) },
     ].filter(Boolean);
     for (const p of day.people) {
       const t = list.find((x) => x.user_id === p.id)!;

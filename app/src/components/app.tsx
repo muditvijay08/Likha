@@ -14,7 +14,7 @@ export const useApp = () => useContext(Ctx);
 /** Screen → feature switch. Screens not listed are always on. */
 export const FEATURE_OF: Record<string, string> = {
   "/kick": "daily_kick", "/saathi": "saathi", "/maasi": "rishta_maasi", "/imagine": "imagine_us", "/couple": "couple_mode",
-  "/travel": "travel_mode", "/check": "check_anyone", "/matches": "golden_hours",
+  "/travel": "travel_mode", "/check": "check_anyone", "/matches": "golden_hours", "/why-not": "why_not",
 };
 export function FeatureGate({ path, children }: { path: string; children: ReactNode }) {
   const { features } = useApp();
@@ -51,11 +51,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** First try of a toolkit feature: a few credits once, with a thank-you toast. Never blocks the feature. */
+/** First try of a toolkit feature: a few credits once. The thank-you toast shows at most once a session (the wallet lists every reward). */
 export function useTried() {
   const { reload, toast } = useApp();
   return useCallback((key: string, label: string) => {
-    api().tried(key).then((first) => { if (first) { toast(`+5 credits for trying ${label}`); reload().catch(() => {}); } }).catch(() => {});
+    api().tried(key).then((first) => {
+      if (!first) return;
+      reload().catch(() => {});
+      let shown = false;
+      try { shown = sessionStorage.getItem("likha-tried-toast") === "1"; sessionStorage.setItem("likha-tried-toast", "1"); } catch { /* storage blocked */ }
+      if (!shown) toast(`+5 credits for trying ${label}. More in your toolkit.`);
+    }).catch(() => {});
   }, [reload, toast]);
 }
 
@@ -156,7 +162,7 @@ export function CreditsPill({ label }: { label?: string }) {
   const { home } = useApp();
   return (
     <Link href="/wallet" className="pillbtn credits tip tip-r" data-tip="Your credits. 1 credit = ₹1">
-      <Coin />{home ? home.balance : "…"}{label ? ` ${label}` : ""}
+      <Coin />{home ? <>{home.balance}{label ? ` ${label}` : ""}</> : <span className="skel" aria-label="Loading balance" style={{ display: "inline-block", width: 44, height: 12, borderRadius: 6 }} />}
     </Link>
   );
 }

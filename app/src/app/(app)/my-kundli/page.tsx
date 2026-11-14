@@ -60,6 +60,7 @@ function Kundli() {
             <span><span style={{ color: "var(--muted)" }}>Nakshatra</span> <strong>{c.summary.nakshatra} {c.summary.pada}</strong></span>
             <span><span style={{ color: "var(--muted)" }}>Manglik</span> <strong>{c.summary.manglik ? "Yes" : "No"}</strong></span>
           </div>
+          {c.sample_birth && <p className="sample-note" role="note">Sample chart (demo mode): worked out by the real engine for {c.sample_birth.date}, {c.sample_birth.time}, {c.sample_birth.place}.</p>}
           {c.summary.borderline && <span className="small">Your birth time is near a boundary: a few minutes could change one detail.</span>}
         </div>
         <section aria-label="Planets" className="listcard" style={{ fontSize: 13 }}>

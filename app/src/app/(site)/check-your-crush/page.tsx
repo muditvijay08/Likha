@@ -5,7 +5,7 @@ import { PairPicker } from "@/components/site/client";
 
 export const metadata: Metadata = {
   title: "Check your crush · Kundli match with anyone · Likha",
-  description: "Your crush, your partner, your boss or a friend: see how your Moon signs get along for free, then invite them to unlock the full kundli match together.",
+  description: "Your crush, your partner or a friend: see how your Moon signs get along for free, then invite them to unlock the full kundli match together.",
   alternates: { canonical: "/check-your-crush" },
 };
 
@@ -17,7 +17,7 @@ export default function Crush() {
           <Crumbs items={[["Likha", "/"], ["Check your crush"]]} />
           <span className="eyebrow">Check With Anyone</span>
           <h1>Is it written in the stars?</h1>
-          <p className="lead">Your crush, your ex, your partner, your boss or your co-founder: see how your stars get along.</p>
+          <p className="lead">Your crush, your partner or a friend: see how your stars get along. They're invited to see the full match with you.</p>
           <ol className="prose" style={{ paddingLeft: 20, margin: 0 }}>
             <li>Try two Moon signs here, free.</li>
             <li>In the app, add their name, phone and date of birth for a free Moon-sign preview.</li>

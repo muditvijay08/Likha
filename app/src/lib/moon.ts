@@ -45,3 +45,12 @@ export function previewLine(mine: number, theirs: number): string {
 export const NAKSHATRAS = ["Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha", "Magha",
   "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha", "Mula", "Purva Ashadha",
   "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"];
+
+/** Day strength for one person: Tara Bala (birth star to the day's star, 3rd/5th/7th are weak) and Chandrashtama
+ *  (the day's Moon in the 8th sign from the birth Moon). Used for the two-person Golden Hours calendar. */
+export function dayFor(at: Date, natalNak: number, natalSign: number): { taraOk: boolean; chandrashtama: boolean } {
+  const lon = moonLongitude(at);
+  const nak = Math.floor(lon / (360 / 27)), sign = Math.floor(lon / 30);
+  const count = ((nak - natalNak + 27) % 27) + 1, rem = count % 9 || 9;
+  return { taraOk: ![3, 5, 7].includes(rem), chandrashtama: ((sign - natalSign + 12) % 12) + 1 === 8 };
+}

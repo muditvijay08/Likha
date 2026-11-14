@@ -126,7 +126,8 @@ page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connec
   } else {
     await page.waitForURL("**/kundli");
     await page.getByText("YOUR KUNDLI IS READY").waitFor({ timeout: 15000 });
-    ok(await page.getByRole("img", { name: /birth chart, Leo ascendant/ }).isVisible(), `${name}: chart drawn with Lagna`);
+    ok(await page.getByRole("img", { name: /birth chart, Aquarius ascendant/ }).isVisible(), `${name}: chart drawn with Lagna`);
+    ok(await page.getByText(/Sample chart \(demo mode\)/).isVisible(), `${name}: demo chart is labelled as a sample`);
     await shot("13-kundli");
     await click("Continue");
     await page.waitForURL("**/install");

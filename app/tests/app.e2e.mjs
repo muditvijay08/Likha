@@ -38,9 +38,9 @@ await page.evaluate((s) => localStorage.setItem("likha-demo-db", JSON.stringify(
 await page.goto(`${BASE}/home`);
 ok(await seen(page.getByText("Hey Aarav")), "Home greets Aarav");
 ok(await seen(page.getByText("Demo mode · sample profiles, not real people")), "Demo mode is labelled on every app screen");
-ok(await seen(page.getByText("Venus is flirting with your 7th house")), "Love weather headline from the Kick teaser");
+ok(await seen(page.getByText("Venus warms the 7th from your Moon")), "Love weather headline from the Kick teaser");
 ok(await seen(page.getByText("Your day in the stars")) && await seen(page.getByText("Rahu Kaal, skip big moves")), "Day timeline drawn from sunrise, horas and Rahu Kaal");
-ok(await seen(page.getByRole("link", { name: /Ishita\s*94%/ })), "Top picks ranked by Jodi Score (Ishita 94%)");
+ok(await seen(page.getByRole("link", { name: /Ishita\s*92%/ })), "Top picks ranked by Jodi Score (Ishita 92%, from the real engine)");
 ok(await seen(page.getByText("people like you")) && (await page.locator("text=people like you").locator("..").textContent()).includes("3"), "3 people like you");
 ok(await credits() === 70, "Wallet shows the 70 welcome credits");
 await shot("01-home");
@@ -51,9 +51,9 @@ await page.waitForURL("**/kick");
 ok(await seen(btn("Unlock today · 10 credits")), "Kick: paid part locked, price 10");
 await shot("02-kick-locked");
 await btn("Unlock today · 10 credits").click();
-ok(await seen(page.getByText("Wear something yellow today.")), "Kick unlocked: today's fix visible");
+ok(await seen(page.getByText("Today's nudges")) && !(await page.getByText(/mantra|Om Budhaya|Wear something/).count()), "Kick unlocked: everyday nudges, no mantras or colours");
 ok(await seen(page.getByText("+5 credits for trying the Daily Kick")), "Toolkit reward for the first Daily Kick (+5)");
-ok(await seen(page.getByText("Avoid big money moves (Rahu Kaal)")), "Kick: best times listed");
+ok(await seen(page.getByText("Rahu Kaal (traditionally kept free of new starts)")), "Kick: best times listed");
 await shot("03-kick");
 
 // D1 Discover
@@ -73,7 +73,7 @@ await btn("Shoot your shot").click();
 
 // M1 Match
 await page.waitForURL("**/match/**");
-ok(await seen(page.getByText("The planets approve.")), "Like on someone who liked you: it's a match");
+ok(await seen(page.getByText("You both said yes.")), "Like on someone who liked you: it's a match");
 ok(await seen(page.getByText("Golden Hours")) && await seen(btn("Unlock all · 19 credits")), "Golden Hours: first window free, rest locked");
 await shot("05-match");
 await btn("Unlock all · 19 credits").click();
@@ -98,7 +98,7 @@ ok(true, "Cosmic Like on Meera matched (first one this week is free)");
 
 // D4 Report
 await page.goto(`${BASE}/report/s-nidhi`);
-ok(await seen(page.getByText("Average match")) && await seen(page.getByText("Graha Maitri")), "Report: Guna verdict and the 8 kootas (free)");
+ok(await seen(page.getByText("Good match")) && await seen(page.getByText("Graha Maitri")), "Report: Guna verdict and the 8 kootas (free)");
 await shot("08-report-locked");
 await btn("Read it · 29 credits").click();
 ok(await seen(page.getByText("Strengths", { exact: true })) && await seen(page.getByText("Try this:")), "Report: written part after paying");

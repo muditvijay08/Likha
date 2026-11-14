@@ -2,38 +2,41 @@
 // is_sample and shown with a "Sample profile" label. They never exist in the real database.
 import type { Card, ProfileFull } from "./types";
 
+import GEN from "./samples.generated.json";
+
 type Sample = Omit<Card, "is_sample"> & { gender: "woman" | "man"; likesYou: number | false; extra: Partial<ProfileFull> };
+type Gen = (typeof GEN.samples)[number];
 
-const base = (id: string, gender: "woman" | "man", first_name: string, age: number, profession: string, jodi: number, gunas: number,
-  moon: string, nak: string, summary: string, likesYou: number | false, extra: Partial<ProfileFull> = {}): Sample => ({
-  id, gender, first_name, age, profession, goal: age > 26 ? "matchmaking" : "dating", tier: jodi > 90 ? "graha" : "none", city: "Jaipur",
-  verified: true, diet: "vegetarian", gunas, jodi_score: jodi, summary, moon_sign: moon, nakshatra: nak, manglik: false, photos: [],
-  prompt: { label: "The planets got me right about…", answer: "Needing a window seat, always. On trains, at work, in life." },
-  interests: ["Travel", "Chai", "Architecture"], liked_me: !!likesYou, likesYou, extra,
-});
+// Everything astrological (Moon, nakshatra, Gunas, kootas, doshas, Jodi Score) comes from the real engine, worked out
+// against the demo member's sample chart by kundli/tools/gen_demo_samples.py. Only the human details are written here.
+const PEOPLE: Record<string, { profession: string; diet: string; likesYou: number | false; interests: string[]; prompt: [string, string] }> = {
+  "s-ishita": { profession: "Brand strategist", diet: "vegetarian", likesYou: 2, interests: ["Travel", "Chai", "Kathak"], prompt: ["The planets got me right about…", "Needing a window seat, always. On trains, at work, in life."] },
+  "s-riya": { profession: "Architect", diet: "eggetarian", likesYou: false, interests: ["Architecture", "Sketching", "Old havelis"], prompt: ["My Sunday looks like…", "Sketching a haveli in the old city, then lassi at Lassiwala."] },
+  "s-sanya": { profession: "Teacher", diet: "non_veg", likesYou: 5, interests: ["Books", "Baking", "Cricket"], prompt: ["What are you fond of?", "Kids who ask 'but why?' five times in a row."] },
+  "s-meera": { profession: "Doctor", diet: "vegetarian", likesYou: 0.5, interests: ["Running", "Podcasts", "Chai"], prompt: ["The planets got me right about…", "I plan everything. Except holidays. Those just happen."] },
+  "s-nidhi": { profession: "Founder, handloom label", diet: "jain", likesYou: false, interests: ["Textiles", "Yoga", "Travel"], prompt: ["About you", "Building a small label with weavers in Sanganer. Ask me about block prints."] },
+  "s-tanvi": { profession: "UX designer", diet: "vegan", likesYou: false, interests: ["Indie music", "Pottery", "Trekking"], prompt: ["My Sunday looks like…", "A trek near Nahargarh at sunrise, then a long nap."] },
+  "s-aarav": { profession: "Product manager", diet: "non_veg", likesYou: false, interests: ["Cricket", "Travel", "Chai"], prompt: ["The planets got me right about…", "Steady at work, terrible at choosing a restaurant."] },
+  "s-kabir": { profession: "Hotel owner", diet: "vegetarian", likesYou: 1, interests: ["Food", "Polo", "Old music"], prompt: ["About you", "Run a heritage guesthouse near Amer. I make a mean dal baati."] },
+  "s-dev": { profession: "Engineer", diet: "eggetarian", likesYou: 4, interests: ["Cycling", "Gaming", "Stand-up"], prompt: ["What are you fond of?", "Night rides on JLN Marg and bad puns."] },
+  "s-rohan": { profession: "Music teacher", diet: "vegetarian", likesYou: 0.5, interests: ["Sitar", "Books", "Chai"], prompt: ["About you", "Teach sitar, learning patience. Divorced, two years on, ready to meet someone kind."] },
+  "s-arjun": { profession: "Architect", diet: "non_veg", likesYou: false, interests: ["Travel", "Photography", "Football"], prompt: ["My Sunday looks like…", "Photographing stepwells. Panna Meena ka Kund at 7 AM, no crowds."] },
+};
 
-export const SAMPLES: Sample[] = [
-  base("s-riya", "woman", "Riya", 26, "Architect", 92, 27, "Pisces", "Revati", "Her calm Moon balances your fiery Mars. Long talks, few fights.", false),
-  base("s-ishita", "woman", "Ishita", 27, "CA", 94, 29, "Taurus", "Rohini", "Two steady Moons. Plans get made and kept.", 2),
-  base("s-sanya", "woman", "Sanya", 24, "Teacher", 91, 27, "Cancer", "Pushya", "Warm and protective together. Family-first energy.", 5),
-  base("s-meera", "woman", "Meera", 25, "Doctor", 88, 25, "Libra", "Swati", "Easy charm on both sides. Talk things out early.", 0.5),
-  base("s-nidhi", "woman", "Nidhi", 26, "Founder", 86, 24, "Aries", "Ashwini", "Both of you move fast. Good for adventures.", false),
-  base("s-tanvi", "woman", "Tanvi", 28, "Designer", 83, 22, "Gemini", "Ardra", "Lots to talk about. Give each other space.", false),
-  base("s-aarav", "man", "Aarav", 27, "Product manager", 92, 27, "Scorpio", "Anuradha", "His steady Saturn grounds your quick Mercury.", false),
-  base("s-kabir", "man", "Kabir", 28, "Doctor", 90, 28, "Taurus", "Rohini", "Two steady Moons. Plans get made and kept.", 1),
-  base("s-dev", "man", "Dev", 26, "Engineer", 87, 25, "Leo", "Magha", "Big warmth, big laughs. Keep egos light.", 4),
-  base("s-rohan", "man", "Rohan", 29, "CA", 85, 24, "Virgo", "Hasta", "Careful and kind. Good with money talks.", 0.5),
-  base("s-arjun", "man", "Arjun", 27, "Architect", 82, 22, "Sagittarius", "Mula", "Travel buddies first. Then the rest.", false),
-];
+const fromGen = (g: Gen): Sample => {
+  const p = PEOPLE[g.id];
+  return {
+    id: g.id, gender: g.gender as "woman" | "man", first_name: g.first_name, age: g.age, profession: p.profession,
+    goal: g.age > 26 ? "matchmaking" : "dating", tier: g.jodi_score > 88 ? "graha" : "none", city: "Jaipur", verified: true, diet: p.diet,
+    gunas: g.gunas, jodi_score: g.jodi_score, summary: g.summary, moon_sign: g.moon_sign, nakshatra: g.nakshatra, manglik: g.manglik, photos: [],
+    prompt: { label: p.prompt[0], answer: p.prompt[1] }, interests: p.interests, liked_me: !!p.likesYou, likesYou: p.likesYou,
+    extra: { lagna: g.lagna, pada: g.pada, kootas: g.kootas, doshas: g.doshas as ProfileFull["doshas"] },
+  };
+};
 
-const MAX = { varna: 1, vashya: 2, tara: 3, yoni: 4, graha_maitri: 5, gana: 6, bhakoot: 7, nadi: 8 };
-/** Koota points that add up to the sample's Guna total (taken off Bhakoot first, then Yoni, Tara, Vashya). */
-function kootasFor(gunas: number) {
-  const k: Record<string, number> = { ...MAX };
-  let left = 36 - gunas;
-  for (const name of ["bhakoot", "yoni", "tara", "vashya"]) { const cut = Math.min(k[name], left); k[name] -= cut; left -= cut; }
-  return k;
-}
+export const SAMPLES: Sample[] = GEN.samples.map(fromGen);
+/** The demo member's chart: one example birth, worked out by the real engine. Shown as a sample chart. */
+export const SAMPLE_CHART = GEN.member;
 
 export function sampleProfile(id: string): ProfileFull | null {
   const s = SAMPLES.find((x) => x.id === id);
@@ -41,10 +44,9 @@ export function sampleProfile(id: string): ProfileFull | null {
   const { gender: _g, likesYou: _l, extra, ...c } = s;
   return {
     ...c, is_sample: true, height_cm: 165, education: "Post-graduate", company: null, languages: ["Hindi", "English"], drinking: "socially",
-    smoking: "never", kids: "want", religion: null, voice_url: null, lagna: "Virgo", pada: 2, borderline: false,
+    smoking: "never", kids: "want", religion: null, voice_url: null, lagna: null, pada: null, borderline: false,
     prompts: c.prompt ? [c.prompt, { label: "A perfect Sunday", answer: "Kachori at Rawat, then a long walk at Jal Mahal." }] : [],
-    kootas: kootasFor(c.gunas ?? 18),
-    doshas: { bhakoot: { present: true, cancelled: true, reason: "Moon sign lords are friends" }, manglik_match: true },
+    kootas: null, doshas: null,
     i_liked: false, match_id: null, ...extra,
   };
 }

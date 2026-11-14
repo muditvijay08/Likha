@@ -42,7 +42,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         {api().demo && <div className="demo-bar" role="note">Demo mode · sample profiles, not real people</div>}
         <ConsentGate><FeatureGate path={path}>{children}</FeatureGate></ConsentGate>
       </div>
-      <BottomNav />
+      {path !== "/sos" && <BottomNav />}{/* nothing to tap by mistake in an emergency */}
     </AppProvider>
   );
 }

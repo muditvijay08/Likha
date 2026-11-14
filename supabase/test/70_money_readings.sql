@@ -91,6 +91,10 @@ select pg_temp.check('Discover still works with the sort on', $q$select public.d
 select pg_temp.check('turn it off', $q$select cardinality(public.set_suits_sort(false)) = 0$q$);
 
 \echo ======================= S3 Why It Didn't Work =======================
+select pg_temp.denied('retired: refused while its switch is off', $q$select public.start_reading('why_not', '{"name":"K","birth_date":"1997-11-09","duration":"6m_2y"}')$q$);
+select pg_temp.act_as_server();
+update public.feature_flags set enabled = true, rollout_pct = 100 where key = 'why_not';   -- the rest checks it still works if switched back on
+select pg_temp.act_as('f0000000-0000-0000-0000-000000000001');
 select pg_temp.denied('needs a date of birth', $q$select public.start_reading('why_not', '{"name":"K"}')$q$);
 select pg_temp.step('buy Why It Didn''t Work (no birth time)', $q$select public.start_reading('why_not', '{"name":"K","birth_date":"1997-11-09","duration":"6m_2y"}')$q$);
 select pg_temp.act_as_server();

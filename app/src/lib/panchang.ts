@@ -101,6 +101,9 @@ export function dayPlan(lat: number, lng: number, tz: string, at: Date = new Dat
   };
 }
 
+/** "Today" or "Tonight": the window is later today. */
+export const isToday = (day: string) => day === "Today" || day === "Tonight";
+
 export interface Golden { day: string; start: Date; end: Date; best_for: "first_message" | "deep_chat" | "first_date"; planet: string }
 
 /** Golden Hours for a match: the next Venus and Moon horas (evening chats) and Jupiter horas (daytime dates), never in Rahu Kaal. */
@@ -111,8 +114,9 @@ export function goldenHours(lat: number, lng: number, tz: string, from: Date = n
     const lp = localParts(tz, at);
     const plan = dayPlan(lat, lng, tz, at);
     const midnight = at.getTime() - lp.minutes * 60000;
-    const label = k === 0 ? "Tonight" : new Intl.DateTimeFormat("en-IN", { timeZone: tz, weekday: "long" }).format(at);
+    const weekday = new Intl.DateTimeFormat("en-IN", { timeZone: tz, weekday: "long" }).format(at);
     for (const h of plan.horas) {
+      const label = k > 0 ? weekday : h.start >= 17 * 60 ? "Tonight" : "Today";   // never "Tonight" for a daytime window
       if (overlaps(h, plan.rahu)) continue;
       const start = new Date(midnight + h.start * 60000), end = new Date(midnight + h.end * 60000);
       if (end <= from) continue;

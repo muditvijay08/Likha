@@ -67,13 +67,14 @@ export default function Kundli() {
           <div className="stack">
             <span className="kicker">YOUR KUNDLI IS READY</span>
             <h1 className="h1">Meet your cosmic self, {s?.first_name}</h1>
+            {chart.sample_birth && <p className="sample-note" role="note">Sample chart (demo mode): worked out by the real engine for {chart.sample_birth.date}, {chart.sample_birth.time}, {chart.sample_birth.place}, not from the details you typed.</p>}
           </div>
           <div className="card" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, borderRadius: 22 }}>
             <KundliChart lagnaSign={signIndex(sm!.lagna)} planets={chart.planets} />
           </div>
           <div className="grid2" style={{ gap: 8 }}>
             {[["Lagna", `${SIGN_HI[sm!.lagna]} (${sm!.lagna})`], ["Moon sign", `${SIGN_HI[sm!.moon_sign]} (${sm!.moon_sign})`],
-              ["Nakshatra", `${sm!.nakshatra}, pada ${sm!.pada}`], ["Mahadasha · Manglik", `${chart.dasha?.maha ?? "—"} · ${sm!.manglik ? "Yes" : "No"}`]]
+              ["Nakshatra", `${sm!.nakshatra}, pada ${sm!.pada}`], ["Current Mahadasha · Manglik", `${chart.dasha?.maha ?? "—"} · ${sm!.manglik ? "Yes" : "No"}`]]
               .map(([k, v]) => <div key={k} className="tile"><span>{k}</span><strong>{v}</strong></div>)}
           </div>
           <div>

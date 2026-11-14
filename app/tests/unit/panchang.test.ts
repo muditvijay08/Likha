@@ -49,3 +49,23 @@ test("approximate Moon sign matches the kundli engine (NASA JPL) to within half 
   assert.deepEqual(moonSignsOn("1999-03-14"), [9]);          // Capricorn all day
   assert.ok(moonSignsOn("1999-03-15").length >= 1);
 });
+
+test("Golden Hours: 'Today' for a daytime window, 'Tonight' only from 5 PM", async () => {
+  const { goldenHours: gh } = await import("../../src/lib/panchang.ts");
+  const from = new Date("2026-11-14T03:30:00Z");               // 9:00 AM in Jaipur
+  const today = gh(26.9124, 75.7873, "Asia/Kolkata", from, 1);
+  for (const h of today) {
+    const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", hourCycle: "h23" }).format(h.start));
+    assert.equal(h.day, hour >= 17 ? "Tonight" : "Today", `${h.planet} at ${hour}:00 labelled ${h.day}`);
+  }
+});
+
+test("Tara Bala and Chandrashtama for the two-person calendar", async () => {
+  const { dayFor, moonLongitude } = await import("../../src/lib/moon.ts");
+  const at = new Date("2026-11-14T13:30:00Z");
+  const lon = moonLongitude(at), nak = Math.floor(lon / (360 / 27)), sign = Math.floor(lon / 30);
+  assert.equal(dayFor(at, nak, sign).taraOk, true, "own birth star (Janma, 1st) is not one of the weak taras");
+  assert.equal(dayFor(at, (nak - 2 + 27) % 27, sign).taraOk, false, "3rd from the birth star (Vipat) is weak");
+  assert.equal(dayFor(at, nak, (sign - 7 + 12) % 12).chandrashtama, true, "day Moon in the 8th sign from the birth Moon");
+  assert.equal(dayFor(at, nak, sign).chandrashtama, false);
+});
