@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
 import { Info, JODI_INFO, price, useApp } from "@/components/app";
+import { GunaRing } from "@/components/kit";
 import { api, type ProfileFull, type Reading } from "@/lib/api";
 
 const KOOTAS: [string, string, number, string][] = [
@@ -57,8 +58,8 @@ export default function Report() {
       </div>
 
       {p.kootas ? <>
-        <div className="row" style={{ gap: 14, padding: "14px 16px", borderRadius: 20, background: "var(--saffron-soft)" }}>
-          <span className="serif" style={{ fontSize: 44, fontWeight: 600, lineHeight: 1 }}>{g}<span style={{ fontSize: 18, color: "var(--saffron-ink)" }}>/36</span></span>
+        <div className="row" style={{ gap: 14, padding: "14px 16px", borderRadius: 22, background: "var(--card)", border: "1px solid var(--line)" }}>
+          <GunaRing gunas={g} size={96} />
           <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 16 }}>{title}</strong><span style={{ fontSize: 13, color: "#3D3560" }}>{line}</span></span>
         </div>
         {p.jodi_score != null && (
@@ -74,7 +75,7 @@ export default function Report() {
               <div key={k} style={{ display: "grid", gridTemplateColumns: "104px 1fr 40px", alignItems: "center", gap: 10 }}>
                 <span>{label}<Info text={tip} /></span>
                 <div style={{ height: 6, borderRadius: 999, background: "#ECE6FA" }} role="meter" aria-label={`${label} ${v} of ${max}`} aria-valuemin={0} aria-valuemax={max} aria-valuenow={v}>
-                  {v > 0 && <div style={{ width: `${(v / max) * 100}%`, height: 6, borderRadius: 999, background: "var(--saffron)" }} />}</div>
+                  {v > 0 && <div style={{ width: `${(v / max) * 100}%`, height: 6, borderRadius: 999, background: "var(--gold)" }} />}</div>
                 <strong style={{ textAlign: "right" }}>{Number.isInteger(v) ? v : v.toFixed(1)}/{max}</strong>
               </div>
             );

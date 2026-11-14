@@ -133,6 +133,7 @@ page.on("console", (m) => { if (/Content Security Policy|Refused to (load|connec
     ok(await page.getByRole("img", { name: /birth chart, Aquarius ascendant/ }).isVisible(), `${name}: chart drawn with Lagna`);
     ok(await page.getByText(/Sample chart \(demo mode\)/).isVisible(), `${name}: demo chart is labelled as a sample`);
     if (gender === "man") ok(await page.getByText(/approximate time of day/).isVisible(), `${name}: kundli says it uses an approximate time`);
+    await page.waitForTimeout(1600);                            // the chart draws itself first
     await shot("13-kundli");
     await click("Continue");
     await page.waitForURL("**/install");

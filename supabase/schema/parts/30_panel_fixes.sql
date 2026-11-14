@@ -264,4 +264,10 @@ begin
   execute 'revoke all on schema private from public, anon, authenticated';
 end $$;
 
+
+-- The app no longer changes colour by gender (one look for everyone), so Admin shows this setting as unused.
+create or replace function private.unused_settings() returns text[] language sql immutable as $$
+  select array['booth_bonus','scam_hold_score','gender_theme']
+$$;
+
 select private.lockdown();

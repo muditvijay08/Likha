@@ -7,7 +7,7 @@ How the platform is protected, what the October 2026 audit found and fixed (plus
 | Layer | Rule |
 |---|---|
 | Database (Supabase Postgres) | Every table has row-level security. Members see only their own rows and the public fields of people they can see. Private data (birth details, charts, keys) lives in the `private` schema, which apps cannot reach at all. |
-| Functions | Signed-out visitors can call five functions only (public website and share links). Server-only functions (`svc_*`) can't be called from the apps. Admin functions (`admin_*`) check a permission, need two-step sign-in (MFA), and write the audit log. |
+| Functions | Signed-out visitors can call six functions only (public website, SOS and family-page share links; family pages are read-only, by unguessable token, expire after 7 days, and never include photos, birth details or chats). Server-only functions (`svc_*`) can't be called from the apps. Admin functions (`admin_*`) check a permission, need two-step sign-in (MFA), and write the audit log. |
 | Team | Admin needs an authenticator app (aal2) for every request. Roles have only the permissions they need. The team changes data only through audited functions, never by editing tables. |
 | Money | Prices come from the database, never the app. Razorpay webhooks are signature-checked in constant time. Credits move only through the ledger with idempotency keys. Bank refunds need a second person. Live payments need the owner, all live keys tested, and typing LIVE. |
 | Keys | Provider keys are in Supabase Vault, write-only from Admin (last 4 shown), owner only, audited. Never in code, logs or the app. |

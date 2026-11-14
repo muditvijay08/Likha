@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ErrorNote, useAction } from "@/components/ui";
-import { CreditsPill, GOAL_LABEL, Info, PhotoBlock, SampleTag, TIER_LABEL, price, useApp } from "@/components/app";
+import { CreditsPill, GOAL_LABEL, GUNA_INFO, Info, JODI_INFO, PhotoBlock, SampleTag, price, useApp } from "@/components/app";
+import { Badge, MoonPortrait } from "@/components/kit";
 import { api, type Card, type Filters, type SaathiState } from "@/lib/api";
 import { LiveStrip } from "@/components/live";
 
@@ -62,47 +63,54 @@ export default function Discover() {
         {card && <LiveStrip />}{/* never next to "you've seen everyone" */}
 
         {cards === null ? <div className="skel" style={{ height: 460 }} /> : card ? <>
-          <article className="disc-card" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <PhotoBlock name={card.first_name} photos={card.photos} height={300}>
-              <div style={{ position: "absolute", top: 14, left: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
-                {card.jodi_score != null ? (
-                  <div style={{ background: "var(--saffron)", color: "var(--ink)", borderRadius: 12, padding: "8px 12px", display: "flex", flexDirection: "column", fontFamily: "var(--sans)" }}>
-                    <span className="serif" style={{ fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{card.jodi_score}%</span>
-                    <span style={{ fontSize: 11, fontWeight: 700 }}>Jodi Score<Info text="Jodi Score: how well your two kundlis match, out of 100." /></span>
+          <article className="disc-card overflow-hidden rounded-[26px] border border-line bg-card shadow-[0_10px_30px_-18px_rgba(29,24,56,.45)]">
+            <div className="relative">
+              {card.photos.length ? <PhotoBlock name={card.first_name} photos={card.photos} height={380} /> : <MoonPortrait name={card.first_name} moonSign={card.moon_sign} className="h-[380px]" />}
+              {/* score first: Gunas big, Jodi explained */}
+              <div className="absolute left-3.5 top-3.5 flex flex-col items-start gap-2">
+                {card.gunas != null ? (
+                  <div className="flex items-center gap-2.5 rounded-2xl bg-black/45 px-3 py-2 text-white backdrop-blur-md">
+                    <span className="font-serif text-[30px] font-[560] leading-none">{Number.isInteger(card.gunas) ? card.gunas : card.gunas.toFixed(1)}</span>
+                    <span className="flex flex-col font-sans leading-tight">
+                      <span className="text-[11px] font-bold tracking-[.08em] text-[var(--star)]">OF 36 GUNAS<Info text={GUNA_INFO} /></span>
+                      {card.jodi_score != null && <span className="text-xs text-white/85">Jodi Score {card.jodi_score}<Info text={JODI_INFO} /></span>}
+                    </span>
                   </div>
-                ) : <div style={{ background: "#fff", borderRadius: 12, padding: "8px 12px", font: "700 12px var(--sans)", color: "var(--ink)" }}>Score on its way</div>}
-                {card.gunas != null && <div style={{ background: "rgba(255,255,255,0.92)", color: "var(--ink)", borderRadius: 999, padding: "6px 10px", font: "600 12px var(--sans)" }}>{card.gunas} / 36 Gunas<Info text="Guna Milan: the traditional 36-point kundli match. 18 or more is seen as good." /></div>}
+                ) : <Badge tone="line">Score on its way</Badge>}
                 {coach && (
-                  <div role="note" style={{ position: "relative", width: 210, marginTop: 6, padding: "10px 12px", borderRadius: 12, background: "var(--ink)", color: "#fff", font: "400 12px/1.4 var(--sans)", boxShadow: "0 8px 20px rgba(30,24,56,0.25)" }}>
-                    <span aria-hidden="true" style={{ position: "absolute", top: -6, left: 22, width: 12, height: 12, background: "var(--ink)", transform: "rotate(45deg)" }} />
-                    <strong style={{ display: "block", marginBottom: 2 }}>New here?</strong>The big number is your Jodi Score. Tap any <b>i</b> to learn what it means.
-                    <button type="button" onClick={gotIt} style={{ display: "block", marginTop: 6, padding: 0, background: "transparent", border: 0, color: "var(--saffron)", font: "700 12px var(--sans)" }}>Got it</button>
+                  <div role="note" className="relative mt-1 w-[220px] rounded-xl bg-ink px-3 py-2.5 font-sans text-xs leading-snug text-white shadow-xl">
+                    <strong className="mb-0.5 block">New here?</strong>The big number is your Guna Milan, out of 36. Tap any <b>i</b> to see what a score means.
+                    <button type="button" onClick={gotIt} className="mt-1.5 block border-0 bg-transparent p-0 font-sans text-xs font-bold text-[var(--star)]">Got it</button>
                   </div>
                 )}
               </div>
-              <div style={{ position: "absolute", top: 14, right: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
-                {card.verified && <span style={{ background: "rgba(255,255,255,0.92)", borderRadius: 999, padding: "6px 10px", font: "600 12px var(--sans)", color: "var(--ink)", display: "flex", gap: 6, alignItems: "center" }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E07B00" strokeWidth="2.4" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>Verified</span>}
-                {card.liked_me && <span style={{ background: "var(--rose)", borderRadius: 999, padding: "6px 10px", font: "700 12px var(--sans)", color: "#fff" }}>Likes you</span>}
+              <div className="absolute right-3.5 top-3.5 flex flex-col items-end gap-1.5">
+                {card.verified && <Badge tone="line" className="bg-white/92">✓ Verified</Badge>}
+                {card.liked_me && <Badge tone="action" className="bg-action text-white">Likes you</Badge>}
                 <SampleTag on={card.is_sample} />
               </div>
-            </PhotoBlock>
-            <div style={{ padding: "16px 18px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
-              <div className="row" style={{ alignItems: "baseline", justifyContent: "space-between" }}>
-                <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 26, fontWeight: 600 }}><Link href={`/profile/${card.id}`} style={{ color: "var(--ink)", textDecoration: "none" }}>{card.first_name}{card.age ? `, ${card.age}` : ""}</Link></h1>
-                {TIER_LABEL[card.tier] && <span className="tag tier">{TIER_LABEL[card.tier]}</span>}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-5 pb-4 pt-16 text-white">
+                <h1 className="m-0 font-serif text-[30px] font-[560] leading-tight">
+                  <Link href={`/profile/${card.id}`} className="text-white no-underline hover:text-white">{card.first_name}{card.age ? `, ${card.age}` : ""}</Link>
+                </h1>
+                <div className="font-sans text-sm text-white/85">{[card.profession, card.city].filter(Boolean).join(" · ")}</div>
               </div>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>{[card.city, card.profession].filter(Boolean).join(" · ")}</div>
-              {card.moon_sign && <div style={{ fontSize: 13 }}>{card.moon_sign} Moon · {card.nakshatra} nakshatra · {card.manglik ? "Manglik" : "Not Manglik"}<Info cls="tip-up" text="Manglik: a Mars placement some families check. We show it, never filter by it." /></div>}
-              {card.summary && <p style={{ margin: "4px 0 0", fontSize: 13, lineHeight: 1.5, color: "#3D3560" }}>Why the stars like you two: {card.summary}</p>}
-              <div className="row" style={{ gap: 14 }}>
-                <Link href={`/profile/${card.id}`} style={{ fontSize: 13, fontWeight: 600 }}>Full profile</Link>
-                <Link href={`/report/${card.id}`} style={{ fontSize: 13, fontWeight: 600 }}>Full compatibility report · {price(prices, "full_report", 29)} credits</Link>
+            </div>
+            <div className="flex flex-col gap-2.5 px-5 pb-5 pt-4">
+              {card.moon_sign && <div className="font-sans text-sm text-ink">{card.moon_sign} Moon · {card.nakshatra} · {card.manglik ? "Manglik" : "Not Manglik"}<Info cls="tip-up" text="Manglik: a Mars placement some families check. We show it, never filter by it." /></div>}
+              {card.summary && <p className="m-0 font-sans text-[15px] leading-relaxed text-muted">{card.summary}</p>}
+              <div className="flex flex-wrap gap-1.5">
+                {card.goal && <Badge tone="gold" size="sm">{GOAL_LABEL[card.goal]}</Badge>}
+                {card.interests.slice(0, 3).map((x) => <Badge key={x} tone="line" size="sm">{x}</Badge>)}
+              </div>
+              <div className="flex gap-4 pt-1">
+                <Link href={`/profile/${card.id}`} className="font-sans text-sm font-bold">Full profile</Link>
+                <Link href={`/report/${card.id}`} className="font-sans text-sm font-bold">Koota report</Link>
               </div>
             </div>
           </article>
           <ErrorNote error={error} />
-          <div className="row" style={{ gap: 12 }}>
+          <div className="row disc-actions" style={{ gap: 12 }}>
             <button type="button" className="btn outline" style={{ flex: 1 }} onClick={pass} disabled={busy}>Not my nakshatra</button>
             <button type="button" className="btn mid" style={{ flex: 1 }} onClick={like} disabled={busy}>Shoot your shot</button>
           </div>

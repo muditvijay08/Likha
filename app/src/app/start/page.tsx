@@ -1,5 +1,8 @@
 "use client";
 // O1 Landing and gender pick
+import { KundliChart } from "@/components/KundliChart";
+import { NightSky } from "@/components/kit";
+import type { ChartPlanet } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -72,15 +75,17 @@ export default function Start() {
   );
 }
 
-// A warm mood photo (stock models, labelled so). Falls back to the brand gradient if it can't load.
+// A warm mood photo (stock models, labelled so) over the night sky and a gold kundli, which show if the photo can't load.
+const ART: ChartPlanet[] = [["Sun", 5], ["Moon", 7], ["Venus", 7], ["Mars", 10], ["Jupiter", 1], ["Saturn", 4], ["Mercury", 6], ["Rahu", 12], ["Ketu", 6]]
+  .map(([planet, house]) => ({ planet: planet as string, house: house as number, sign: 0, sign_name: "", retro: false, nakshatra: "" }));
 function Hero() {
   return (
-    <div style={{ position: "relative", height: 300, flex: "none", borderRadius: 28, overflow: "hidden",
-      background: "linear-gradient(135deg, #FFE7B8 0%, #FFD3E0 55%, #E3D8FF 100%)", boxShadow: "0 14px 34px rgba(30,24,56,.14)" }}>
+    <NightSky className="relative h-[300px] flex-none rounded-[28px] shadow-[0_14px_34px_rgba(29,24,56,.22)]">
+      <div className="flex h-[300px] items-center justify-center"><KundliChart lagnaSign={4} planets={ART} tone="night" draw size={220} /></div>
       <StockPhoto name="laugh" eager sizes="(max-width: 480px) 100vw, 480px" />
-      <span style={{ position: "absolute", left: 14, bottom: 14, padding: "6px 12px", borderRadius: 999, background: "rgba(30,24,56,.78)", color: "#FFD98A", font: "700 12px var(--sans)" }}>Written in the stars</span>
+      <span style={{ position: "absolute", left: 14, bottom: 14, padding: "6px 12px", borderRadius: 999, background: "rgba(18,14,42,.78)", color: "var(--star)", font: "700 12px var(--sans)" }}>Kundli first, then coffee</span>
       <span style={{ position: "absolute", right: 12, bottom: 16, fontSize: 10, color: "rgba(255,255,255,.85)", textShadow: "0 1px 2px rgba(0,0,0,.5)" }}>Models · Pexels</span>
-    </div>
+    </NightSky>
   );
 }
 
@@ -94,7 +99,7 @@ const WHY: Record<string, Pitch> = {
     ["\ud83d\udee1\ufe0f", "No numbers in first chats. One-tap SOS on dates."],
     ["\ud83d\udc8c", "See who likes you. Free."],
   ] },
-  woman: { photo: "her", kicker: "FOR HER", title: "Dating, on your terms.", sub: "Safe. Real. Written in your stars.", points: [
+  woman: { photo: "her", kicker: "FOR HER", title: "Dating, on your terms.", sub: "Safe. Real. Kundli first.", points: [
     ["\u2728", "You make the first move. Or don\u2019t."],
     ["\ud83d\udd2e", "Know if the stars agree, before you say hi."],
     ["\ud83d\ude48", "Go incognito. Only people you like see you."],
@@ -102,7 +107,7 @@ const WHY: Record<string, Pitch> = {
     ["\ud83d\udc8c", "See who likes you. Free."],
   ] },
   man: { photo: "him", kicker: "FOR HIM", title: "Stop swiping blind.", sub: "See if the stars agree before you like.", points: [
-    ["\ud83d\udd2e", "Jodi Score + 36 gunas on every profile."],
+    ["\ud83d\udd2e", "Guna Milan out of 36 on every profile."],
     ["\ud83d\udcab", "Cosmic Like: say hi before you match."],
     ["\ud83d\udcac", "Never open with \u201chey\u201d again. Cupid helps."],
     ["\u23f0", "Golden Hours: text when it counts."],
@@ -114,15 +119,16 @@ function Why({ gender, credits, onGo, onBack }: { gender: Gender; credits: numbe
   const w = WHY[gender] ?? WHY.woman;
   return (
     <Screen style={{ gap: 18, paddingTop: 0 }}>
-      <div style={{ position: "relative", margin: "0 -24px", height: 300, overflow: "hidden", background: "linear-gradient(160deg, var(--g-ink), #1E1838)" }}>
+      <div style={{ position: "relative", margin: "0 -24px", height: 300, overflow: "hidden", background: "radial-gradient(120% 80% at 50% 0%, #2E2464, var(--night))" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: 60, opacity: .7 }}><KundliChart lagnaSign={1} planets={ART} tone="night" size={190} /></div>
         <StockPhoto name={w.photo} eager sizes="(max-width: 480px) 100vw, 480px" />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(20,16,40,.15) 30%, rgba(20,16,40,.88))" }} />
         <button type="button" onClick={onBack} aria-label="Change"
           style={{ position: "absolute", top: 14, left: 16, border: 0, borderRadius: 999, padding: "6px 12px", background: "rgba(255,255,255,.9)", font: "600 13px var(--sans)", color: "var(--ink)" }}>‹ Change</button>
         <span style={{ position: "absolute", top: 20, right: 14, fontSize: 10, color: "rgba(255,255,255,.85)", textShadow: "0 1px 2px rgba(0,0,0,.5)" }}>Models · Pexels</span>
         <div style={{ position: "absolute", left: 24, right: 24, bottom: 22, color: "#fff" }}>
-          <span style={{ font: "800 11px var(--sans)", letterSpacing: ".14em", color: "#FFD98A" }}>{w.kicker}</span>
-          <h1 style={{ margin: "6px 0 4px", font: "700 36px/1.05 var(--serif)" }}>{w.title}</h1>
+          <span style={{ font: "800 11px var(--sans)", letterSpacing: ".14em", color: "var(--star)" }}>{w.kicker}</span>
+          <h1 style={{ margin: "6px 0 4px", font: "560 36px/1.05 var(--serif)", letterSpacing: "-0.01em" }}>{w.title}</h1>
           <span style={{ fontSize: 15, opacity: .9 }}>{w.sub}</span>
         </div>
       </div>

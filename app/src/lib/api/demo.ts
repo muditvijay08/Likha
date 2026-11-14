@@ -110,7 +110,7 @@ export class DemoApi implements Api {
              grievance_officer: { name: "[NAME]", email: "grievance@likha.in", phone: "[NUMBER]", ack_hours: 24, resolve_days: 15 },
              company: { legal_name: "[COMPANY NAME] Private Limited", gstin: "[GSTIN]", cin: "[CIN]", address: "[ADDRESS], Jaipur, Rajasthan" },
              app: { maintenance: !!adminView().maintenance, maintenance_message: adminView().maintenance, support_email: "support@likha.in", min_app_version: adminView().minVersion ?? "1.0.0" },
-             max_age_filter: 60, gender_options: ["woman", "man"], gender_theme: { woman: "#E0457B", man: "#2F6FE0" },
+             max_age_filter: 60, gender_options: ["woman", "man", "other"],
              verification_modes: adminView().verification ?? { selfie: "api", photos: "api" }, photos: { min: 2, max: 6 }, prompts: { required: 2, max_length: 300, interests_min: 3, interests_max: 10 }, saathi: { max_session_minutes: 45 } };
   }
 

@@ -5,11 +5,10 @@ import { Avatar, Chevron, TIER_LABEL, featureOn, useApp } from "@/components/app
 import { InstallCard } from "@/components/install";
 import { api } from "@/lib/api";
 
-const TILES: [string, string, string, string][] = [
-  ["/kick", "Daily Kick", "Your day, decoded", "#FFF3D6"], ["/my-kundli", "My Kundli", "Chart and dasha", "#EDE6FF"], ["/store", "Astro Store", "Readings and more", "#FFF0F4"],
-  ["/saathi", "Saathi", "Chat till you match", "#E4F4EE"], ["/universe", "Our Universe", "For you two", "#FFF0F4"], ["/maasi", "Rishta Maasi", "Sunday picks", "#FFF3D6"],
-  ["/gift", "Gift a Reading", "For someone special", "#EDE6FF"], ["/travel", "Travel Mode", "Match in a new city", "#E4F4EE"], ["/boost", "Boost", "Be seen first", "#FFF3D6"],
-  ["/story", "Our Story", "Your timeline", "#FFF0F4"], ["/couple", "Couple Mode", "For matched pairs", "#EDE6FF"], ["/matches", "Golden Hours", "Best times to talk", "#FFF3D6"],
+const GROUPS: [string, [string, string, string][]][] = [
+  ["Your stars", [["/my-kundli", "My Kundli", "Chart, dasha and who suits you"], ["/matches", "Golden Hours", "Best times to talk"], ["/kick", "Daily Kick", "Your day, decoded"], ["/store", "Astro Store", "Readings"]]],
+  ["Meet people", [["/maasi", "Rishta Maasi", "3 hand-picked people every Sunday"], ["/travel", "Travel Mode", "Match in a city before you land"], ["/boost", "Boost", "Be seen first for an hour"], ["/saathi", "Saathi", "A virtual companion to talk to"]]],
+  ["Together", [["/universe", "Our Universe", "Readings for the two of you"], ["/story", "Our Story", "Your timeline"], ["/couple", "Couple Mode", "For matched pairs"], ["/gift", "Gift a Reading", "For someone special"]]],
 ];
 const LINKS: [string, string, string?][] = [
   ["/family", "Family view", "New"], ["/toolkit", "Your cosmic toolkit"], ["/inbox", "Inbox"], ["/plans", "My plans"], ["/cupid", "Be a Cupid", "Earn ₹"], ["/invite", "Invite and earn credits"],
@@ -35,13 +34,23 @@ export default function Menu() {
         <Link href="/tiers" style={{ display: "flex", flexDirection: "column", gap: 2, padding: "12px 14px", borderRadius: 18, background: "#fff", border: "1px solid var(--line)", color: "var(--ink)", textDecoration: "none" }}>
           <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700 }}>YOUR TIER</span><strong style={{ fontSize: 17 }}>{home && TIER_LABEL[home.tier] ? TIER_LABEL[home.tier] : "No tier yet"}</strong></Link>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
-        {TILES.filter(([href]) => featureOn(features, href)).map(([href, t, s, bg]) => (
-          <Link key={t} href={href} style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 8, padding: 12, borderRadius: 18, background: bg, color: "var(--ink)", textDecoration: "none", minHeight: 92 }}>
-            <span className="stack" style={{ gap: 1 }}><strong style={{ fontSize: 13 }}>{t}</strong><span style={{ fontSize: 11, color: "var(--muted)" }}>{s}</span></span>
-          </Link>
-        ))}
-      </div>
+      {GROUPS.map(([title, items]) => {
+        const shown = items.filter(([href]) => featureOn(features, href));
+        if (!shown.length) return null;
+        return (
+          <section key={title} aria-label={title} className="stack" style={{ gap: 8 }}>
+            <h2 style={{ margin: "6px 2px 0", font: "700 12px var(--sans)", letterSpacing: ".1em", color: "var(--muted)" }}>{title.toUpperCase()}</h2>
+            <div className="listcard">
+              {shown.map(([href, t, sub]) => (
+                <Link key={href} href={href} style={{ alignItems: "center" }}>
+                  <span className="stack" style={{ gap: 1, flex: 1, minWidth: 0 }}><strong style={{ fontSize: 15 }}>{t}</strong><span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>{sub}</span></span>
+                  <Chevron />
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })}
       <InstallCard />
       <div className="listcard">
         {LINKS.map(([href, t, badge]) => (

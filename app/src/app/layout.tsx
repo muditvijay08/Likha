@@ -3,6 +3,7 @@ import { RegisterSW } from "@/components/RegisterSW";
 import { MaintenanceGate } from "@/components/gates";
 import { FlowProvider } from "@/lib/flow";
 import { SITE_URL } from "@/lib/site";
+import "./kit.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,16 +15,12 @@ export const metadata: Metadata = {
   icons: { icon: "/icons/icon.svg", apple: "/icons/apple-touch-icon.png" },
 };
 
-export const viewport: Viewport = { themeColor: "#FBF8FF", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#FAF6EF", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN" data-gender="woman">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" />
       </head>
       <body><FlowProvider><MaintenanceGate>{children}</MaintenanceGate></FlowProvider><RegisterSW /></body>
     </html>

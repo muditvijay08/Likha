@@ -1,0 +1,28 @@
+/* Tailwind (shadcn/ui-style kit) next to the existing styles. No preflight: the classic screens keep their look.
+   Utilities read Likha's own tokens from globals.css, so both systems share one palette. */
+/* Layer order: Tailwind theme, the classic Likha styles (globals.css, layer "legacy"), then utilities, so kit classes win. */
+@layer theme, legacy, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "@fontsource-variable/fraunces/full.css";
+@import "@fontsource-variable/manrope/index.css";
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-paper: var(--bg);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-action: var(--action);
+  --color-action-ink: var(--action-ink);
+  --color-action-soft: var(--action-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-night: var(--night);
+  --color-night-2: var(--night-2);
+  --color-star: var(--star);
+  --color-good: var(--green);
+  --color-good-soft: var(--green-soft);
+  --font-serif: var(--serif);
+  --font-sans: var(--sans);
+}

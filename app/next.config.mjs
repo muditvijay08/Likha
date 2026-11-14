@@ -5,8 +5,8 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://maps.googleapis.com https://cdn.onesignal.com https://challenges.cloudflare.com`,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
   `img-src 'self' data: blob: https://${supabase} https://images.pexels.com https://maps.gstatic.com https://maps.googleapis.com https://*.razorpay.com`,
   `media-src 'self' blob: data: https://${supabase}`,
   `connect-src 'self' https://${supabase} wss://${supabase} https://api.razorpay.com https://lumberjack.razorpay.com https://maps.googleapis.com https://places.googleapis.com https://*.onesignal.com https://onesignal.com https://challenges.cloudflare.com`,

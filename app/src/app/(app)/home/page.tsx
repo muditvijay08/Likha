@@ -1,8 +1,10 @@
 "use client";
-// H1 Home: love weather, today's timeline (computed here from the city's sunrise, Rahu Kaal and horas), top picks, likes, Golden Hour.
+// H1 Home: today's best match first, then likes and the Golden Hour, the day timeline (computed here from the city's sunrise,
+// Rahu Kaal and horas), more picks, and a one-line love weather.
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Avatar, Chevron, Coin, Info, price, useApp } from "@/components/app";
+import { GunaRing, NightSky, Rise } from "@/components/kit";
 import { LivePopup } from "@/components/live";
 import { api, type Announcement, type ConsentReq, type DueCheckin, type MatchRow } from "@/lib/api";
 import { KIND_TITLE } from "@/components/couple";
@@ -71,73 +73,23 @@ export default function Home() {
           <span className="t"><strong>{d.day_mark} days with {d.other_name}</strong><span>How&apos;s it going? Just for you, they never see it.</span></span><Chevron /></Link>
       ))}
       <div className="home-cols"><div className="home-col">
-      <Link href="/kick" aria-label="Today's love weather" style={{ display: "flex", gap: 16, alignItems: "center", padding: 18, borderRadius: 26,
-        background: "linear-gradient(135deg, #FFE7B8 0%, #FFD3E0 55%, #E3D8FF 100%)", color: "var(--ink)", textDecoration: "none" }}>
-        <svg width="112" height="112" viewBox="0 0 112 112" aria-hidden="true" style={{ flex: "none" }}>
-          <circle cx="56" cy="56" r="46" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="10" />
-          {vibe !== null && <circle cx="56" cy="56" r="46" fill="none" stroke="#E0457B" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${(vibe / 10) * 289} 289`} transform="rotate(-90 56 56)" />}
-          <text x="56" y="60" textAnchor="middle" fontFamily="Fraunces, Georgia, serif" fontSize="32" fontWeight="600" fill="#1E1838">{vibe ?? "…"}</text>
-          <text x="56" y="78" textAnchor="middle" fontFamily="Manrope, sans-serif" fontSize="11" fontWeight="700" fill="#5E5780">of 10</text>
-        </svg>
-        <span style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "#A3164C" }}>TODAY&apos;S LOVE WEATHER<Info cls="tip-r" text="Your love energy today, 1 to 10, from today's Moon and your birth star (Tara bala)." /></span>
-          <strong style={{ fontFamily: "var(--serif)", fontSize: 21, lineHeight: 1.2 }}>{k?.teaser.love_weather ?? "Your Kick is being written"}</strong>
-          <span style={{ fontSize: 13, color: "#3D3560" }}>{k?.teaser.line ?? "It arrives early every morning. Check back soon."}</span>
-        </span>
-      </Link>
-
-      {home.feature && (
-        <Link href={home.feature.link || "/menu"} style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 16px", borderRadius: 20, background: "var(--ink)", color: "#fff", textDecoration: "none" }}>
-          <span style={{ width: 42, height: 42, flex: "none", borderRadius: 14, background: "var(--saffron)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E1838" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
-          <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "#FFD98A" }}>DAY {home.feature.day} · NEW FOR YOU</span>
-            <strong style={{ fontSize: 15 }}>{home.feature.title}</strong>
-            <span style={{ fontSize: 12, color: "#C9BDEB" }}>{home.feature.body}</span>
-          </span>
-          <Chevron color="#fff" />
-        </Link>
-      )}
-
-      {plan && lp && (
-        <section aria-label="Your day" className="stack">
-          <div className="sec-title"><strong>Your day in the stars</strong><Link href="/kick">{k?.unlocked ? "Full Kick" : `Full Kick · ${home.kick_pass ? "Pass" : `${price(prices, "daily_kick", home.kick_price)} cr`}`}</Link></div>
-          <div style={{ position: "relative", height: 40, borderRadius: 12, background: "#fff", border: "1px solid var(--line)", overflow: "hidden" }}>
-            <span title={`Rahu Kaal ${range(plan.rahu[0], plan.rahu[1])}`} style={{ position: "absolute", left: `${pos(plan.rahu[0])}%`, width: `${pos(plan.rahu[1]) - pos(plan.rahu[0])}%`, top: 0, bottom: 0, background: "repeating-linear-gradient(45deg, #ECE6FA 0 4px, #F7F4FD 4px 8px)" }} />
-            {plan.office && <span title={k?.unlocked ? `Office best ${range(plan.office.start, plan.office.end)}` : "Office best, see times in your Kick"} style={{ position: "absolute", left: `${pos(plan.office.start)}%`, width: `${pos(plan.office.end) - pos(plan.office.start)}%`, top: 0, bottom: 0, background: "#DCEBFF" }} />}
-            {love && <span title={`Lucky love window ${range(love.start, love.end)}`} style={{ position: "absolute", left: `${pos(love.start)}%`, width: `${pos(love.end) - pos(love.start)}%`, top: 0, bottom: 0, background: "var(--saffron)" }} />}
-            {lp.minutes >= 360 && <>
-              <span style={{ position: "absolute", left: `${pos(lp.minutes)}%`, top: 0, bottom: 0, width: 2, background: "var(--ink)" }} />
-              <span style={{ position: "absolute", left: `clamp(0px, calc(${pos(lp.minutes)}% - 16px), calc(100% - 34px))`, top: 3, padding: "1px 5px", borderRadius: 6, background: "var(--ink)", color: "#fff", fontSize: 10, fontWeight: 700 }}>Now</span>
-            </>}
-          </div>
-          <div className="row" style={{ justifyContent: "space-between", fontSize: 10, color: "var(--muted)" }}><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span></div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 11, color: "#3D3560" }}>
-            {love && <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--saffron)" }} />Love window {fmt(love.start)}</span>}
-            {plan.office && <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#DCEBFF" }} />Office best</span>}
-            <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#ECE6FA" }} />Rahu Kaal, skip big moves<Info cls="tip-up tip-r" text={`Rahu Kaal today: ${range(plan.rahu[0], plan.rahu[1])}. About 90 minutes a day seen as unlucky for new starts.`} /></span>
-          </div>
-        </section>
-      )}
-
-      </div><div className="home-col">
-      <section aria-label="Stars aligned today" className="stack" style={{ gap: 10 }}>
-        <div className="sec-title"><strong>Stars aligned for you today</strong><Link href="/discover">See all</Link></div>
-        {home.top.length ? (
-          <div className="row" style={{ gap: 12, overflowX: "auto", scrollbarWidth: "none" }}>
-            {home.top.map((c) => (
-              <Link key={c.id} href={`/profile/${c.id}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "var(--ink)", textDecoration: "none", flex: "none", width: 66 }}>
-                <span style={{ width: 64, height: 64, borderRadius: 999, background: `conic-gradient(#FFB020 0 ${(c.jodi_score ?? 0) * 3.6}deg, #ECE6FA ${(c.jodi_score ?? 0) * 3.6}deg 360deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Avatar name={c.first_name} photo={c.photos[0]} size={56} style={{ border: "2px solid #fff", fontSize: 22 }} />
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 700 }}>{c.first_name}</span>
-                <span style={{ marginTop: -6, fontSize: 11, color: "var(--link)", fontWeight: 700 }}>{c.jodi_score != null ? `${c.jodi_score}%` : "…"}</span>
-              </Link>
-            ))}
-          </div>
-        ) : <Link href="/discover" className="small">No new people right now. Widen your filters on Discover.</Link>}
-      </section>
-
+      {home.top[0] && (() => { const t = home.top[0]; return (
+        <Rise>
+          <Link href={`/profile/${t.id}`} aria-label={`Today's best match: ${t.first_name}`} className="block overflow-hidden rounded-[26px] text-white no-underline hover:text-white">
+            <NightSky seed={t.first_name.length + 5} className="rounded-[26px]">
+              <div className="flex items-center gap-4 p-5">
+                <GunaRing gunas={t.gunas ?? 0} size={104} tone="night" />
+                <div className="flex min-w-0 flex-col gap-1">
+                  <span className="font-sans text-[11px] font-bold tracking-[.12em] text-[var(--star)]">TODAY&apos;S BEST MATCH</span>
+                  <strong className="font-serif text-[26px] font-[560] leading-tight">{t.first_name}{t.age ? `, ${t.age}` : ""}</strong>
+                  <span className="font-sans text-[13px] text-[#CFC6F2]">{[t.profession, t.moon_sign ? `${t.moon_sign} Moon` : null].filter(Boolean).join(" · ")}</span>
+                  {t.jodi_score != null && <span className="font-sans text-xs text-white/80">Jodi Score {t.jodi_score}</span>}
+                </div>
+              </div>
+            </NightSky>
+          </Link>
+        </Rise>
+      ); })()}
       <div className="grid2" style={{ gap: 10 }}>
         <Link href="/likes" style={{ display: "flex", flexDirection: "column", gap: 4, padding: 14, borderRadius: 20, background: "var(--rose-soft)", color: "var(--ink)", textDecoration: "none" }}>
           <span className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--rose)" }}>{home.likes_count}</span>
@@ -155,13 +107,71 @@ export default function Home() {
           </Link>
         )}
       </div>
+      {plan && lp && (
+        <section aria-label="Your day" className="stack">
+          <div className="sec-title"><strong>Your day in the stars</strong><Link href="/kick">{k?.unlocked ? "Full Kick" : `Full Kick · ${home.kick_pass ? "Pass" : `${price(prices, "daily_kick", home.kick_price)} cr`}`}</Link></div>
+          <div style={{ position: "relative", height: 40, borderRadius: 12, background: "#fff", border: "1px solid var(--line)", overflow: "hidden" }}>
+            <span title={`Rahu Kaal ${range(plan.rahu[0], plan.rahu[1])}`} style={{ position: "absolute", left: `${pos(plan.rahu[0])}%`, width: `${pos(plan.rahu[1]) - pos(plan.rahu[0])}%`, top: 0, bottom: 0, background: "repeating-linear-gradient(45deg, #ECE6FA 0 4px, #F7F4FD 4px 8px)" }} />
+            {plan.office && <span title={k?.unlocked ? `Office best ${range(plan.office.start, plan.office.end)}` : "Office best, see times in your Kick"} style={{ position: "absolute", left: `${pos(plan.office.start)}%`, width: `${pos(plan.office.end) - pos(plan.office.start)}%`, top: 0, bottom: 0, background: "#DCEBFF" }} />}
+            {love && <span title={`Lucky love window ${range(love.start, love.end)}`} style={{ position: "absolute", left: `${pos(love.start)}%`, width: `${pos(love.end) - pos(love.start)}%`, top: 0, bottom: 0, background: "var(--saffron)" }} />}
+            {lp.minutes >= 360 && <>
+              <span style={{ position: "absolute", left: `${pos(lp.minutes)}%`, top: 0, bottom: 0, width: 2, background: "var(--ink)" }} />
+              <span style={{ position: "absolute", left: `clamp(0px, calc(${pos(lp.minutes)}% - 16px), calc(100% - 34px))`, top: 3, padding: "1px 5px", borderRadius: 6, background: "var(--ink)", color: "#fff", fontSize: 10, fontWeight: 700 }}>Now</span>
+            </>}
+          </div>
+          <div className="row" style={{ justifyContent: "space-between", fontSize: 10, color: "var(--muted)" }}><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span></div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 11, color: "#3D3560" }}>
+            {love && <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--saffron)" }} />Love window {fmt(love.start)}</span>}
+            {plan.office && <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#DCEBFF" }} />Office best</span>}
+            <span className="row" style={{ gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#ECE6FA" }} />Rahu Kaal<Info cls="tip-up tip-r" text={`Rahu Kaal today: ${range(plan.rahu[0], plan.rahu[1])}. About 90 minutes a day seen as unlucky for new starts.`} /></span>
+          </div>
+        </section>
+      )}
 
+
+
+      </div><div className="home-col">
+      <section aria-label="Stars aligned today" className="stack" style={{ gap: 10 }}>
+        <div className="sec-title"><strong>More stars aligned today</strong><Link href="/discover">See all</Link></div>
+        {home.top.length ? (
+          <div className="row" style={{ gap: 12, overflowX: "auto", scrollbarWidth: "none" }}>
+            {home.top.slice(1).map((c) => (
+              <Link key={c.id} href={`/profile/${c.id}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "var(--ink)", textDecoration: "none", flex: "none", width: 66 }}>
+                <span style={{ width: 64, height: 64, borderRadius: 999, background: `conic-gradient(var(--gold) 0 ${((c.gunas ?? 0) / 36) * 360}deg, var(--track) ${((c.gunas ?? 0) / 36) * 360}deg 360deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Avatar name={c.first_name} photo={c.photos[0]} size={56} style={{ border: "2px solid #fff", fontSize: 22 }} />
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700 }}>{c.first_name}</span>
+                <span style={{ marginTop: -6, fontSize: 11, color: "var(--gold)", fontWeight: 700 }}>{c.gunas != null ? `${c.gunas}/36` : "…"}</span>
+              </Link>
+            ))}
+          </div>
+        ) : <Link href="/discover" className="small">No new people right now. Widen your filters on Discover.</Link>}
+      </section>
+      <Link href="/kick" aria-label="Today's love weather" className="rowlink">
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-night font-serif text-lg font-[560] text-white">{vibe ?? "…"}</span>
+        <span className="t"><strong>{k?.teaser.love_weather ?? "Your Kick is being written"}</strong><span>Love weather {vibe != null ? `${vibe}/10` : ""}<Info cls="tip-r" text="Your love energy today, 1 to 10, from today's Moon and your birth star (Tara bala)." /> · {k?.teaser.line ?? "It arrives early every morning."}</span></span>
+        <Chevron />
+      </Link>
       <Link href="/check" className="rowlink">
         <span style={{ width: 40, height: 40, flex: "none", borderRadius: 999, background: "#F3EEFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E0457B" strokeWidth="2" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg></span>
-        <span className="t"><strong>Got a crush outside the app?</strong><span>Check your Jodi Score with anyone · {price(prices, "check_anyone", 29)} cr</span></span>
+        <span className="t"><strong>Got a crush outside the app?</strong><span>See how your Moon signs get along, then invite them</span></span>
         <Chevron />
       </Link>
+      {home.feature && (
+        <Link href={home.feature.link || "/menu"} style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 16px", borderRadius: 20, background: "var(--ink)", color: "#fff", textDecoration: "none" }}>
+          <span style={{ width: 42, height: 42, flex: "none", borderRadius: 14, background: "var(--saffron)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E1838" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
+          <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "#FFD98A" }}>DAY {home.feature.day} · NEW FOR YOU</span>
+            <strong style={{ fontSize: 15 }}>{home.feature.title}</strong>
+            <span style={{ fontSize: 12, color: "#C9BDEB" }}>{home.feature.body}</span>
+          </span>
+          <Chevron color="#fff" />
+        </Link>
+      )}
+
+
       </div></div>
       <LivePopup />
     </div>

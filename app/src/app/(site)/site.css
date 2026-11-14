@@ -5,7 +5,7 @@
   --night: #1C1442; --night-2: #2A1E5C; --night-line: rgba(203, 191, 245, .18);
   --rani: #E8457A; --rani-ink: #B0245A; --marigold: #FFB020; --marigold-ink: #8A4300;
   --sandstone: #F7DED3; --paper: #FFF7F3; --lilac: #CBBFF5;
-  --display: Fraunces, Georgia, serif; --deva: "Tiro Devanagari Hindi", Fraunces, serif;
+  --display: "Fraunces Variable", Fraunces, Georgia, serif; --deva: "Tiro Devanagari Hindi", Fraunces, serif;
   min-height: 100dvh; display: flex; flex-direction: column; background: var(--paper); color: var(--ink);
 }
 .site .wrap { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 24px; }

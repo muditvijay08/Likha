@@ -39,8 +39,8 @@ await page.goto(`${BASE}/home`);
 ok(await seen(page.getByText("Hey Aarav")), "Home greets Aarav");
 ok(await seen(page.getByText("Demo mode · sample profiles, not real people")), "Demo mode is labelled on every app screen");
 ok(await seen(page.getByText("Venus warms the 7th from your Moon")), "Love weather headline from the Kick teaser");
-ok(await seen(page.getByText("Your day in the stars")) && await seen(page.getByText("Rahu Kaal, skip big moves")), "Day timeline drawn from sunrise, horas and Rahu Kaal");
-ok(await seen(page.getByRole("link", { name: /Ishita\s*92%/ })), "Top picks ranked by Jodi Score (Ishita 92%, from the real engine)");
+ok(await seen(page.getByText("Your day in the stars")) && await seen(page.getByText(/^Rahu Kaal/).first()), "Day timeline drawn from sunrise, horas and Rahu Kaal");
+ok(await seen(page.getByRole("link", { name: "Today's best match: Ishita" })) && await seen(page.getByText("Jodi Score 92")), "Best match first on Home (Ishita, Jodi 92 from the real engine)");
 ok(await seen(page.getByText("people like you")) && (await page.locator("text=people like you").locator("..").textContent()).includes("3"), "3 people like you");
 ok(await credits() === 70, "Wallet shows the 70 welcome credits");
 await shot("01-home");
@@ -76,6 +76,7 @@ await page.waitForURL("**/match/**");
 ok(await seen(page.getByText("You both said yes.")), "Like on someone who liked you: it's a match");
 ok(await seen(page.getByText("A good time to say hi", { exact: false })) && !(await page.locator(".app-body").getByText(/credits/).count()), "Match screen: a free Golden Hour and no prices");
 ok(await seen(page.getByText(/of 36 Gunas/)), "Match screen: Gunas first");
+await page.waitForTimeout(1200);                              // let the match animation settle
 await shot("05-match");
 ok(await seen(page.getByRole("link", { name: "Say hi to Sanya" })), "Say hi button");
 
