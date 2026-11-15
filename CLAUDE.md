@@ -21,7 +21,7 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 
 ## Rules (do not break)
 1. No fake profiles, testimonials, popups or false claims. Demo accounts are flagged `is_demo` and never mix with real users.
-2. Member-facing copy never says "AI". Saathi says "virtual companion, not a real person". Images say "imagined, not a real photo".
+2. Member-facing copy never says "AI". Saathi says "virtual companion, not a real person". Images say "imagined, not a real photo": the label PNG is `app/public/imagined-label.png` (same bytes as `_shared/imagined_label.ts`, a test checks), fetched by the functions; no label, no picture stored.
 3. No guarantees ("100% accurate", "guaranteed match"), no predictions of death/illness/divorce, no paid remedies, no caste. Manglik is shown, never a filter.
 4. Consent boxes start unticked (DPDP). Birth details lock once saved; corrections only through support.
 5. Every credit change goes through `private.add_credits` / `consume_credits` with an idempotency key. Never update balances directly.
