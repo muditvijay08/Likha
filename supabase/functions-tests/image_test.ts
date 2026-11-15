@@ -1,6 +1,7 @@
 import { ok as assert, deepStrictEqual as assertEquals } from "node:assert";
 import { Jimp } from "npm:jimp@1.6.0";
-import { generateImage, geminiImage, imaginePrompt, stampImagined } from "../functions/_shared/image.ts";
+import { _useLabel, generateImage, geminiImage, imaginePrompt, stampImagined } from "../functions/_shared/image.ts";
+import { IMAGINED_LABEL_PNG } from "../functions/_shared/imagined_label.ts";
 import { _useKeys } from "../functions/_shared/keys.ts";
 
 Deno.test("prompts are painterly, respectful and per scene", () => {
@@ -10,6 +11,7 @@ Deno.test("prompts are painterly, respectful and per scene", () => {
 });
 
 Deno.test("the Imagined label is burned into the picture", async () => {
+  _useLabel(Uint8Array.from(atob(IMAGINED_LABEL_PNG), (c) => c.charCodeAt(0)));
   const src = new Jimp({ width: 1024, height: 1024, color: 0x7e5befff });
   const out = await stampImagined(new Uint8Array(await src.getBuffer("image/png")));
   const img = await Jimp.read(out.buffer as ArrayBuffer);
@@ -74,4 +76,22 @@ Deno.test("unknown providers and missing keys fail clearly", async () => {
   _useKeys({});
   await generateImage("anthropic", "x", "p", refs).then(() => assert(false), (e) => assert(e.message.includes("can't make pictures")));
   await generateImage("fal", "x", "p", refs).then(() => assert(false), (e) => assert(e.message.includes("FAL_KEY is not set")));
+});
+
+Deno.test("the app serves the same label bytes", async () => {
+  const served = await Deno.readFile(new URL("../../app/public/imagined-label.png", import.meta.url));
+  assertEquals(served, Uint8Array.from(atob(IMAGINED_LABEL_PNG), (c) => c.charCodeAt(0)));
+});
+
+Deno.test("no label, no picture", async () => {
+  _useLabel(null);
+  _useKeys({ LIKHA_SITE: "not-a-site" });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = () => Promise.reject(new Error("offline"));
+  try {
+    const src = new Jimp({ width: 64, height: 64, color: 0xffffffff });
+    let failed = false;
+    try { await stampImagined(new Uint8Array(await src.getBuffer("image/png"))); } catch { failed = true; }
+    assert(failed, "stampImagined must refuse without the label");
+  } finally { globalThis.fetch = realFetch; }
 });

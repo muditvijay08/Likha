@@ -1,8 +1,24 @@
 // Imagine Us: two painterly pictures of a couple (both agreed), from their main photos. The model is picked in
 // Admin > AI models (ai_features.imagine): Google, OpenAI or any fal.ai image-edit endpoint. Every picture gets "Imagined · Likha · not a real photo" burned in before it is stored.
 import { Jimp } from "npm:jimp@1.6.0";
-import { IMAGINED_LABEL_PNG } from "./imagined_label.ts";
-import { mustKey } from "./keys.ts";
+import { key, mustKey } from "./keys.ts";
+
+// The label PNG is served by the app (app/public/imagined-label.png, same bytes as imagined_label.ts), so the deployed
+// function stays small. If it can't be fetched, no picture is stored: an image never leaves without its label.
+let labelCache: Uint8Array | null = null;
+export function _useLabel(png: Uint8Array | null) { labelCache = png; }
+async function labelPng(): Promise<Uint8Array> {
+  if (labelCache) return labelCache;
+  for (const site of [key("LIKHA_SITE"), "https://likha.in", "https://likha-pink.vercel.app"]) {
+    if (!site || !site.startsWith("https://")) continue;
+    try {
+      const r = await fetch(`${site.replace(/\/$/, "")}/imagined-label.png`, { signal: AbortSignal.timeout(10_000) });
+      const bytes = new Uint8Array(await r.arrayBuffer());
+      if (r.ok && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return (labelCache = bytes);   // "\x89PNG"
+    } catch { /* try the next site */ }
+  }
+  throw new Error("imagined label not reachable: picture not stored");
+}
 
 export const SCENES: Record<string, string> = {
   travel: "on a trip together: a hill-station viewpoint at golden hour, casual travel clothes",
@@ -82,7 +98,8 @@ export async function falImage(model: string, prompt: string, refs: Ref[], fetch
 /** Burns the "Imagined" label into the bottom-left corner and returns a JPEG. */
 export async function stampImagined(bytes: Uint8Array): Promise<Uint8Array> {
   const img = await Jimp.read(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer);
-  const label = await Jimp.read(Uint8Array.from(atob(IMAGINED_LABEL_PNG), (c) => c.charCodeAt(0)).buffer);
+  const png = await labelPng();
+  const label = await Jimp.read(png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength) as ArrayBuffer);
   const scale = Math.max(0.5, Math.min(2, img.width / 1024));
   if (scale !== 1) label.resize({ w: Math.round(label.width * scale) });
   const m = Math.round(20 * scale);
