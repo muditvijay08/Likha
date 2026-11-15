@@ -10096,7 +10096,7 @@ end $$;
 
 
 -- The app no longer changes colour by gender (one look for everyone), so Admin shows this setting as unused.
-create or replace function private.unused_settings() returns text[] language sql immutable as $$
+create or replace function private.unused_settings() returns text[] language sql immutable set search_path = public as $$
   select array['booth_bonus','scam_hold_score','gender_theme']
 $$;
 
