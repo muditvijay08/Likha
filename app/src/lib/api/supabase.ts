@@ -3,7 +3,7 @@ import type {
   Announcement, BoostState, ConsentNeeded, ConsentReq, CoupleState, CrushLanding, CupidState, DueCheckin, GiftLanding, Invites, SevenState, Story, TravelCity, TravelState, Universe,
   AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
-  ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
+  ChatData, GuruState, Msg, SaathiChar, SaathiMemory, SaathiPrefs, SaathiReply, SaathiState,
   CityCounter, WaitlistJoin, WaitlistResult,
   Api, Basics, Birth, Card, City, CityQueue, Filters, FamilyPage, FamilyShares, Gender, Goal, MaritalStatus, MarriageTimeline, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
@@ -431,6 +431,11 @@ export class SupabaseApi implements Api {
     return data as SaathiReply;
   }
   async saathiTopup() { return this.rpc<number>("saathi_topup", {}, "Top-up"); }
+  async saathiPrefs(p: SaathiPrefs) { await this.rpc("saathi_prefs", { p }, "Saathi settings"); }
+  async saathiMemories() { return this.rpc<SaathiMemory[]>("saathi_memories", {}, "Memories"); }
+  async saathiMemorySave(body: string, id: number | null = null, source: "approved" | "added" = "approved") { await this.rpc("saathi_memory_save", { p_body: body, p_id: id, p_source: source }, "Memory"); }
+  async saathiMemoryDelete(id: number | null = null) { await this.rpc("saathi_memory_delete", { p_id: id }, "Memory"); }
+  async saathiClearChat() { await this.rpc("saathi_clear_chat", {}, "Clear chat"); }
 
   // ---------------------------------------------------------------- wallet and payments
   async wallet() { return this.rpc<Wallet>("wallet", {}, "Wallet"); }

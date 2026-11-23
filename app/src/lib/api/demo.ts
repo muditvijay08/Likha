@@ -5,7 +5,7 @@ import type {
   TravelCity, TravelState, Universe,
   AccountState, DateShare, History, Invoice, MyProfile, Notice, NotifPrefs, ProfilePatch, ReportReason, Ticket, Toolkit, TrustedContact,
   CrushCheck, GiftItem, MaasiState, PaymentStatus, ReadingFull, ReadingItem, UpiApp, Wallet,
-  ChatData, GuruState, Msg, SaathiChar, SaathiReply, SaathiState,
+  ChatData, GuruState, Msg, SaathiChar, SaathiMemory, SaathiPrefs, SaathiReply, SaathiState,
   CityCounter, WaitlistJoin, WaitlistResult,
   Api, Basics, Birth, Card, City, CityQueue, Filters, FamilyPage, FamilyShareStatus, FamilyShares, Gender, Goal, MaritalStatus, MarriageTimeline, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
@@ -46,7 +46,7 @@ interface Db {
   nprefs?: NotifPrefs; contacts?: TrustedContact[]; blocked?: { id: string; first_name: string; since: string }[]; shares?: DateShare[];
   sos?: { id: string; token: string; share_until: string; lat: number | null; lng: number | null; updated_at: string }[]; reads?: number;
   tickets?: Ticket[]; grievances?: number; tried?: string[]; deleted?: boolean; otpSent?: boolean; reportsMade?: number;
-  ledger?: { delta: number; kind: string; reason: string; at: string }[]; saathiMsgs?: SaathiState["history"]; saathiUsed?: { day: string; n: number; extra: number };
+  ledger?: { delta: number; kind: string; reason: string; at: string }[]; saathiMsgs?: SaathiState["history"]; saathiPrefs?: SaathiPrefs & { romance_ack?: boolean; memory_ack?: boolean }; saathiMemories?: SaathiMemory[]; saathiUsed?: { day: string; n: number; extra: number };
   // couples and growth
   couples?: Record<string, { otherAt: number; ended?: boolean }>; seven?: Record<string, { reading: string; mine: Record<string, string> }>;
   moments?: Record<string, StoryEvent[]>; checked?: string[]; boostAt?: { id: string; starts: number; ends: number };
@@ -441,21 +441,57 @@ export class DemoApi implements Api {
     return { available: true, setup: !!db.saathi, character: db.saathi?.character ?? "chandni", styles: db.saathi?.styles ?? ["friendly", "hinglish"],
              left: this.saathiLeft(db), free_per_day: 30, topup_messages: 50, paused: !!m,
              pause_match: m ? { match_id: m.id, first_name: sampleProfile(m.other)?.first_name ?? "" } : null,
-             top_today: this.visible(db).filter((c) => (c.jodi_score ?? 0) >= 90).length, history: db.saathiMsgs ?? [] };
+             top_today: this.visible(db).filter((c) => (c.jodi_score ?? 0) >= 90).length, history: db.saathiMsgs ?? [],
+             mode: db.saathiPrefs?.mode ?? "companion", romance: db.saathiPrefs?.romance ?? "off", romance_ack: !!db.saathiPrefs?.romance_ack,
+             tone: db.saathiPrefs?.tone ?? { caring: 30, playful: 40, expressive: 60, detail: "short" }, language: db.saathiPrefs?.language ?? "hinglish",
+             memory_on: !!db.saathiPrefs?.memory_on, memory_count: (db.saathiMemories ?? []).length };
   }
+  async saathiPrefs(p: SaathiPrefs) {
+    await wait(120);
+    const cur = this.load().saathiPrefs ?? {};
+    const romance = p.romance ?? cur.romance ?? "off";
+    if ((romance === "flirty" || romance === "romantic") && !cur.romance_ack && !p.romance_ack) throw new Error("Please confirm you understand first.");
+    const memOn = p.memory_on ?? cur.memory_on ?? false;
+    if (memOn && !cur.memory_on && !cur.memory_ack && !p.memory_ack) throw new Error("Please confirm memory first.");
+    this.edit((d) => {
+      d.saathiPrefs = { ...cur, ...p, romance, memory_on: memOn, romance_ack: cur.romance_ack || p.romance_ack || false, memory_ack: cur.memory_ack || p.memory_ack || false };
+      if (p.character) d.saathi = { character: p.character, styles: d.saathi?.styles ?? ["hinglish"] };
+    });
+  }
+  async saathiMemories(): Promise<SaathiMemory[]> { return [...(this.load().saathiMemories ?? [])].reverse(); }
+  async saathiMemorySave(body: string, id: number | null = null, source: "approved" | "added" = "approved") {
+    const db = this.load(); const b = body.trim();
+    if (!db.saathiPrefs?.memory_on) throw new Error("Memory is off.");
+    if (b.length < 3 || b.length > 160) throw new Error("Keep it between 3 and 160 characters.");
+    this.edit((d) => {
+      const list = d.saathiMemories ?? [];
+      if (id != null) d.saathiMemories = list.map((m) => (m.id === id ? { ...m, body: b } : m));
+      else d.saathiMemories = [...list, { id: Date.now(), body: b, source, created_at: new Date().toISOString() }];
+    });
+  }
+  async saathiMemoryDelete(id: number | null = null) { this.edit((d) => { d.saathiMemories = id == null ? [] : (d.saathiMemories ?? []).filter((m) => m.id !== id); }); }
+  async saathiClearChat() { this.edit((d) => { d.saathiMsgs = []; }); }
   async saathiSetup(character: SaathiChar, styles: string[]) { this.edit((d) => { d.saathi = { character, styles }; }); }
   async saathiSend(_c: SaathiChar, text: string): Promise<SaathiReply> {
     const db = this.load();
     const crisis = CRISIS.test(text);          // answered first, never counted against the daily limit
     if (!crisis && this.saathiLeft(db) <= 0) return { reply: null, topup: true, message: "That's today's free chats. Top up for 50 more." };
-    const reply = crisis ? CRISIS_REPLY : "I hear you. Swiping can be tiring. Want to practise a reply to your newest match together? (Sample reply in demo mode.)";
+    const calm = (db.saathiMsgs ?? []).some((m) => m.body === CRISIS_REPLY);      // after a crisis: no romance, no games
+    const pr = calm ? { ...(db.saathiPrefs ?? {}), romance: "off" as const, mode: "companion" as const } : (db.saathiPrefs ?? {});
+    const opener = pr.romance === "romantic" ? "Aww, jaan. " : pr.romance === "flirty" ? "Look at you, opening up! " : "";
+    const body = pr.mode === "advisor" ? "Good question. Here's what I'd do: keep it short, ask about something on their profile, and suggest chai this week."
+      : pr.mode === "coach" ? "Let's practise. You send your first line to your newest match, I'll play them, then we tweak it."
+      : pr.mode === "fun" ? "Quick game: two truths and a lie about your perfect Sunday. Go!"
+      : "I hear you. Swiping can be tiring. Want to practise a reply to your newest match together?";
+    const reply = crisis ? CRISIS_REPLY : `${opener}${body} (Sample reply in demo mode.)`;
+    const remember = !crisis && pr.memory_on && /\b(date|interview|exam|trip)\b/i.test(text) ? `Has a ${text.match(/\b(date|interview|exam|trip)\b/i)![1].toLowerCase()} coming up` : null;
     this.edit((d) => {
       const u = d.saathiUsed?.day === today() ? d.saathiUsed : { day: today(), n: 0, extra: 0 };
       if (!crisis) d.saathiUsed = { ...u, n: u.n + 1 };
       d.saathiMsgs = [...(d.saathiMsgs ?? []), { role: "user", body: text }, { role: "assistant", body: reply }];
     });
     await wait(600);
-    return { reply, crisis, left: this.saathiLeft(this.load()) };
+    return { reply, crisis, left: this.saathiLeft(this.load()), remember };
   }
   async saathiTopup() {
     this.spend("saathi_50");

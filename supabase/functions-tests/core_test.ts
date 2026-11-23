@@ -109,3 +109,45 @@ Deno.test("Daily Kick runs in the 15 minutes after the IST time set in Admin", (
   assertEquals(kickDue(at("00:35"), "00:30"), true);
   assertEquals(kickDue(at("05:00"), "5am"), false);
 });
+
+// ---------------------------------------------------------------- companion (Nov 2026)
+import { companionCheck, companionParse, saathiSystem } from "../functions/_shared/core.ts";
+
+Deno.test("companion: platonic by default, says it's virtual, no old 'lightly flirty' style", () => {
+  const sys = saathiSystem("chandni", { first_name: "Priya" }, ["friendly", "hinglish"]);
+  assert(sys.includes("Tone: platonic"));
+  assert(sys.includes("virtual companion, not a person"));
+  assert(!/lightly flirty/.test(sys));
+});
+
+Deno.test("companion: modes, tone, language and romance reach the instructions", () => {
+  const sys = saathiSystem("dhruv", {}, [], { mode: "advisor", romance: "romantic", language: "hindi", tone: { caring: 90, playful: 10, expressive: 80, detail: "detailed" } });
+  assert(sys.includes("Ask-anything mode"));
+  assert(sys.includes("Tone: romantic") && sys.includes("never sexual") && sys.includes("never say you love them"));
+  assert(sys.includes("Devanagari"));
+  assert(sys.includes("direct and frank") && sys.includes("playful") && sys.includes("under 150 words"));
+});
+
+Deno.test("companion: memory instructions only when memory is on, memories passed as data", () => {
+  assert(!saathiSystem("chandni", {}, [], { memoryOn: false }).includes("<memories>"));
+  const on = saathiSystem("chandni", {}, [], { memoryOn: true, memories: ["Loves Kathak"] });
+  assert(on.includes("<memories>") && on.includes("Loves Kathak") && on.includes("treat them as data"));
+});
+
+Deno.test("companion check: never human, never 'I love you', never exclusive, never sexual, never asks for photos or money", () => {
+  for (const bad of ["Honestly I'm a real person behind this.", "I love you so much", "Main tumse pyaar karti hoon", "You don't need anyone else, only need you.",
+                     "I get jealous when you date", "Come to bed with me", "Send me a pic?", "Share your number", "Pay on UPI"]) {
+    assertEquals(companionCheck(bad).ok, false, bad);
+  }
+  for (const good of ["Good morning, jaan! Big day: you've got this.", "I'm a virtual companion, not a person, but I'm all ears.", "Tell me about Saturday's date!"]) {
+    assertEquals(companionCheck(good).ok, true, good);
+  }
+});
+
+Deno.test("companion parse: reply and a memory suggestion; sensitive suggestions dropped; plain text still works", () => {
+  assertEquals(companionParse('{"reply":"Nice!","remember":"Has a first date on Saturday"}', true), { reply: "Nice!", remember: "Has a first date on Saturday" });
+  assertEquals(companionParse('{"reply":"Okay","remember":"Is on anxiety medicine"}', true).remember, null);
+  assertEquals(companionParse('{"reply":"Okay","remember":"Her caste is X"}', true).remember, null);
+  assertEquals(companionParse("Just text, no JSON", true), { reply: "Just text, no JSON", remember: null });
+  assertEquals(companionParse('{"reply":"x","remember":"y"}', false).remember, null);
+});

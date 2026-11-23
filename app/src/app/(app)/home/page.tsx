@@ -80,7 +80,7 @@ export default function Home() {
         <p className="sub" style={{ marginTop: 10 }}>{c.line}. Dating nerves, a text you can&apos;t word, or just your day.</p>
         <div className="stack" style={{ gap: 10, marginTop: 20 }}>
           <Link href="/saathi" className="btn">Talk to {c.name}</Link>
-          <Link href="/kick" className="btn outline">Your day in the stars</Link>
+          <Link href="/saathi?mode=advisor" className="btn outline">Ask anything</Link>
         </div>
       </section>
 
@@ -95,11 +95,13 @@ export default function Home() {
           <Link href="/me/values" className="list-row"><span className="num">{lifeLeft}</span>
             <span className="t"><strong>Life and values</strong><span>Quick questions so match reasons go beyond the kundli</span></span><Chevron /></Link>
         )}
-        <Link href="/saathi" className="list-row"><span className="num">01</span>
+        <Link href="/kick" className="list-row"><span className="num">01</span>
+          <span className="t"><strong>Your day in the stars</strong><span>Love weather, good windows, Rahu Kaal</span></span><Chevron /></Link>
+        <Link href="/saathi?mode=coach" className="list-row"><span className="num">02</span>
           <span className="t"><strong>Relationship coach</strong><span>Practise a first message or a tricky talk</span></span><Chevron /></Link>
-        <Link href="/readings" className="list-row"><span className="num">02</span>
+        <Link href="/readings" className="list-row"><span className="num">03</span>
           <span className="t"><strong>Who suits me?</strong><span>The partner your chart leans towards</span></span><Chevron /></Link>
-        <Link href="/golden" className="list-row"><span className="num">03</span>
+        <Link href="/golden" className="list-row"><span className="num">04</span>
           <span className="t"><strong>Golden Hours</strong><span>When your stars and theirs line up</span></span><Chevron /></Link>
       </section>
     </div>

@@ -44,7 +44,8 @@ Deno.test("key tests: one read-only call each, 401 means the key was refused", a
   assert(seen.includes("POST https://kundli.likha.in/v1/chart"));
 });
 
-Deno.test("internal calls need the full shared secret (32+ characters), compared in constant time", async () => {
+// importing db.ts creates the Supabase client, whose auth refresh timer outlives the test: not ours to clear
+Deno.test({ name: "internal calls need the full shared secret (32+ characters), compared in constant time", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   Deno.env.set("SUPABASE_URL", "https://x.supabase.co"); Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test"); Deno.env.set("SUPABASE_ANON_KEY", "test");
   const { isInternal } = await import("../functions/_shared/db.ts");
   const secret = "s".repeat(40);
@@ -56,4 +57,4 @@ Deno.test("internal calls need the full shared secret (32+ characters), compared
   Deno.env.set("LIKHA_INTERNAL_SECRET", "short");
   assertEquals(isInternal(req("short")), false);
   Deno.env.delete("LIKHA_INTERNAL_SECRET");
-});
+} });

@@ -179,6 +179,7 @@ export type SaathiChar = "chandni" | "dhruv";
 export interface SaathiState {
   available: boolean; setup: boolean; character: SaathiChar; styles: string[]; left: number; free_per_day: number; topup_messages: number;
   paused: boolean; pause_match: { match_id: string; first_name: string } | null; top_today: number;
+  mode?: SaathiMode; romance?: Romance; romance_ack?: boolean; tone?: SaathiTone; language?: "english" | "hinglish" | "hindi"; memory_on?: boolean; memory_count?: number;
   history: { role: "user" | "assistant"; body: string; created_at?: string }[];
 }
 // ---------------------------------------------------------------- wallet, payments, store
@@ -237,7 +238,14 @@ export interface AccountState { status: string; selfie_status: string; paused: b
   action: { id: string; action: string; reason: string; until: string | null; at: string; appealed: boolean; appeal_status: string | null; can_appeal: boolean } | null }
 export interface Toolkit { reward: number; items: { key: string; title: string; body: string; link: string; tried: boolean }[] }
 
-export interface SaathiReply { reply: string | null; left?: number; topup?: boolean; crisis?: boolean; message?: string }
+export interface SaathiReply { reply: string | null; left?: number; topup?: boolean; crisis?: boolean; message?: string;
+  /** a memory the companion suggests keeping; stored only if the member taps Save */ remember?: string | null }
+export type SaathiMode = "companion" | "advisor" | "fun" | "coach";
+export type Romance = "off" | "warm" | "flirty" | "romantic";
+export interface SaathiTone { caring: number; playful: number; expressive: number; detail: "short" | "detailed" }
+export interface SaathiPrefs { character?: SaathiChar; mode?: SaathiMode; romance?: Romance; romance_ack?: boolean; tone?: SaathiTone;
+  language?: "english" | "hinglish" | "hindi"; memory_on?: boolean; memory_ack?: boolean }
+export interface SaathiMemory { id: number; body: string; source: "approved" | "added"; created_at: string }
 
 // ---------------------------------------------------------------- batch 5: couples and growth
 export type CoupleKind = "our_stars" | "our_alignment" | "imagine_us" | "seven_questions";
@@ -338,6 +346,11 @@ export interface Api {
   saathiSetup(c: SaathiChar, styles: string[]): Promise<void>;
   saathiSend(c: SaathiChar, text: string): Promise<SaathiReply>;
   saathiTopup(): Promise<number>;
+  saathiPrefs(p: SaathiPrefs): Promise<void>;
+  saathiMemories(): Promise<SaathiMemory[]>;
+  saathiMemorySave(body: string, id?: number | null, source?: "approved" | "added"): Promise<void>;
+  saathiMemoryDelete(id?: number | null): Promise<void>;
+  saathiClearChat(): Promise<void>;
 
   wallet(): Promise<Wallet>;
   /** Opens payment (Razorpay Checkout, UPI first) and resolves with the order id once the member has paid or left. */

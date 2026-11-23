@@ -14,6 +14,9 @@ import {
   allowedFrom, CAP_MESSAGES, cleanName, CRISIS_REPLY, estimateTokens, guruSystem, isCrisis, numberCheck, openerPrompt,
   pairFacts, parseJson, personFacts, readableText, readingPrompt, saathiSystem, sevenText, styleCheck, NAKSHATRAS, SIGNS,
   lengthCheck,
+  companionCheck,
+  companionParse,
+  type CompanionOpts,
 } from "../_shared/core.ts";
 import { admin, asUser, isInternal, json, rpc, preflight } from "../_shared/db.ts";
 import { generateImage, imaginePrompt, stampImagined, type Ref } from "../_shared/image.ts";
@@ -194,13 +197,19 @@ async function saathi(userId: string, client: any, character: "chandni" | "dhruv
   const facts = ctx.summary ? { first_name: cleanName(ctx.first_name), lagna: ctx.summary.lagna, moon_sign: ctx.summary.moon_sign,
     nakshatra: ctx.summary.nakshatra, dasha_now: ctx.summary.current_dasha } : { first_name: cleanName(ctx.first_name) };
   const history = (ctx.history as any[]).map((h) => ({ role: h.role, content: h.role === "user" ? `<user_text>${h.body}</user_text>` : h.body }));
+  // after a crisis in the last 24 hours: no romance, no games, just a steady companion
+  const calm = !!ctx.recent_crisis;
+  const opts: CompanionOpts = { mode: calm ? "companion" : ctx.mode, romance: calm ? "off" : ctx.romance, tone: ctx.tone, language: ctx.language,
+    memoryOn: !!ctx.memory_on, memories: ctx.memories ?? [] };
   try {
-    const { text } = await run(userId, "saathi", { system: saathiSystem(character, facts, ctx.styles ?? []), messages: history, cacheSystem: true },
-      { check: (t) => styleCheck(t) });
-    const s = styleCheck(text);
-    const reply = s.ok ? text.trim() : "Hmm, let me put that better. Tell me a bit more about what's on your mind?";
+    const { text } = await run(userId, "saathi", { system: saathiSystem(character, facts, ctx.styles ?? [], opts), messages: history, cacheSystem: true },
+      { check: (t) => companionCheck(companionParse(t, opts.memoryOn!).reply) });
+    const parsed = companionParse(text, opts.memoryOn!);
+    const s = companionCheck(parsed.reply);
+    const reply = s.ok ? parsed.reply : "Hmm, let me put that better. Tell me a bit more about what's on your mind?";
     await rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "assistant", p_body: reply, p_flagged: !s.ok });
-    return json({ reply, left: left - 1 });
+    // a memory is only a suggestion: the member approves it in the chat before anything is stored
+    return json({ reply, left: left - 1, remember: s.ok ? parsed.remember : null });
   } catch (e) {
     const reason = (e as any).capped as string | undefined;
     return json({ reply: null, capped: reason ?? "error", message: CAP_MESSAGES[reason ?? ""] ?? "Saathi is offline for a moment." }, reason ? 429 : 503);

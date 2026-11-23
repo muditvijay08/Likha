@@ -1,17 +1,20 @@
 "use client";
-// Saathi, the virtual companion: E11 setup, A1 chat, E12 stepping back when a real conversation is going well.
+// Saathi, the virtual companion: E11 setup, A1 chat (with modes and approved memories), E12 stepping back when a real conversation is going well.
+// Settings (personality, language, romance, memory) live at /saathi/settings, the Memory Centre at /saathi/memory.
 // Always labelled virtual. Crisis messages never reach the writer; they get a fixed reply with Tele-MANAS 14416.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BackButton, ErrorNote, Primary, useAction } from "@/components/ui";
 import { price, useApp, useTried } from "@/components/app";
-import { api, type SaathiChar, type SaathiState } from "@/lib/api";
+import { api, type SaathiChar, type SaathiMode, type SaathiState } from "@/lib/api";
 import { useFlow } from "@/lib/flow";
+import { MODES } from "@/lib/companion";
 
 const CHARS: { v: SaathiChar; name: string; line: string }[] = [
   { v: "chandni", name: "Chandni", line: "Warm, playful, remembers your day" }, { v: "dhruv", name: "Dhruv", line: "Calm, witty, steady advice" }];
-const STYLES = [["friendly", "Friendly and flirty"], ["coach", "Dating coach"], ["funny", "Funny"], ["hinglish", "Hinglish"], ["english", "English"]] as const;
+const LANGS = [["hinglish", "Hinglish"], ["english", "English"], ["hindi", "Hindi"]] as const;
+
 const Sparkle = ({ size = 42 }: { size?: number }) => (
   <span style={{ width: size, height: size, flex: "none", borderRadius: 999, background: "#FFEDDE", display: "flex", alignItems: "center", justifyContent: "center" }}>
     <svg width={size / 2} height={size / 2} viewBox="0 0 24 24" fill="none" stroke="#3A3632" strokeWidth="2" aria-hidden="true"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z" /></svg></span>
@@ -23,7 +26,8 @@ export default function Saathi() {
   const [s, setS] = useState<SaathiState | null>(null);
   const [view, setView] = useState<"setup" | "paused" | "chat" | null>(null);
   const [char, setChar] = useState<SaathiChar>("chandni");
-  const [styles, setStyles] = useState<string[]>(["friendly", "hinglish"]);
+  const [lang, setLang] = useState<"english" | "hinglish" | "hindi">("hinglish");
+  const [remember, setRemember] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
   const end = useRef<HTMLDivElement | null>(null);
@@ -40,8 +44,10 @@ export default function Saathi() {
     // /saathi?char=dhruv (from the empty Discover screen) picks that companion; choosing the other one opens setup to switch.
     const want = new URLSearchParams(window.location.search).get("char") as SaathiChar | null;
     const picked = want && CHARS.some((c) => c.v === want) ? want : null;
-    api().saathi().then((x) => {
-      setS(x); setChar(picked ?? x.character); setStyles(x.styles);
+    const wantMode = new URLSearchParams(window.location.search).get("mode") as SaathiMode | null;
+    api().saathi().then(async (x) => {
+      if (wantMode && MODES.some((m) => m[0] === wantMode) && x.setup && wantMode !== x.mode) { await api().saathiPrefs({ mode: wantMode }).catch(() => {}); x = { ...x, mode: wantMode }; }
+      setS(x); setChar(picked ?? x.character); setLang(x.language ?? (x.styles.includes("english") ? "english" : "hinglish"));
       setView(!x.setup || (picked && picked !== x.character) ? "setup" : x.paused ? "paused" : "chat");
     }).catch(() => setView("chat"));
   }, []);
@@ -49,8 +55,9 @@ export default function Saathi() {
   const name = CHARS.find((c) => c.v === (s?.setup ? s.character : char))!.name;
 
   const save = () => run(async () => {
-    await api().saathiSetup(char, styles);
-    setS((x) => x && { ...x, setup: true, character: char, styles }); setView("chat");
+    await api().saathiSetup(char, [lang === "english" ? "english" : "hinglish"]);
+    await api().saathiPrefs({ character: char, language: lang });
+    setS((x) => x && { ...x, setup: true, character: char, language: lang }); setView("chat");
   });
   const send = (msg: string) => run(async () => {
     if (!msg.trim() || !s) return;
@@ -62,12 +69,15 @@ export default function Saathi() {
       const r = await api().saathiSend(s.character, msg.trim());
       if (r.reply) {
         setS((x) => x && { ...x, left: r.left ?? x.left, history: [...x.history, { role: "assistant", body: r.reply! }] });
+        setRemember(r.remember ?? null);
         if (r.crisis) setCrisis(true);            // crisis: no rewards, no promos, helpline stays pinned
         else if (!crisis) tried("saathi", "Saathi");
       }
       else { setS((x) => x && { ...x, left: r.topup ? 0 : x.left }); setError(r.message ?? "Saathi is offline for a moment."); }
     } finally { setTyping(false); }
   });
+  const setMode = (m: SaathiMode) => run(async () => { await api().saathiPrefs({ mode: m }); setS((x) => x && { ...x, mode: m }); });
+  const keep = () => run(async () => { if (remember) { await api().saathiMemorySave(remember); setRemember(null); setS((x) => x && { ...x, memory_count: (x.memory_count ?? 0) + 1 }); } });
   const topup = () => run(async () => { const left = await api().saathiTopup(); setS((x) => x && { ...x, left }); await reload(); });
 
   if (!s || !view) return <div className="app-body pad"><div className="skel" style={{ height: 400 }} /></div>;
@@ -88,17 +98,11 @@ export default function Saathi() {
         ))}
       </div>
       <div className="stack">
-        <span className="label">How should {CHARS.find((c) => c.v === char)!.name} talk with you?</span>
-        <div className="chips">
-          {STYLES.map(([v, l]) => (
-            <button key={v} type="button" className="chip sm" aria-pressed={styles.includes(v)} onClick={() => {
-              let n = styles.includes(v) ? styles.filter((x) => x !== v) : [...styles, v];
-              if (v === "hinglish" && !styles.includes(v)) n = n.filter((x) => x !== "english");
-              if (v === "english" && !styles.includes(v)) n = n.filter((x) => x !== "hinglish");
-              setStyles(n);
-            }}>{l}</button>
-          ))}
+        <span className="label">Which language?</span>
+        <div className="chips" role="radiogroup" aria-label="Language">
+          {LANGS.map(([v, l]) => <button key={v} type="button" role="radio" className="chip sm" aria-checked={lang === v} aria-pressed={lang === v} onClick={() => setLang(v)}>{l}</button>)}
         </div>
+        <span className="small">Personality, romance and memory: fine-tune any time in settings. Everything starts friendly and platonic.</span>
       </div>
       <section className="stack" style={{ padding: "14px 16px", borderRadius: 12, background: "#FFF8EF", gap: 6, fontSize: 13, lineHeight: 1.45 }}>
         <strong style={{ fontSize: 14 }}>{CHARS.find((c) => c.v === char)!.name}&apos;s promises</strong>
@@ -144,10 +148,19 @@ export default function Saathi() {
         <span className="stack" style={{ gap: 0, flex: 1 }}>
           <span className="row" style={{ gap: 6 }}><strong style={{ fontSize: 15 }}>{name}</strong><span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "var(--violet-soft)", color: "#3A3632" }}>Virtual</span></span>
           <span style={{ fontSize: 12, color: "var(--muted)" }}>Saathi · here till you find your person</span></span>
-        <button type="button" aria-label="Saathi settings" className="tip tip-r" data-tip="Change Saathi or style" onClick={() => setView("setup")}
-          style={{ width: 40, height: 40, borderRadius: 999, background: "#FFF8EF", border: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z" /></svg></button>
+        <Link href="/saathi/memory" aria-label="Memory Centre" className="tip tip-r" data-tip={s.memory_on ? `Memory on · ${s.memory_count ?? 0} kept` : "Memory is off"}
+          style={{ width: 40, height: 40, borderRadius: 999, background: "#FFF8EF", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ink)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M9 4a3 3 0 0 0-3 3v1a3 3 0 0 0-2 5 3 3 0 0 0 3 5h2V4zM15 4a3 3 0 0 1 3 3v1a3 3 0 0 1 2 5 3 3 0 0 1-3 5h-2V4z" /></svg></Link>
+        <Link href="/saathi/settings" aria-label="Saathi settings" className="tip tip-r" data-tip="Personality, romance, language"
+          style={{ width: 40, height: 40, borderRadius: 999, background: "#FFF8EF", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ink)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z" /></svg></Link>
       </header>
+      <div role="radiogroup" aria-label="Mode" className="mode-bar">
+        {MODES.map(([m, label, sub]) => (
+          <button key={m} type="button" role="radio" aria-checked={(s.mode ?? "companion") === m} disabled={busy} onClick={() => setMode(m)}>
+            <strong>{label}</strong><span>{sub}</span></button>
+        ))}
+      </div>
       {crisis && (
         <div role="note" style={{ margin: "12px 16px 0", padding: "12px 14px", borderRadius: 16, background: "var(--red-soft)", color: "var(--ink)", fontSize: 14, lineHeight: 1.45 }}>
           <strong>You deserve support from a real person.</strong> Tele-MANAS: <a href="tel:14416">14416</a> (free, 24×7, many languages). In danger right now? Call <a href="tel:112">112</a>.
@@ -179,6 +192,12 @@ export default function Saathi() {
           <div className="row" role="note" aria-label="Take a break" style={{ gap: 8, margin: "0 16px 10px", padding: "10px 12px", borderRadius: 12, background: "#FFEDDE", fontSize: 13 }}>
             <span style={{ flex: 1 }}>You&apos;ve been chatting with {name} for a while. Maybe a short break, or a hello to one of <Link href="/matches">your matches</Link>?</span>
             <button type="button" aria-label="Close" className="tip tip-r" data-tip="Close" onClick={() => setBreakClosed(true)} style={{ background: "none", border: 0, fontSize: 18 }}>×</button>
+          </div>)}
+        {remember && s.memory_on && (
+          <div className="row" role="note" aria-label="Memory suggestion" style={{ gap: 8, margin: "0 16px 10px", padding: "10px 12px", borderRadius: 12, background: "var(--ivory)", border: "1px solid var(--line)", fontSize: 13 }}>
+            <span style={{ flex: 1 }}>Remember this? <strong>&ldquo;{remember}&rdquo;</strong></span>
+            <button type="button" className="btn sm" onClick={keep} disabled={busy}>Save</button>
+            <button type="button" className="btn sm outline" onClick={() => setRemember(null)}>Not now</button>
           </div>)}
         <ErrorNote error={error} />
         {s.left > 0 ? (
