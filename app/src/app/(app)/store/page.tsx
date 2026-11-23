@@ -23,19 +23,19 @@ export default function Store() {
         <CreditsPill label="credits" />
       </header>
       {w && w.tier.tier !== "none" && w.tier.discount > 0 && !w.tier.paused_until &&
-        <div style={{ fontSize: 13, background: "#C9B8FF", borderRadius: 12, padding: "10px 14px", fontWeight: 600 }}>{w.tier.label} tier: {w.tier.discount}% off most credit prices below</div>}
-      <Link href="/check" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 20, borderRadius: 24, background: "var(--rose-soft)", border: "1px solid #FFC6D4", color: "var(--ink)", textDecoration: "none" }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#D6336C", letterSpacing: ".08em" }}>MOST LOVED</span>
+        <div style={{ fontSize: 13, background: "#FFD2BC", borderRadius: 12, padding: "10px 14px", fontWeight: 600 }}>{w.tier.label} tier: {w.tier.discount}% off most credit prices below</div>}
+      <Link href="/check" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 20, borderRadius: 12, background: "var(--rose-soft)", border: "1px solid #FFD2BC", color: "var(--ink)", textDecoration: "none" }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#FF5A1F", letterSpacing: ".08em" }}>MOST LOVED</span>
         <span className="serif" style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.15 }}>Check With Anyone</span>
-        <span style={{ fontSize: 14, color: "#8A3A55", lineHeight: 1.45 }}>Your crush, your partner or a friend. See how your Moon signs get along, then invite them to open the full match together.</span>
+        <span style={{ fontSize: 14, color: "#9A3412", lineHeight: 1.45 }}>Your crush, your partner or a friend. See how your Moon signs get along, then invite them to open the full match together.</span>
         <div className="row" style={{ justifyContent: "space-between", paddingTop: 4 }}>
-          <span style={{ fontSize: 13, color: "#8A3A55" }}>5-pack: {price(prices, "check_anyone_5", 119)} credits</span>
-          <span style={{ padding: "8px 14px", borderRadius: 999, background: "#FF7A9A", fontSize: 14, fontWeight: 700 }}>{price(prices, "check_anyone", 29)} credits</span>
+          <span style={{ fontSize: 13, color: "#9A3412" }}>5-pack: {price(prices, "check_anyone_5", 119)} credits</span>
+          <span style={{ padding: "8px 14px", borderRadius: 999, background: "#FF5A1F", fontSize: 14, fontWeight: 700 }}>{price(prices, "check_anyone", 29)} credits</span>
         </div>
       </Link>
       <ul className="desk-grid2" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
         {rows.map(([href, t, s, p]) => (
-          <li key={t}><Link href={href} className="rowlink" style={{ borderRadius: 18 }}>
+          <li key={t}><Link href={href} className="rowlink" style={{ borderRadius: 12 }}>
             <span className="t"><strong style={{ fontSize: 15 }}>{t}</strong><span style={{ fontSize: 13 }}>{s}</span></span>
             <span style={{ fontSize: 13, fontWeight: 700, color: p === "Active" ? "#1F5E49" : "var(--link)", whiteSpace: "nowrap" }}>{p}</span>
           </Link></li>

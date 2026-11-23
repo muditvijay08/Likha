@@ -25,9 +25,9 @@ export default function Couple() {
       <div className="titlebar"><BackButton href={`/universe/${match}`} /><h1>Couple Mode</h1></div>
       <Pair me={c.me_name} other={c.other_name} line={on ? `Together on Likha since ${day(c.started_at!)}` : `Matched ${day(c.matched_at)} · ${c.jodi_score ?? "–"}% Jodi Score`} />
       {on ? <>
-        <div className="card stack" style={{ gap: 6, borderRadius: 20, background: "var(--green-soft)" }}>
+        <div className="card stack" style={{ gap: 6, borderRadius: 12, background: "var(--green-soft)" }}>
           <strong>Couple Mode is on</strong><span className="sub">You&apos;ve both left Discover and new likes are paused. Your chat, readings and Our Story stay.</span></div>
-        <section className="stack" style={{ gap: 8, padding: 16, borderRadius: 20, background: "linear-gradient(135deg, #FFE7B8, #FFD3E0)" }}>
+        <section className="stack" style={{ gap: 8, padding: 16, borderRadius: 12, background: "var(--ivory)" }}>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "var(--rose-ink)" }}>COUPLE MODE PLUS</span>
           {c.plus ? <><strong style={{ fontSize: 16 }}>On until {day(c.plus_until!)}</strong><span style={{ fontSize: 13 }}>20% off every Our Universe reading and Guru Ji, for both of you.</span></>
             : <><strong style={{ fontSize: 16 }}>{rupees(c.plus_price_paise)} a month, one pays, both get it</strong>
@@ -36,19 +36,19 @@ export default function Couple() {
         </section>
         <Link className="rowlink" href={`/story/${match}`}><span className="t"><strong>Our Story</strong><span>Your timeline, and add your own moments</span></span></Link>
         <Link className="rowlink" href="/checkout?type=subscription&key=next_12_months"><span className="t"><strong>Our Next 12 Months</strong><span>A love forecast for the year ahead · {rupees(c.year_price_paise)}</span></span></Link>
-        {ending ? <div className="card stack" style={{ gap: 8, borderRadius: 18 }}>
+        {ending ? <div className="card stack" style={{ gap: 8, borderRadius: 12 }}>
             <strong>End Couple Mode?</strong><span className="sub">Both of you go back into Discover. Your chat and Our Story stay.</span>
             <div className="grid2"><button type="button" className="btn ghost" onClick={() => setEnding(false)}>Keep it on</button>
               <button type="button" className="btn" disabled={busy} onClick={() => run(async () => { await api().endCouple(match); setEnding(false); await load(); })}>End it</button></div></div>
           : <button type="button" className="btn text" onClick={() => setEnding(true)}>End Couple Mode</button>}
       </> : c.confirmed_me ? (
-        <div className="card stack" style={{ alignItems: "center", textAlign: "center", gap: 10, padding: 24, borderRadius: 22 }}>
+        <div className="card stack" style={{ alignItems: "center", textAlign: "center", gap: 10, padding: 24, borderRadius: 12 }}>
           <span className="spinner" aria-hidden="true" /><strong>Waiting for {c.other_name} to confirm</strong>
           <span className="sub">We&apos;ve let them know. Nothing changes until they say yes too.</span></div>
       ) : <>
-        <div style={{ padding: 18, borderRadius: 22, background: "#EDE6FF" }} className="stack">
+        <div style={{ padding: 18, borderRadius: 12, background: "#FFF8EF" }} className="stack">
           <strong className="serif" style={{ fontSize: 22 }}>Found your person?</strong>
-          <span style={{ fontSize: 13, color: "#3D3560" }}>Turn on Couple Mode together. It&apos;s free.</span>
+          <span style={{ fontSize: 13, color: "#3A3632" }}>Turn on Couple Mode together. It&apos;s free.</span>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }}><li>Both your profiles leave Discover</li><li>New likes pause; your chats stay</li>
             <li>Our Story keeps your timeline</li><li>Either of you can end it any time</li></ul>
         </div>

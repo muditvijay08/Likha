@@ -40,7 +40,7 @@ export default async function PairPage({ params }: { params: Promise<{ pair: str
         <div className="panel" style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
           <div className="ring" role="img" aria-label={`${p.points} of 12 Moon-sign points`}>
             <svg viewBox="0 0 120 120" aria-hidden="true">
-              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFB020" /><stop offset="1" stopColor="#E8457A" /></linearGradient></defs>
+              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFB020" /><stop offset="1" stopColor="#FF5A1F" /></linearGradient></defs>
               <circle className="bg" cx="60" cy="60" r="50" />
               {p.points > 0 && <circle className="fg" cx="60" cy="60" r="50" pathLength={12} strokeDasharray={`${p.points} 12`} />}
             </svg>

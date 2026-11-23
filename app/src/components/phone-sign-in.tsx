@@ -92,7 +92,7 @@ export function PhoneSignIn({ mode }: { mode: "signup" | "login" }) {
       </div>
 
       {sentTo && (
-        <section aria-label="Verification code" className="card" style={{ borderRadius: 20, padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+        <section aria-label="Verification code" className="card" style={{ borderRadius: 12, padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ fontSize: 14, lineHeight: 1.45 }}>Code sent to <strong>{cc} {pretty}</strong> ·{" "}
             <button type="button" className="linkbtn" style={{ fontSize: 14, fontWeight: 600 }} onClick={() => { setSentTo(null); setDigits(["", "", "", "", "", ""]); }}>Change</button></div>
           <div className="otp">

@@ -26,7 +26,7 @@ export default function Ask() {
   if (done) return (
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/inbox" /><h1>{done === "yes" ? "You said yes" : "You said no"}</h1></div>
-      <div className="card stack" style={{ gap: 8, borderRadius: 20 }}>
+      <div className="card stack" style={{ gap: 8, borderRadius: 12 }}>
         <strong>{done === "yes" ? `Writing ${KIND_TITLE[req?.kind ?? ""] ?? "the reading"} now` : `We told ${req?.from_name ?? "them"} it isn't happening this time`}</strong>
         <span className="sub">{done === "yes" ? "You can both open it from My readings once it's ready." : "They weren't charged. No reason is shared."}</span>
       </div>
@@ -37,10 +37,10 @@ export default function Ask() {
   return (
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/inbox" /><h1>{KIND_TITLE[req.kind] ?? "A reading"}</h1></div>
-      <div style={{ padding: 18, borderRadius: 22, background: "linear-gradient(135deg, #EDE6FF, var(--rose-soft))" }} className="stack">
+      <div style={{ padding: 18, borderRadius: 12, background: "var(--ivory)" }} className="stack">
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "var(--rose-ink)" }}>YOUR SAY</span>
         <strong className="serif" style={{ fontSize: 22, lineHeight: 1.25 }}>{req.from_name} wants to read {KIND_TITLE[req.kind] ?? "a reading"} with you{req.scene ? ` (${SCENE[req.scene] ?? req.scene})` : ""}</strong>
-        <span style={{ fontSize: 13, color: "#3D3560" }}>It looks at {WHAT[req.kind] ?? "both your charts"}. {req.from_name} pays; you pay nothing. Only the two of you see it.</span>
+        <span style={{ fontSize: 13, color: "#3A3632" }}>It looks at {WHAT[req.kind] ?? "both your charts"}. {req.from_name} pays; you pay nothing. Only the two of you see it.</span>
       </div>
       <label className="row" style={{ gap: 10, fontSize: 14, alignItems: "flex-start" }}>
         <input type="checkbox" checked={always} onChange={(e) => setAlways(e.target.checked)} style={{ marginTop: 3 }} />

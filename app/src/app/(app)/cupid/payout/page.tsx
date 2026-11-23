@@ -29,7 +29,7 @@ export default function Payout() {
       </div>
       <span className="small">2% TDS is deducted once your total this financial year passes ₹20,000. You can claim it in your tax return; we issue Form 16A.</span>
       {needKyc ? (
-        <section className="card stack" style={{ gap: 10, borderRadius: 20 }} aria-label="Payout details">
+        <section className="card stack" style={{ gap: 10, borderRadius: 12 }} aria-label="Payout details">
           <strong>Payout details</strong>
           {c.kyc === "rejected" && <span className="sub">{KYC.rejected}</span>}
           <div className="field"><label className="label" htmlFor="k-name">Full name as on PAN</label><input id="k-name" className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></div>

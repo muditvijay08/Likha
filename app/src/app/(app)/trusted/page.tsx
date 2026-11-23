@@ -20,7 +20,7 @@ function Trusted() {
       <p className="sub">When you share a date, they get the details from your WhatsApp. If you don&apos;t check in, we text them.</p>
       {list.length > 0 && <div className="listcard">{list.map((c) => <div key={c.id}><span className="stack" style={{ gap: 1 }}><strong>{c.name}{c.relation ? ` (${c.relation})` : ""}</strong><span className="small">{c.phone}</span></span>
         <button type="button" className="linkbtn" onClick={() => remove(c.id)}>Remove</button></div>)}</div>}
-      <div className="card stack" style={{ gap: 10, borderRadius: 18 }}>
+      <div className="card stack" style={{ gap: 10, borderRadius: 12 }}>
         <strong>Add someone you trust</strong>
         <div className="grid2">
           <div className="field"><label htmlFor="t-name" className="label">Name</label><input id="t-name" className="input" maxLength={40} value={name} onChange={(e) => setName(e.target.value)} /></div>

@@ -35,7 +35,7 @@ export function MatchPicker({ base, title, blurb }: { base: string; title: strin
 /** "Riya & Kabir" header strip used across the couple screens. */
 export function Pair({ me, other, line }: { me: string; other: string; line?: string }) {
   return (
-    <div className="row" style={{ gap: 12, padding: "14px 16px", borderRadius: 22, background: "linear-gradient(135deg, #EDE6FF, var(--rose-soft))" }}>
+    <div className="row" style={{ gap: 12, padding: "14px 16px", borderRadius: 12, background: "var(--ivory)" }}>
       <span className="row" style={{ gap: 0 }}><Avatar name={me} size={42} /><Avatar name={other} size={42} style={{ marginLeft: -12, border: "2px solid #fff" }} /></span>
       <span className="stack" style={{ gap: 2 }}><strong className="serif" style={{ fontSize: 18 }}>{me} &amp; {other}</strong>{line && <span className="small">{line}</span>}</span>
     </div>

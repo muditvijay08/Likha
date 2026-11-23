@@ -104,10 +104,10 @@ export default function Profile() {
         {p.voice_url && (
           <div className="row" style={{ gap: 10, padding: "10px 12px", borderRadius: 14, background: "var(--rose-soft)" }}>
             <button type="button" onClick={voice} className="tip tip-up" data-tip={playing ? "Pause" : "Play voice intro"} aria-label={playing ? "Pause voice intro" : "Play voice intro"}
-              style={{ width: 36, height: 36, borderRadius: 999, border: 0, background: "var(--rose)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              style={{ width: 36, height: 36, borderRadius: 999, border: 0, background: "var(--rose)", color: "#111", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">{playing ? <path d="M7 5h4v14H7zM13 5h4v14h-4z" /> : <path d="M7 4l13 8-13 8z" />}</svg></button>
-            <div style={{ flex: 1, height: 4, borderRadius: 999, background: "#FFC6D4" }} />
-            <span style={{ fontSize: 12, color: "#8A3A55", fontWeight: 600 }}>Voice intro</span>
+            <div style={{ flex: 1, height: 4, borderRadius: 999, background: "#FFD2BC" }} />
+            <span style={{ fontSize: 12, color: "#9A3412", fontWeight: 600 }}>Voice intro</span>
           </div>
         )}
         {p.interests.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{p.interests.map((x) => <span key={x} className="tag" style={{ fontWeight: 600 }}>{x}</span>)}</div>}

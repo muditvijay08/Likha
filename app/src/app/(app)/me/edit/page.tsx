@@ -126,8 +126,8 @@ export default function EditProfile() {
           </div>
         ))}
       </nav>
-      <div className="row" style={{ gap: 10, padding: "12px 14px", borderRadius: 16, background: "#F3EEFF" }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B44C9" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+      <div className="row" style={{ gap: 10, padding: "12px 14px", borderRadius: 16, background: "#FFF8EF" }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C2410C" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
         <span className="stack" style={{ gap: 2, fontSize: 13 }}><strong>Birth details{p.birth ? `: ${new Date(p.birth.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}, ${p.birth.time}, ${p.birth.place}` : ""}</strong>
           <span style={{ color: "var(--muted)" }}>Locked to keep matches honest. 1 free correction via <Link href="/help">Help</Link>.</span></span>
       </div>

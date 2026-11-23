@@ -33,7 +33,7 @@ export default function Bonus() {
   return (
     <Screen style={{ gap: 18 }}>
       <BackButton href="/install" />
-      <div className="card row" style={{ gap: 18, borderRadius: 22, background: "var(--saffron-soft)", borderColor: "#FFE1A3" }}>
+      <div className="card row" style={{ gap: 18, borderRadius: 12, background: "var(--saffron-soft)", borderColor: "#FFE1A3" }}>
         <div style={{ position: "relative", width: 120, height: 120, flex: "none" }}>
           <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label={`Profile ${pct} percent complete`}>
             <circle cx="60" cy="60" r="52" fill="none" stroke="#FFFFFF" strokeWidth="12" />
@@ -54,7 +54,7 @@ export default function Bonus() {
         {items.map(([t, ok, href]) => (
           <li key={t} className="row" style={{ gap: 10, fontSize: 14, padding: "10px 0", borderTop: "1px solid var(--line-soft)" }}>
             <span aria-hidden="true" style={{ width: 22, height: 22, flex: "none", borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center",
-              background: ok ? "#2F7D63" : "#fff", border: ok ? 0 : "2px solid #D5CFE6", color: "#fff", fontSize: 13 }}>{ok ? "✓" : ""}</span>
+              background: ok ? "#2F7D63" : "#fff", border: ok ? 0 : "2px solid #EBE6DF", color: "#fff", fontSize: 13 }}>{ok ? "✓" : ""}</span>
             <span style={{ flex: 1, color: ok ? "var(--muted)" : "var(--ink)", fontWeight: ok ? 500 : 700 }}>{t}<span className="sr">{ok ? " (done)" : " (to do)"}</span></span>
             {!ok && <Link href={href} style={{ fontWeight: 700, fontSize: 14 }}>Add</Link>}
           </li>

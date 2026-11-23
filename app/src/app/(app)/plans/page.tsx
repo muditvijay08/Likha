@@ -20,14 +20,14 @@ export default function Plans() {
       <span style={sec}>ACTIVE</span>
       {active.length === 0 ? <div className="rowlink"><span className="t"><strong>No active plans</strong><span>Kick Pass, Rishta Maasi, Couple Mode</span></span><Link href="/store" style={{ fontWeight: 700, fontSize: 14 }}>Explore</Link></div>
       : active.map((p) => (
-        <div key={p.id} className="stack" style={{ gap: 6, padding: "14px 16px", borderRadius: 18, background: "#fff", border: "1.5px solid var(--saffron)" }}>
+        <div key={p.id} className="stack" style={{ gap: 6, padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1.5px solid var(--saffron)" }}>
           <div className="row" style={{ justifyContent: "space-between" }}><strong>{p.label}</strong><strong>{rupees(p.price_paise)} / {p.interval}</strong></div>
           <span style={{ fontSize: 13, color: "var(--muted)" }}>Prepaid until {d(p.until)}. It doesn&apos;t renew by itself; we remind you 2 days before.</span>
           <Link href={`/checkout?type=subscription&key=${p.key}`} className="linkbtn" style={{ fontSize: 13 }}>Add another {p.interval}</Link>
         </div>
       ))}
       <span style={{ ...sec, marginTop: 6 }}>CREDIT HISTORY</span>
-      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 18, fontSize: 13 }}>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, fontSize: 13 }}>
         <div style={{ display: "grid", gridTemplateColumns: "58px 1fr 52px 52px", gap: 8, padding: "10px 14px", ...sec, fontSize: 10 }}><span>DATE</span><span>ITEM</span><span style={{ textAlign: "right" }}>CR</span><span style={{ textAlign: "right" }}>BAL</span></div>
         {h.ledger.length === 0 ? <div style={{ padding: "10px 14px" }} className="small">No credit activity yet.</div> : h.ledger.map((l, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: "58px 1fr 52px 52px", gap: 8, padding: "10px 14px", borderTop: "1px solid var(--line-soft)" }}>

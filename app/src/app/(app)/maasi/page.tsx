@@ -29,9 +29,9 @@ export default function Maasi() {
           <span style={{ fontSize: 12, color: "var(--muted)" }}>Your matchmaker · Sunday picks · {rupees(m.price_paise)}/month</span></div>
       </div>
       {!m.until ? <>
-        <div className="serif" style={{ padding: "16px 18px", borderRadius: 20, background: "#FFF3D6", fontSize: 18, lineHeight: 1.4 }}>
+        <div className="serif" style={{ padding: "16px 18px", borderRadius: 12, background: "#FFEDDE", fontSize: 18, lineHeight: 1.4 }}>
           Beta, every Sunday I&apos;ll look through the charts and send you three people I have a good feeling about.</div>
-        <div className="card stack" style={{ gap: 6, fontSize: 13, lineHeight: 1.5, borderRadius: 18 }}>
+        <div className="card stack" style={{ gap: 6, fontSize: 13, lineHeight: 1.5, borderRadius: 12 }}>
           <span>Three picks every Sunday, with a note on why.</span><span>Our team checks every pick before it reaches you.</span>
           <span>Interested on both sides means a match.</span><span>One month prepaid. It doesn&apos;t renew by itself.</span>
         </div>
@@ -40,19 +40,19 @@ export default function Maasi() {
       </> : <>
         <span className="small">Active until {new Date(m.until).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
         {m.picks.length === 0 ? (
-          <div className="serif" style={{ padding: "16px 18px", borderRadius: 20, background: "#FFF3D6", fontSize: 18, lineHeight: 1.4 }}>Your first picks arrive this Sunday. Maasi is looking!</div>
+          <div className="serif" style={{ padding: "16px 18px", borderRadius: 12, background: "#FFEDDE", fontSize: 18, lineHeight: 1.4 }}>Your first picks arrive this Sunday. Maasi is looking!</div>
         ) : <>
-          <div className="serif" style={{ padding: "14px 16px", borderRadius: 18, background: "#FFF3D6", fontSize: 16, lineHeight: 1.4 }}>Beta, these three, I have a good feeling about.</div>
+          <div className="serif" style={{ padding: "14px 16px", borderRadius: 12, background: "#FFEDDE", fontSize: 16, lineHeight: 1.4 }}>Beta, these three, I have a good feeling about.</div>
           {m.picks.map((p) => {
             const res = answered[p.pick_id] ?? p.response;
             return (
-              <article key={p.pick_id} className="row" style={{ gap: 12, alignItems: "flex-start", padding: 14, borderRadius: 20, background: "#fff", border: "1px solid var(--line)" }}>
+              <article key={p.pick_id} className="row" style={{ gap: 12, alignItems: "flex-start", padding: 14, borderRadius: 12, background: "#fff", border: "1px solid var(--line)" }}>
                 <Link href={`/profile/${p.id}`}><Avatar name={p.first_name} photo={p.photos[0]} size={56} /></Link>
                 <div className="stack" style={{ gap: 4, flex: 1, minWidth: 0 }}>
                   <div className="row" style={{ justifyContent: "space-between" }}><strong style={{ fontSize: 15 }}>{p.first_name}{p.age ? `, ${p.age}` : ""}</strong>
                     {p.gunas != null && <span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{p.gunas} Gunas</span>}</div>
                   <span style={{ fontSize: 12, color: "var(--muted)" }}>{[p.profession, p.city, p.diet ? DIET_LABEL[p.diet] : null].filter(Boolean).join(" · ")}</span>
-                  <span style={{ fontSize: 13, fontStyle: "italic", color: "#3D3560" }}>&ldquo;{p.note}&rdquo;</span>
+                  <span style={{ fontSize: 13, fontStyle: "italic", color: "#3A3632" }}>&ldquo;{p.note}&rdquo;</span>
                   <SampleTag on={p.is_sample} />
                   {res ? <span style={{ fontSize: 12, fontWeight: 700, color: res === "interested" ? "#1F5E49" : "var(--muted)" }}>{res === "interested" ? "You're interested" : "Not for you"}</span> : (
                     <div className="row" style={{ gap: 8, paddingTop: 4 }}>

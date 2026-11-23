@@ -26,7 +26,7 @@ export default function Travel() {
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/discover" /><h1>Travel Mode</h1></div>
       {t.trip ? <>
-        <div style={{ padding: 18, borderRadius: 22, background: "#E4F4EE" }} className="stack">
+        <div style={{ padding: 18, borderRadius: 12, background: "#E4F4EE" }} className="stack">
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "#1F5E49" }}>TRAVEL MODE ON</span>
           <strong className="serif" style={{ fontSize: 24 }}>{t.trip.city}, {fmt(t.trip.from)} to {fmt(t.trip.to)}</strong>
           <span style={{ fontSize: 13 }}>Discover, Daily Kick timings and Golden Hours follow {t.trip.city} till then.</span>
@@ -37,10 +37,10 @@ export default function Travel() {
         <p className="sub" style={{ margin: 0 }}>Going somewhere? Show up in that city&apos;s Discover for your dates and start matching before you land.</p>
         <PlaceInput id="t-city" label="Where to" value={place} onPick={pick} placeholder="Mumbai, Udaipur, Dubai…" />
         {city && (city.people > 0 ? (
-          <div className="card stack" style={{ gap: 4, borderRadius: 18 }}><strong>{city.people} {city.people === 1 ? "person" : "people"} on Likha in {city.name}</strong>
+          <div className="card stack" style={{ gap: 4, borderRadius: 12 }}><strong>{city.people} {city.people === 1 ? "person" : "people"} on Likha in {city.name}</strong>
             <span className="sub">{city.top_score ? `Your best Jodi Score there: ${city.top_score}%.` : "Jodi Scores show once you arrive in their Discover."}</span></div>
         ) : (
-          <div className="card stack" style={{ gap: 4, borderRadius: 18 }}><strong>No one on Likha in {city.name} yet</strong>
+          <div className="card stack" style={{ gap: 4, borderRadius: 12 }}><strong>No one on Likha in {city.name} yet</strong>
             <span className="sub">We won&apos;t sell you a trip to an empty city.</span></div>
         ))}
         <div className="grid2">

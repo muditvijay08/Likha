@@ -34,19 +34,33 @@ const credits = async () => Number((await page.locator("a.pillbtn.credits").firs
 await page.goto(`${BASE}/offline`);
 await page.evaluate((s) => localStorage.setItem("likha-demo-db", JSON.stringify(s)), SEED);
 
-// H1 Home
+// H0 Home (redesign): companion first, then a short list
 await page.goto(`${BASE}/home`);
-ok(await seen(page.getByText("Hey Aarav")), "Home greets Aarav");
+ok(await seen(page.getByText(/, Aarav$/i)), "Home greets Aarav");
 ok(await seen(page.getByText("Demo mode · sample profiles, not real people")), "Demo mode is labelled on every app screen");
+ok(await seen(page.getByRole("heading", { name: /What's on your mind/i })) && await seen(page.getByText("Virtual companion, not a real person")), "Home leads with the companion, labelled virtual");
+ok(await seen(page.getByRole("link", { name: "Talk to Chandni" })), "One clear next step: talk to the companion");
+ok((await page.getByText(/\bAI\b/).count()) === 0, "Home never says AI");
+ok(await seen(page.getByRole("link", { name: /Today's best match: Ishita/ })), "Best match teaser links to the Kundli tab");
+ok(await credits() === 70, "Home shows the 70 welcome credits");
+await shot("00-home");
+for (const [tab, path] of [["Kundli", "/stars"], ["Discover", "/discover"], ["Connect", "/matches"], ["You", "/menu"], ["Home", "/home"]]) {
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: tab }).click();
+  await page.waitForURL(`**${path}`);
+}
+ok(true, "Bottom nav: Home, Kundli, Discover, Connect, You");
+
+// H1 Kundli tab: the day in the stars and today's best match
+await page.goto(`${BASE}/stars`);
+ok(await seen(page.getByRole("heading", { name: "Your stars" })), "Kundli tab opens");
 ok(await seen(page.getByText("Venus warms the 7th from your Moon")), "Love weather headline from the Kick teaser");
 ok(await seen(page.getByText("Your day in the stars")) && await seen(page.getByText(/^Rahu Kaal/).first()), "Day timeline drawn from sunrise, horas and Rahu Kaal");
-ok(await seen(page.getByRole("link", { name: "Today's best match: Ishita" })) && await seen(page.getByText("Jodi Score 92")), "Best match first on Home (Ishita, Jodi 92 from the real engine)");
+ok(await seen(page.getByRole("link", { name: "Today's best match: Ishita" })) && await seen(page.getByText("Jodi Score 92")), "Best match first on the Kundli tab (Ishita, Jodi 92 from the real engine)");
 ok(await seen(page.getByText("people like you")) && (await page.locator("text=people like you").locator("..").textContent()).includes("3"), "3 people like you");
 const ring = page.getByRole("img", { name: /of 36 Gunas/ }).first();
 const homeGunas = (await ring.getAttribute("aria-label")).split(" ")[0];
-ok((await ring.locator("text").first().textContent()) === homeGunas, "Home ring shows the real Guna number at once (no half-counted value)");
-ok(await credits() === 70, "Wallet shows the 70 welcome credits");
-await shot("01-home");
+ok((await ring.locator("text").first().textContent()) === homeGunas, "Kundli tab ring shows the real Guna number at once (no half-counted value)");
+await shot("01-stars");
 
 // H2 Daily Kick
 await page.getByRole("link", { name: "Today's love weather" }).click();
@@ -64,7 +78,7 @@ await page.getByRole("link", { name: "Discover" }).click();
 await page.waitForURL("**/discover");
 ok(await seen(page.getByRole("heading", { name: "Ishita, 27" })), "Discover: best Jodi Score first");
 ok(await seen(page.getByText("SAMPLE PROFILE")), "Sample profiles are labelled");
-ok((await page.locator(".disc-card .font-serif").first().textContent()) === homeGunas, `Same Gunas for Ishita on Home and Discover (${homeGunas})`);
+ok((await page.locator(".disc-card .font-serif").first().textContent()) === homeGunas, `Same Gunas for Ishita on the Kundli tab and Discover (${homeGunas})`);
 ok(await seen(page.getByText("Sample ·").first()), "Live strip says Sample in demo mode");
 ok(await seen(page.getByText("Live in Jaipur:")), "Live city strip shown");
 ok(await credits() === 65, "Kick charged 10 credits once, +5 first-try reward (70 → 65)");
@@ -85,8 +99,10 @@ await page.waitForTimeout(1200);                              // let the match a
 await shot("05-match");
 ok(await seen(page.getByRole("link", { name: "Say hi to Sanya" })), "Say hi button");
 
-// D5 Likes
-await page.getByRole("link", { name: /^Likes/ }).click();
+// D5 Likes (inside Connect since the redesign)
+await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /^Connect/ }).click();
+await page.waitForURL("**/matches");
+await page.getByRole("link", { name: /Likes you/ }).click();
 await page.waitForURL("**/likes");
 ok(await seen(page.getByText("Always free.")), "Likes: always free note");
 ok(await seen(page.getByText("1 person")), "Likes: matched and passed people are gone, Meera left");
@@ -137,8 +153,8 @@ await page.goto(`${BASE}/report/s-tanvi`);
 await btn("Read it · 29 credits").click();                    // 27 left, the reading costs 29
 ok(await seen(page.getByText("Not enough credits. Top up your wallet to continue.")), "Not enough credits is explained, nothing charged");
 
-// N1 Menu and Chats
-await page.getByRole("link", { name: "Menu" }).click();
+// N1 You (menu) and Connect
+await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "You" }).click();
 await page.waitForURL("**/menu");
 ok(await seen(page.getByText("27 credits")) && await seen(page.getByRole("link", { name: /Be a Cupid/ })) && await seen(page.getByRole("link", { name: /Family view/ })), "Menu: wallet and every link, Family view included");
 const inst = page.getByRole("region", { name: "Add Likha to your home screen" });
@@ -149,7 +165,7 @@ await page.evaluate(() => { const e = new Event("beforeinstallprompt"); Object.a
 await inst.getByRole("button", { name: "Install" }).click();
 ok(await page.evaluate(() => window.__prompted === true), "Menu: one-tap Install uses the browser's own prompt");
 await shot("12-menu");
-await page.getByRole("link", { name: /^Chats/ }).click();
+await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /^Connect/ }).click();
 await page.waitForURL("**/matches");
 ok(await seen(page.getByText("Meera")) && await seen(page.getByText("Sanya")), "Chats lists both matches");
 await shot("13-chats");

@@ -41,7 +41,7 @@ export default function AccountStatus() {
         <Link className="btn text" href="/help">Contact Help</Link>
       </> : a ? <>
         <h1 className="h1">{WHAT[a.action] ?? "About your account"}</h1>
-        <div className="card stack" style={{ gap: 6, borderRadius: 18 }}>
+        <div className="card stack" style={{ gap: 6, borderRadius: 12 }}>
           <span><strong>Reason:</strong> {a.reason}</span>
           {a.until && <span><strong>Back on:</strong> {new Date(a.until).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>}
           {s.tier_paused_until && <span className="small">Your tier discount is on hold until {new Date(s.tier_paused_until).toLocaleDateString("en-IN")}.</span>}

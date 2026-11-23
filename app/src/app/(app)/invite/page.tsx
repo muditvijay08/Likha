@@ -17,11 +17,11 @@ export default function Invite() {
   return (
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/menu" /><h1>Invite friends</h1></div>
-      <div style={{ padding: 18, borderRadius: 22, background: "linear-gradient(135deg, #EDE6FF, #E4F4EE)" }} className="stack">
+      <div style={{ padding: 18, borderRadius: 12, background: "linear-gradient(135deg, #FFF8EF, #E4F4EE)" }} className="stack">
         <strong className="serif" style={{ fontSize: 22 }}>{v.reward} credits for you, {v.friend_reward} for them</strong>
-        <span style={{ fontSize: 13, color: "#3D3560" }}>When a friend joins with your link and passes the selfie check. Up to {v.max_per_month} friends a month.</span>
+        <span style={{ fontSize: 13, color: "#3A3632" }}>When a friend joins with your link and passes the selfie check. Up to {v.max_per_month} friends a month.</span>
       </div>
-      <div className="card stack" style={{ gap: 6, borderRadius: 18 }}>
+      <div className="card stack" style={{ gap: 6, borderRadius: 12 }}>
         <span className="label">Your code</span>
         <strong style={{ fontSize: 22, letterSpacing: ".04em" }}>{v.code ?? "…"}</strong>
         <span className="small" style={{ wordBreak: "break-all" }}>{link}</span>

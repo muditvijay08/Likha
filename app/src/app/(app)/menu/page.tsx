@@ -25,13 +25,13 @@ export default function Menu() {
         <Avatar name={home?.first_name ?? "?"} size={54} />
         <span className="t" style={{ gap: 4 }}><strong style={{ fontSize: 16 }}>{home?.first_name ?? "…"}</strong>
           <span className="row" style={{ gap: 8, fontSize: 12 }}>
-            <span style={{ flex: 1, height: 6, borderRadius: 999, background: "#ECE6FA" }}><span style={{ display: "block", width: `${home?.pct ?? 0}%`, height: 6, borderRadius: 999, background: "var(--saffron)" }} /></span>
+            <span style={{ flex: 1, height: 6, borderRadius: 999, background: "#EBE6DF" }}><span style={{ display: "block", width: `${home?.pct ?? 0}%`, height: 6, borderRadius: 999, background: "var(--saffron)" }} /></span>
             Profile {home?.pct ?? 0}%</span></span>
       </Link>
       <div className="grid2" style={{ gap: 10 }}>
-        <Link href="/wallet" style={{ display: "flex", flexDirection: "column", gap: 2, padding: "12px 14px", borderRadius: 18, background: "var(--ink)", color: "#fff", textDecoration: "none" }}>
-          <span style={{ fontSize: 11, color: "#C9BDEB", fontWeight: 700 }}>WALLET</span><strong style={{ fontSize: 20 }}>{home?.balance ?? "…"} credits</strong></Link>
-        <Link href="/tiers" style={{ display: "flex", flexDirection: "column", gap: 2, padding: "12px 14px", borderRadius: 18, background: "#fff", border: "1px solid var(--line)", color: "var(--ink)", textDecoration: "none" }}>
+        <Link href="/wallet" style={{ display: "flex", flexDirection: "column", gap: 2, padding: "12px 14px", borderRadius: 12, background: "var(--ink)", color: "#fff", textDecoration: "none" }}>
+          <span style={{ fontSize: 11, color: "#D8D2CB", fontWeight: 700 }}>WALLET</span><strong style={{ fontSize: 20 }}>{home?.balance ?? "…"} credits</strong></Link>
+        <Link href="/tiers" style={{ display: "flex", flexDirection: "column", gap: 2, padding: "12px 14px", borderRadius: 12, background: "#fff", border: "1px solid var(--line)", color: "var(--ink)", textDecoration: "none" }}>
           <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700 }}>YOUR TIER</span><strong style={{ fontSize: 17 }}>{home && TIER_LABEL[home.tier] ? TIER_LABEL[home.tier] : "No tier yet"}</strong></Link>
       </div>
       {GROUPS.map(([title, items]) => {

@@ -43,7 +43,7 @@ await page.goto(`${BASE}/home`);
 ok(await seen(page.getByRole("note", { name: "Announcement" }).getByText("Diwali: 20% more credits")), "Home: banner from Admin");
 await page.getByRole("button", { name: "Close announcement" }).click();
 await page.reload();
-ok(await seen(page.getByRole("heading", { name: /Hey Aarav/ })) && (await page.getByRole("note", { name: "Announcement" }).count()) === 0, "Home: closed banner stays closed");
+ok(await seen(page.getByRole("heading", { name: /What's on your mind/i })) && (await page.getByRole("note", { name: "Announcement" }).count()) === 0, "Home: closed banner stays closed");
 await shot("01-home");
 
 await page.goto(`${BASE}/menu`);
@@ -61,9 +61,9 @@ await page.getByRole("button", { name: "Agree and continue" }).click();
 ok(await seen(page.getByText("Tick each box to continue.")), "Consent: must tick to continue");
 await shot("02-consent");
 await page.getByLabel(/I agree to the Terms/).check(); await page.getByRole("button", { name: "Agree and continue" }).click();
-ok(await seen(page.getByRole("heading", { name: /Hey Aarav/ })), "Consent: accepted, Home opens");
+ok(await seen(page.getByRole("heading", { name: /What's on your mind/i })), "Consent: accepted, Home opens");
 await page.reload();
-ok(await seen(page.getByRole("heading", { name: /Hey Aarav/ })), "Consent: not asked again");
+ok(await seen(page.getByRole("heading", { name: /What's on your mind/i })), "Consent: not asked again");
 
 await admin({ maintenance: "Back in 30 minutes. The stars are recharging." });
 await page.goto(`${BASE}/home`);
@@ -71,7 +71,7 @@ ok(await seen(page.getByRole("heading", { name: "Likha is taking a short break" 
 await shot("03-maintenance");
 await admin({});
 await page.goto(`${BASE}/home`);
-ok(await seen(page.getByRole("heading", { name: /Hey Aarav/ })), "Maintenance off: app back");
+ok(await seen(page.getByRole("heading", { name: /What's on your mind/i })), "Maintenance off: app back");
 
 await admin({ minVersion: "9.0.0" });
 await page.goto(`${BASE}/home`);

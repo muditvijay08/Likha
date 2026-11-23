@@ -63,7 +63,7 @@ export default function Discover() {
         {card && <LiveStrip />}{/* never next to "you've seen everyone" */}
 
         {cards === null ? <div className="skel" style={{ height: 460 }} /> : card ? <>
-          <article className="disc-card overflow-hidden rounded-[26px] border border-line bg-card shadow-[0_10px_30px_-18px_rgba(29,24,56,.45)]">
+          <article className="disc-card overflow-hidden rounded-[14px] border border-line bg-card shadow-[0_10px_30px_-18px_rgba(29,24,56,.45)]">
             <div className="relative">
               {card.photos.length ? <PhotoBlock name={card.first_name} photos={card.photos} height={380} /> : <MoonPortrait name={card.first_name} moonSign={card.moon_sign} className="h-[380px]" />}
               {/* score first: Gunas big, Jodi explained */}
@@ -86,7 +86,7 @@ export default function Discover() {
               </div>
               <div className="absolute right-3.5 top-3.5 flex flex-col items-end gap-1.5">
                 {card.verified && <Badge tone="line" className="bg-white/92">✓ Verified</Badge>}
-                {card.liked_me && <Badge tone="action" className="bg-action text-white">Likes you</Badge>}
+                {card.liked_me && <Badge tone="action" className="bg-action text-ink">Likes you</Badge>}
                 <SampleTag on={card.is_sample} />
               </div>
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-5 pb-4 pt-16 text-white">
@@ -121,8 +121,8 @@ export default function Discover() {
 }
 
 const COMPANIONS = [
-  { v: "chandni", name: "Chandni", line: "Warm, playful, remembers your day", bg: "linear-gradient(135deg, #FFC6D4, #C9B8FF)" },
-  { v: "dhruv", name: "Dhruv", line: "Calm, witty, steady advice", bg: "linear-gradient(135deg, #C9B8FF, #A7D8F0)" },
+  { v: "chandni", name: "Chandni", line: "Warm, playful, remembers your day", bg: "linear-gradient(135deg, #FFD2BC, #FFD2BC)" },
+  { v: "dhruv", name: "Dhruv", line: "Calm, witty, steady advice", bg: "linear-gradient(135deg, #FFD2BC, #A7D8F0)" },
 ] as const;
 
 function EmptySky({ city, filters, onWiden }: { city: string; filters: Filters | null; onWiden(): Promise<void> }) {
@@ -140,12 +140,12 @@ function EmptySky({ city, filters, onWiden }: { city: string; filters: Filters |
         <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 26, fontWeight: 600, lineHeight: 1.2 }}>That&apos;s everyone in {city} for now</h1>
         <p className="sub">New people join every day. The fastest way to more matches is bringing your own people.</p>
       </div>
-      <section aria-label="Bring your people" className="stack" style={{ gap: 10, padding: 16, borderRadius: 20, background: "var(--ink)", color: "#fff" }}>
+      <section aria-label="Bring your people" className="stack" style={{ gap: 10, padding: 16, borderRadius: 12, background: "var(--ink)", color: "#fff" }}>
         <strong style={{ fontSize: 16 }}>Bring your people</strong>
         <Link href="/check" className="row" style={{ gap: 12, padding: 12, borderRadius: 14, background: "rgba(255,255,255,.08)", color: "#fff", textDecoration: "none" }}>
-          <span className="stack" style={{ gap: 2, flex: 1 }}><strong style={{ fontSize: 14 }}>Check your crush</strong><span style={{ fontSize: 12, color: "#CFC6F2" }}>Send a link. See your Gunas once they join and say yes.</span></span><span aria-hidden="true">→</span></Link>
+          <span className="stack" style={{ gap: 2, flex: 1 }}><strong style={{ fontSize: 14 }}>Check your crush</strong><span style={{ fontSize: 12, color: "#D8D2CB" }}>Send a link. See your Gunas once they join and say yes.</span></span><span aria-hidden="true">→</span></Link>
         <Link href="/invite" className="row" style={{ gap: 12, padding: 12, borderRadius: 14, background: "rgba(255,255,255,.08)", color: "#fff", textDecoration: "none" }}>
-          <span className="stack" style={{ gap: 2, flex: 1 }}><strong style={{ fontSize: 14 }}>Invite single friends from {city}</strong><span style={{ fontSize: 12, color: "#CFC6F2" }}>You both get credits when they finish sign-up.</span></span><span aria-hidden="true">→</span></Link>
+          <span className="stack" style={{ gap: 2, flex: 1 }}><strong style={{ fontSize: 14 }}>Invite single friends from {city}</strong><span style={{ fontSize: 12, color: "#D8D2CB" }}>You both get credits when they finish sign-up.</span></span><span aria-hidden="true">→</span></Link>
       </section>
       <div className="stack" style={{ gap: 10 }}>
         {filters?.distance === "same_city" && (
@@ -159,7 +159,7 @@ function EmptySky({ city, filters, onWiden }: { city: string; filters: Filters |
         <Link href="/travel" className="rowlink"><span className="t"><strong>Travel Mode</strong><span>Going somewhere soon? Match there first</span></span><span style={{ fontSize: 12, fontWeight: 700, color: "var(--link)" }}>{price(prices, "travel_mode", 29)} / trip</span></Link>
       </div>
       {saathi?.available && (
-        <div className="stack" style={{ gap: 10, padding: 16, borderRadius: 20, background: "#F6F2FF", border: "1px solid var(--line)" }}>
+        <div className="stack" style={{ gap: 10, padding: 16, borderRadius: 12, background: "#FFF8EF", border: "1px solid var(--line)" }}>
           <div className="stack" style={{ gap: 2 }}>
             <strong style={{ fontSize: 15 }}>Want to talk while you wait?</strong>
             <span style={{ fontSize: 12, color: "var(--muted)" }}>A virtual companion, not a real person. {saathi.free_per_day} free messages a day.</span>
@@ -167,7 +167,7 @@ function EmptySky({ city, filters, onWiden }: { city: string; filters: Filters |
           <div className="grid2" style={{ gap: 10 }}>
             {pair.map((c) => (
               <Link key={c.v} href={`/saathi?char=${c.v}`} className="row" style={{ gap: 10, padding: 12, borderRadius: 16, background: "#fff", border: "1px solid var(--line)", color: "var(--ink)", textDecoration: "none", alignItems: "center" }}>
-                <span aria-hidden="true" style={{ width: 40, height: 40, flex: "none", borderRadius: 999, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--serif)", fontWeight: 600, color: "#3D3560" }}>{c.name[0]}</span>
+                <span aria-hidden="true" style={{ width: 40, height: 40, flex: "none", borderRadius: 999, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--serif)", fontWeight: 600, color: "#3A3632" }}>{c.name[0]}</span>
                 <span className="stack" style={{ gap: 1, minWidth: 0 }}>
                   <strong style={{ fontSize: 14 }}>{c.name} {saathi.setup && saathi.character === c.v && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--link)" }}>· yours</span>}</strong>
                   <span style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.3 }}>{c.line}</span>

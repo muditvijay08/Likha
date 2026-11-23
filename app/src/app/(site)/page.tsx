@@ -40,7 +40,7 @@ function KundliArt() {
         <path className="moon" d="M300 222a12 12 0 1 0 12 -16a9 9 0 1 1 -12 16z" />
       </svg>
       <div className="gunas"><b className="count" aria-hidden="true" /><span>of 36 Gunas</span></div>
-      <div className="k-card her"><span className="av" style={{ background: "#FFE4EC", color: "#E8457A" }}>R</span><span>Riya, 26<small>Jodi Score 92%</small></span></div>
+      <div className="k-card her"><span className="av" style={{ background: "#FFEDDE", color: "#FF5A1F" }}>R</span><span>Riya, 26<small>Jodi Score 92%</small></span></div>
       <div className="k-card him"><span className="av" style={{ background: "#E3ECFF", color: "#2F6FE0" }}>A</span><span>Aarav, 28<small>Meen Moon</small></span></div>
       <span className="sample">Sample profiles</span>
     </div>

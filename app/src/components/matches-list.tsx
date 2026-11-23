@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Avatar, price, useApp } from "@/components/app";
+import { Avatar, Chevron, price, useApp } from "@/components/app";
 import { api, type MatchRow, type SaathiState } from "@/lib/api";
 
 const when = (iso: string) => {
@@ -31,12 +31,12 @@ export function MatchesList({ compact = false }: { compact?: boolean }) {
   const name = saathi?.character === "dhruv" ? "Dhruv" : "Chandni";
 
   const SaathiRow = saathi?.available ? (
-    <Link href="/saathi" className="row" style={{ gap: 12, padding: pad, borderBottom: "1px solid #ECE6FA", color: "var(--ink)", textDecoration: "none", ...here("/saathi") }}>
-      <span style={{ width: 52, height: 52, flex: "none", borderRadius: 999, background: "linear-gradient(135deg, #C9B8FF, #FFC6D4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3D3560" strokeWidth="2" aria-hidden="true"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z" /></svg></span>
+    <Link href="/saathi" className="row" style={{ gap: 12, padding: pad, borderBottom: "1px solid #EBE6DF", color: "var(--ink)", textDecoration: "none", ...here("/saathi") }}>
+      <span style={{ width: 52, height: 52, flex: "none", borderRadius: 999, background: "#FFEDDE", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A3632" strokeWidth="2" aria-hidden="true"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z" /></svg></span>
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
         <span className="row" style={{ gap: 6 }}><strong style={{ fontSize: 15 }}>{saathi.setup ? name : "Saathi"}</strong>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "var(--violet-soft)", color: "#3D3560" }}>Virtual</span></span>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "var(--violet-soft)", color: "#3A3632" }}>Virtual</span></span>
         <span style={{ fontSize: 14, color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {saathi.paused ? `Stepping back while you talk to ${saathi.pause_match?.first_name}` : saathi.setup ? (saathi.history.at(-1)?.body ?? "Say hi") : "Someone to talk to till you match"}</span>
       </span>
@@ -45,7 +45,10 @@ export function MatchesList({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className="app-body pad" style={{ gap: 16 }}>
-      <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 28, fontWeight: 600 }}>Matches</h1>
+      <h1 className="h1" style={{ margin: 0 }}>Connect</h1>
+      <Link href="/likes" className="list-row" style={{ borderTop: "1px solid var(--line)" }}>
+        <span className="num">{home?.likes_count ?? 0}</span>
+        <span className="t"><strong>Likes you</strong><span>See who already likes you. Always free</span></span><Chevron /></Link>
       {rows === null ? <div className="skel" style={{ height: 240 }} /> : rows.length === 0 ? <>
         <div className="stack" style={{ gap: 8 }}>
           <h2 style={{ margin: 0, fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, lineHeight: 1.25 }}>No matches yet. Your stars are warming up.</h2>
@@ -76,7 +79,7 @@ export function MatchesList({ compact = false }: { compact?: boolean }) {
           {talks.map((m, i) => {
             const old = Date.now() - new Date(m.last_at!).getTime() > 4 * 864e5;
             return (
-              <Link key={m.match_id} href={`/chat/${m.match_id}`} className="row" style={{ gap: 12, padding: pad, borderBottom: i < talks.length - 1 ? "1px solid #ECE6FA" : 0, color: "var(--ink)", textDecoration: "none", ...here(`/chat/${m.match_id}`) }}>
+              <Link key={m.match_id} href={`/chat/${m.match_id}`} className="row" style={{ gap: 12, padding: pad, borderBottom: i < talks.length - 1 ? "1px solid #EBE6DF" : 0, color: "var(--ink)", textDecoration: "none", ...here(`/chat/${m.match_id}`) }}>
                 <Avatar name={m.first_name} photo={m.photo} size={52} />
                 <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                   <span className="row" style={{ justifyContent: "space-between" }}><strong style={{ fontSize: 15 }}>{m.first_name}</strong><span style={{ fontSize: 12, color: "var(--muted)" }}>{when(m.last_at!)}</span></span>

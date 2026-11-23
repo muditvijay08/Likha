@@ -31,12 +31,12 @@ export default function Likes() {
           {likes.map((l) => {
             const [bg, fg] = tint(l.first_name);
             return (
-              <Link key={l.id} href={`/profile/${l.id}`} style={{ display: "flex", flexDirection: "column", borderRadius: 18, background: "#fff", border: l.kind === "cosmic_like" ? "1.5px solid #FF7A9A" : "1px solid var(--line)", color: "var(--ink)", textDecoration: "none", overflow: "hidden" }}>
+              <Link key={l.id} href={`/profile/${l.id}`} style={{ display: "flex", flexDirection: "column", borderRadius: 12, background: "#fff", border: l.kind === "cosmic_like" ? "1.5px solid #FF5A1F" : "1px solid var(--line)", color: "var(--ink)", textDecoration: "none", overflow: "hidden" }}>
                 <div style={{ position: "relative", height: 112, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--serif)", fontSize: 40, color: fg }}>
                   {l.photos[0] ? <img src={l.photos[0]} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : l.first_name.slice(0, 1)}
                   {l.jodi_score != null && <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(255,255,255,0.92)", borderRadius: 999, padding: "3px 8px", font: "700 12px var(--sans)", color: "var(--ink)" }}>{l.jodi_score}%</span>}
-                  <span style={{ position: "absolute", top: 8, right: 8, font: "600 11px var(--sans)", color: "#3D3560" }}>{l.new ? "New" : ago(l.liked_at)}</span>
-                  {l.kind === "cosmic_like" && <span style={{ position: "absolute", bottom: 8, left: 8, background: "var(--rose)", color: "#fff", borderRadius: 999, padding: "2px 8px", font: "700 10px var(--sans)" }}>Cosmic Like</span>}
+                  <span style={{ position: "absolute", top: 8, right: 8, font: "600 11px var(--sans)", color: "#3A3632" }}>{l.new ? "New" : ago(l.liked_at)}</span>
+                  {l.kind === "cosmic_like" && <span style={{ position: "absolute", bottom: 8, left: 8, background: "var(--rose)", color: "#111", borderRadius: 999, padding: "2px 8px", font: "700 10px var(--sans)" }}>Cosmic Like</span>}
                 </div>
                 <div style={{ padding: "8px 10px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
                   <strong style={{ fontSize: 14 }}>{l.first_name}{l.age ? `, ${l.age}` : ""}</strong>

@@ -24,7 +24,7 @@ function Together() {
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/home" /><h1>{day} days</h1></div>
       {done ? <>
-        <div className="card stack" style={{ gap: 8, borderRadius: 20 }}><strong>Thanks</strong><span className="sub">{done.reply}</span></div>
+        <div className="card stack" style={{ gap: 8, borderRadius: 12 }}><strong>Thanks</strong><span className="sub">{done.reply}</span></div>
         {done.links.map(([r, l]) => <Link key={r} className="btn ghost" href={`/${r}/${match}`}>{l}</Link>)}
         {done.key === "stopped" && <Link className="btn" href="/discover">Go to Discover</Link>}
         <Link className="btn text" href="/home">Back to Home</Link>

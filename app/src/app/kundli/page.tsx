@@ -86,13 +86,13 @@ export default function Kundli() {
         <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-white/15 py-4">
           {facts.map(([k, big, small]) => (
             <div key={k} className="flex min-w-0 flex-col gap-0.5">
-              <dt className="font-sans text-[11px] font-bold tracking-[.1em] text-[#CFC6F2]">{k.toUpperCase()}</dt>
+              <dt className="font-sans text-[11px] font-bold tracking-[.1em] text-[#D8D2CB]">{k.toUpperCase()}</dt>
               <dd className="m-0 font-serif text-xl font-[560] text-white">{big}</dd>
-              <dd className="m-0 font-sans text-[13px] text-[#CFC6F2]">{small}</dd>
+              <dd className="m-0 font-sans text-[13px] text-[#D8D2CB]">{small}</dd>
             </div>
           ))}
         </dl>
-        {sm!.borderline && <span className="font-sans text-[13px] text-[#CFC6F2]">Born close to a boundary: a few minutes&apos; difference in birth time could change one detail.</span>}
+        {sm!.borderline && <span className="font-sans text-[13px] text-[#D8D2CB]">Born close to a boundary: a few minutes&apos; difference in birth time could change one detail.</span>}
         <p className="m-0 font-sans text-base leading-relaxed text-white/90">{LAGNA_LINE[sm!.lagna]}</p>
         <div className="grow" />
         <div className="grid grid-cols-2 gap-2.5">
@@ -103,13 +103,13 @@ export default function Kundli() {
       {card && (
         <div role="dialog" aria-modal="true" aria-label="Your kundli story card" className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/70 p-6"
           onClick={() => setCard(false)}>
-          <NightSky seed={signIndex(sm!.moon_sign) + 11} className="aspect-[9/16] w-full max-w-[300px] rounded-[28px] border border-white/15 shadow-2xl">
+          <NightSky seed={signIndex(sm!.moon_sign) + 11} className="aspect-[9/16] w-full max-w-[300px] rounded-[14px] border border-white/15 shadow-2xl">
             <div className="flex h-full flex-col items-center justify-between gap-3 p-6 text-center">
               <span className="font-serif text-2xl font-[560]">Likha<span className="text-action">.</span></span>
               <KundliChart lagnaSign={signIndex(sm!.lagna)} planets={chart.planets} tone="night" size={210} />
               <div className="flex flex-col gap-1">
                 <span className="font-serif text-[26px] font-[560]">{SIGN_HI[sm!.moon_sign]} Moon</span>
-                <span className="font-sans text-sm text-[#CFC6F2]">{sm!.nakshatra} nakshatra · {SIGN_HI[sm!.lagna]} Lagna</span>
+                <span className="font-sans text-sm text-[#D8D2CB]">{sm!.nakshatra} nakshatra · {SIGN_HI[sm!.lagna]} Lagna</span>
               </div>
               <span className="font-sans text-xs font-bold tracking-[.12em] text-[var(--star)]">FIND YOURS ON LIKHA.IN</span>
             </div>

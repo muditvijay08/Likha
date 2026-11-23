@@ -14,8 +14,8 @@ const HOUSE_POS: [number, number, number, number][] = [
 export function KundliChart({ lagnaSign, planets, size = 230, tone = "paper", draw = false }:
   { lagnaSign: number; planets: ChartPlanet[]; size?: number; tone?: "paper" | "night"; draw?: boolean }) {
   const night = tone === "night";
-  const c = night ? { bg: "transparent", line: "#E8C46E", num: "rgba(232,196,110,.75)", text: "#FFFFFF", moon: "#FF9DBF" }
-                  : { bg: "#FFFBF2", line: "#B8892E", num: "#8A6416", text: "#1D1838", moon: "#C93366" };
+  const c = night ? { bg: "transparent", line: "#FF8A4C", num: "rgba(255,138,76,.8)", text: "#FFFFFF", moon: "#FF8A4C" }
+                  : { bg: "#FFF8EF", line: "#FF5A1F", num: "#C2410C", text: "#111111", moon: "#FF5A1F" };
   const byHouse = new Map<number, string[]>();
   for (const p of planets) {
     const list = byHouse.get(p.house) ?? [];

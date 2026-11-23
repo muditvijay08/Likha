@@ -255,7 +255,7 @@ export function InstallButton() {
   return (
     <div className="stack" style={{ gap: 10 }}>
       <strong style={{ color: "#fff" }}>{state === "ios" ? "On this iPhone:" : "On this phone:"}</strong>
-      <div style={{ color: "#EDE6FF" }}><InstallSteps ios={state === "ios"} /></div>
+      <div style={{ color: "#FFF8EF" }}><InstallSteps ios={state === "ios"} /></div>
     </div>
   );
 }

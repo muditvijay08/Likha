@@ -52,7 +52,7 @@ function Kundli() {
       {tab === "chart" ? (c === undefined ? <div className="skel" style={{ height: 400 }} /> : !c ? (
         <div className="empty card"><strong>Your kundli is still being made</strong><span className="sub">It usually takes a few seconds. Check back soon.</span></div>
       ) : <>
-        <div className="card stack" style={{ alignItems: "center", gap: 10, borderRadius: 22 }}>
+        <div className="card stack" style={{ alignItems: "center", gap: 10, borderRadius: 12 }}>
           <KundliChart lagnaSign={signIndex(c.summary.lagna)} planets={c.planets} />
           <div className="row" style={{ flexWrap: "wrap", justifyContent: "center", gap: 12, fontSize: 13 }}>
             <span><span style={{ color: "var(--muted)" }}>Lagna</span> <strong>{c.summary.lagna}</strong></span>
@@ -78,7 +78,7 @@ function Kundli() {
               {c.mahadashas.filter((m) => m.end >= now).slice(0, 4).concat(c.mahadashas.filter((m) => m.end < now).slice(-1)).sort((a, b) => a.start.localeCompare(b.start)).map((m) => {
                 const cur = m.start <= now && now < m.end;
                 return <span key={m.start} style={{ flex: "none", padding: "8px 12px", borderRadius: 12, fontSize: 12, fontWeight: cur ? 700 : 600,
-                  background: cur ? "var(--saffron)" : m.end < now ? "#F3EEFF" : "#fff", border: cur ? 0 : "1px solid var(--line)", color: m.end < now ? "var(--muted)" : "var(--ink)" }}>
+                  background: cur ? "var(--saffron)" : m.end < now ? "#FFF8EF" : "#fff", border: cur ? 0 : "1px solid var(--line)", color: m.end < now ? "var(--muted)" : "var(--ink)" }}>
                   {m.lord}{cur ? ` · now to ${m.end.slice(0, 4)}` : ` · ${m.start.slice(0, 4)}`}</span>;
               })}
             </div>
@@ -86,7 +86,7 @@ function Kundli() {
           </section>
         )}
       </>) : r === undefined ? <div className="skel" style={{ height: 300 }} /> : !r ? (
-        <div className="card stack" style={{ gap: 10, borderRadius: 20 }}>
+        <div className="card stack" style={{ gap: 10, borderRadius: 12 }}>
           <h2 className="serif" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>The partner your chart is looking for</h2>
           <span className="sub">The Moon signs and nakshatras that score best with yours on the 36-point Guna match, and what your 7th house asks for.</span>
           <ErrorNote error={error} />
@@ -100,9 +100,9 @@ function Kundli() {
           <div className="stack"><span className="label">Best Moon signs for you</span>
             <div className="chips">{r.suits.moon_signs.map((s, i) => <span key={s} className="chip sm" aria-pressed={i === 0} style={{ display: "inline-flex", alignItems: "center" }}>{SIGNS[s]}</span>)}</div></div>
           <div className="stack"><span className="label">Nakshatras that click</span>
-            <div className="chips">{r.suits.nakshatras.map((n) => <span key={n} className="chip sm" style={{ display: "inline-flex", alignItems: "center", background: "var(--rose-soft)", borderColor: "#FFC6D4" }}>{NAKSHATRAS[n]}</span>)}</div></div>
+            <div className="chips">{r.suits.nakshatras.map((n) => <span key={n} className="chip sm" style={{ display: "inline-flex", alignItems: "center", background: "var(--rose-soft)", borderColor: "#FFD2BC" }}>{NAKSHATRAS[n]}</span>)}</div></div>
         </>}
-        {r.content?.sections.map((s) => <section key={s.heading} className="stack" style={{ padding: "14px 16px", borderRadius: 18, background: "#F3EEFF", gap: 6, fontSize: 13, lineHeight: 1.5 }}>
+        {r.content?.sections.map((s) => <section key={s.heading} className="stack" style={{ padding: "14px 16px", borderRadius: 12, background: "#FFF8EF", gap: 6, fontSize: 13, lineHeight: 1.5 }}>
           <strong style={{ fontSize: 14 }}>{s.heading}</strong><span>{s.body}</span></section>)}
         <ErrorNote error={error} />
         <Primary onClick={sortFirst} busy={busy}>Show me these people first</Primary>

@@ -43,7 +43,7 @@ export default function CheckAnyone() {
   if (sent) return (
     <div className="app-body pad" style={{ gap: 16 }}>
       <div className="titlebar"><BackButton href="/store" /><h1>Invite ready</h1></div>
-      <div className="card stack" style={{ gap: 8, borderRadius: 20 }}>
+      <div className="card stack" style={{ gap: 8, borderRadius: 12 }}>
         <strong style={{ fontSize: 16 }}>Now send it to {sent.name}</strong>
         <span className="sub">The full reading unlocks for both of you once {sent.name} joins with this number and agrees. If nobody joins in 30 days, your credits come back.</span>
       </div>
@@ -68,7 +68,7 @@ export default function CheckAnyone() {
         <input id="cw-dob" className="input" type="date" max={new Date().toISOString().slice(0, 10)} min="1940-01-01" value={dob} onChange={(e) => setDob(e.target.value)} /></div>
       {preview && (
         <div style={{ padding: "12px 14px", borderRadius: 16, background: "var(--violet-soft)", display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "#5B44C9" }}>FREE PREVIEW · MOON SIGNS</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "#C2410C" }}>FREE PREVIEW · MOON SIGNS</span>
           <span style={{ fontSize: 14, lineHeight: 1.45 }}>{preview}</span>
           <span className="small">Your Moon: {mineName}. Theirs is worked out from the date only.</span>
         </div>

@@ -9,8 +9,8 @@ import { Pair } from "@/components/couple";
 import { api, type Universe } from "@/lib/api";
 
 const READINGS: { kind: "our_stars" | "our_alignment"; title: string; body: string; bg: string }[] = [
-  { kind: "our_stars", title: "Our Stars", body: "How your two charts get along: Gunas, doshas, what flows and what needs care.", bg: "#FFF3D6" },
-  { kind: "our_alignment", title: "Our Alignment", body: "How your current dashas line up over the next few months.", bg: "#EDE6FF" },
+  { kind: "our_stars", title: "Our Stars", body: "How your two charts get along: Gunas, doshas, what flows and what needs care.", bg: "#FFEDDE" },
+  { kind: "our_alignment", title: "Our Alignment", body: "How your current dashas line up over the next few months.", bg: "#FFF8EF" },
 ];
 
 export default function UniversePage() {
@@ -30,8 +30,8 @@ export default function UniversePage() {
   const others: [string, string, string, string][] = [
     [`/imagine/${match}`, "Imagine Us", status("imagine_us")?.status === "ready" ? "Open your pictures" : `Two painted pictures of you two · ${u.prices.imagine_us} credits`, "var(--rose-soft)"],
     [`/seven/${match}`, "Seven Questions", status("seven_questions") ? "Keep playing" : `Answer together, read what it says · ${u.prices.seven_questions} credits`, "#E4F4EE"],
-    [`/guru/${match}`, "Ask Guru Ji", "Questions about the two of you", "#FFF3D6"],
-    [`/golden/${match}`, "Golden Hours", "Best times to talk this week", "#EDE6FF"],
+    [`/guru/${match}`, "Ask Guru Ji", "Questions about the two of you", "#FFEDDE"],
+    [`/golden/${match}`, "Golden Hours", "Best times to talk this week", "#FFF8EF"],
     [`/story/${match}`, "Our Story", "Your timeline together", "var(--rose-soft)"],
     [`/couple/${match}`, "Couple Mode", "Found your person? Turn it on together", "#fff"],
   ];
@@ -44,8 +44,8 @@ export default function UniversePage() {
       {READINGS.map((r) => {
         const s = status(r.kind);
         return (
-          <section key={r.kind} className="stack" style={{ gap: 8, padding: 16, borderRadius: 20, background: r.bg }}>
-            <strong style={{ fontSize: 16 }}>{r.title}</strong><span style={{ fontSize: 13, color: "#3D3560" }}>{r.body}</span>
+          <section key={r.kind} className="stack" style={{ gap: 8, padding: 16, borderRadius: 12, background: r.bg }}>
+            <strong style={{ fontSize: 16 }}>{r.title}</strong><span style={{ fontSize: 13, color: "#3A3632" }}>{r.body}</span>
             {!s ? <button type="button" className="btn" disabled={busy} onClick={() => start(r.kind)}>Ask {u.other_name} · {u.prices[r.kind]} credits</button>
               : s.status === "pending_consent" ? <Link className="btn ghost" href={`/readings/${s.id}`}>{s.mine ? `Waiting for ${u.other_name} to say yes` : "Waiting for you to say yes"}</Link>
               : <Link className="btn ghost" href={`/readings/${s.id}`}>{s.status === "ready" ? "Read it" : "Being written…"}</Link>}

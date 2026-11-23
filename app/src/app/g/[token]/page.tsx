@@ -28,11 +28,11 @@ export default function GiftLandingPage() {
   return (
     <Screen style={{ gap: 14 }}>
       <div className="wordmark">Likha<span>.</span></div>
-      <div style={{ padding: 20, borderRadius: 22, background: "linear-gradient(135deg, #FFE7B8, #FFD3E0)" }} className="stack">
+      <div style={{ padding: 20, borderRadius: 12, background: "var(--ivory)" }} className="stack">
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "var(--rose-ink)" }}>A GIFT FOR {v.name.toUpperCase()}</span>
         <strong className="serif" style={{ fontSize: 26 }}>{KIND[v.kind] ?? "A reading"}</strong>
         {v.note && <span style={{ fontSize: 15 }}>&ldquo;{v.note}&rdquo;</span>}
-        <span style={{ fontSize: 13, color: "#3D3560" }}>From {v.from}</span>
+        <span style={{ fontSize: 13, color: "#3A3632" }}>From {v.from}</span>
       </div>
       <p className="sub">{ready ? "It's ready to open." : `It opens on ${day}. You can join now and it'll be waiting.`} Join with the mobile number it was sent to and add your birth details; the reading is written from your own kundli.</p>
       <div className="grow" />

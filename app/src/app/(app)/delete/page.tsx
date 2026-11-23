@@ -28,8 +28,8 @@ export default function Delete() {
           {WHY.map((w) => <button key={w} type="button" role="radio" aria-checked={why === w} className="rcard" onClick={() => setWhy(w)}><span className="dot" />{w}</button>)}
         </div>
         {why === "I found someone" && (
-          <Link href="/couple" className="stack" style={{ gap: 4, padding: "14px 16px", borderRadius: 18, background: "var(--rose-soft)", color: "var(--ink)", textDecoration: "none" }}>
-            <strong>Congratulations! Try Couple Mode instead?</strong><span style={{ fontSize: 13, color: "#8A3A55" }}>Hide from Discover and keep your story, readings and chats.</span></Link>
+          <Link href="/couple" className="stack" style={{ gap: 4, padding: "14px 16px", borderRadius: 12, background: "var(--rose-soft)", color: "var(--ink)", textDecoration: "none" }}>
+            <strong>Congratulations! Try Couple Mode instead?</strong><span style={{ fontSize: 13, color: "#9A3412" }}>Hide from Discover and keep your story, readings and chats.</span></Link>
         )}
         {why === "Taking a break" && <Link href="/settings" className="note" style={{ textDecoration: "none", color: "var(--ink)" }}><span><strong>Pause instead?</strong> You disappear from Discover, chats stay, nothing is lost.</span></Link>}
         <div className="card stack" style={{ gap: 4, fontSize: 13, borderRadius: 16 }}>

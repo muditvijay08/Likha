@@ -7,8 +7,8 @@ import { api, type Kick } from "@/lib/api";
 
 const ICONS = [
   <span key="c" style={{ width: 22, height: 22, flex: "none", borderRadius: 6, background: "#FFD43B", border: "1px solid #E0B400" }} />,
-  <svg key="m" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A4300" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}><path d="M12 3c4 4 4 14 0 18M12 3c-4 4-4 14 0 18M3 12h18" /></svg>,
-  <svg key="k" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A4300" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>,
+  <svg key="m" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A3412" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}><path d="M12 3c4 4 4 14 0 18M12 3c-4 4-4 14 0 18M3 12h18" /></svg>,
+  <svg key="k" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A3412" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>,
 ];
 
 const Tile = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -51,34 +51,34 @@ export default function DailyKick() {
       ) : <>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
           <Tile label="Vibe"><span className="serif" style={{ fontSize: 24, fontWeight: 600 }}>{k.teaser.vibe}<span style={{ fontSize: 13, color: "var(--muted)" }}>/10</span></span></Tile>
-          <Tile label="Date score"><span className="serif" style={{ fontSize: 24, fontWeight: 600, color: "#D6336C" }}>{k.teaser.date_score}<span style={{ fontSize: 13, color: "var(--muted)" }}>/10</span></span></Tile>
+          <Tile label="Date score"><span className="serif" style={{ fontSize: 24, fontWeight: 600, color: "#FF5A1F" }}>{k.teaser.date_score}<span style={{ fontSize: 13, color: "var(--muted)" }}>/10</span></span></Tile>
           <Tile label="Good window"><span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{k.teaser.lucky_window ?? "Tonight"}</span></Tile>
         </div>
 
         <div className="lockbox">
           <div className="stack" style={{ gap: 12 }} aria-hidden={!c || undefined}>
-            <section aria-label="Today's nudges" style={{ background: "var(--saffron-soft)", borderRadius: 20, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+            <section aria-label="Today's nudges" style={{ background: "var(--saffron-soft)", borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
               <strong style={{ fontSize: 15 }}>Today&apos;s nudges</strong>
               {(c?.fix ?? ["A message worth sending.", "A small way to rest.", "One kind thing to do."]).map((f, i) => (
                 <div key={i} className="row" style={{ gap: 10, fontSize: 13 }}>{ICONS[i]}{f}</div>
               ))}
             </section>
-            <section aria-label="Best times today" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 20, padding: "6px 16px", display: "flex", flexDirection: "column" }}>
+            <section aria-label="Best times today" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "6px 16px", display: "flex", flexDirection: "column" }}>
               {(c?.time_windows ?? [{ label: "Office and meetings", time: "–" }, { label: "Travel", time: "–" }, { label: "Date or chat", time: "–" }, { label: "Rahu Kaal (traditionally kept free of new starts)", time: "–" }]).map((w, i, all) => (
                 <div key={w.label} className="row" style={{ justifyContent: "space-between", padding: "10px 0", borderBottom: i < all.length - 1 ? "1px solid var(--line-soft)" : 0, fontSize: 13 }}>
-                  <span>{w.label}</span><strong style={{ color: w.label.startsWith("Date") ? "#D6336C" : w.label.includes("Rahu") ? "var(--muted)" : undefined }}>{w.time}</strong>
+                  <span>{w.label}</span><strong style={{ color: w.label.startsWith("Date") ? "#FF5A1F" : w.label.includes("Rahu") ? "var(--muted)" : undefined }}>{w.time}</strong>
                 </div>
               ))}
             </section>
-            <div style={{ background: "var(--rose-soft)", border: "1px solid #FFC6D4", borderRadius: 20, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ background: "var(--rose-soft)", border: "1px solid #FFD2BC", borderRadius: 12, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
               <strong style={{ fontSize: 14 }}>Good day for a first date?</strong>
-              <span style={{ fontSize: 13, color: "#8A3A55" }}>{c?.first_date_answer ?? "Your answer for today."}</span>
+              <span style={{ fontSize: 13, color: "#9A3412" }}>{c?.first_date_answer ?? "Your answer for today."}</span>
               {c?.today_moon && <span className="small">Today&apos;s Moon: {c.today_moon}{c.tara ? ` · your Tara: ${c.tara}` : ""}</span>}
             </div>
           </div>
           {!c && (
             <div className="veil">
-              <LockIcon color="#8A4300" />
+              <LockIcon color="#9A3412" />
               <strong>Today&apos;s nudges, best times and date answer</strong>
               <div style={{ width: "100%", maxWidth: 280 }}>
                 <Primary onClick={unlock} busy={busy}>{home.kick_pass ? "Open with Kick Pass" : `Unlock today · ${cost} credits`}</Primary>

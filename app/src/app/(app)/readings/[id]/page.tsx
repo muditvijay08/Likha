@@ -34,28 +34,28 @@ export default function ReadingPage() {
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/readings" /><h1>{TITLE[r.kind] ?? "Your reading"}</h1></div>
       {r.status === "generating" || r.status === "pending_consent" ? (
-        <div className="card stack" style={{ alignItems: "center", textAlign: "center", gap: 10, padding: 24, borderRadius: 22 }}>
+        <div className="card stack" style={{ alignItems: "center", textAlign: "center", gap: 10, padding: 24, borderRadius: 12 }}>
           <span className="spinner" aria-hidden="true" />
           <strong>{r.status === "pending_consent" ? (r.kind === "seven_questions" ? `Waiting for both of you to finish Seven Questions` : r.match_id ? `Waiting for ${r.name ?? "them"} to say yes` : `Waiting for ${r.name ?? "them"} to join and agree`) : r.kind === "imagine_us" ? "Painting your pictures" : "Writing your reading"}</strong>
           <span className="sub">{r.status === "pending_consent" ? (r.match_id && r.kind !== "seven_questions" ? "You're only charged if they say yes." : "The full reading unlocks for both of you then.") : "Usually under a minute. We'll notify you if you leave."}</span>
         </div>
       ) : r.status === "refunded" || r.status === "failed" ? (
-        <div className="card stack" style={{ gap: 8, borderRadius: 20 }}><strong>We couldn&apos;t write this one</strong><span className="sub">Your {r.credits_charged} credits are back in your wallet.</span></div>
+        <div className="card stack" style={{ gap: 8, borderRadius: 12 }}><strong>We couldn&apos;t write this one</strong><span className="sub">Your {r.credits_charged} credits are back in your wallet.</span></div>
       ) : r.status === "declined" ? (
-        <div className="card stack" style={{ gap: 8, borderRadius: 20 }}><strong>{r.name ?? "They"} said no to this reading</strong><span className="sub">Nothing was charged.</span></div>
+        <div className="card stack" style={{ gap: 8, borderRadius: 12 }}><strong>{r.name ?? "They"} said no to this reading</strong><span className="sub">Nothing was charged.</span></div>
       ) : r.content && <>
         {r.mine === false && <div className="note"><span>Shared with you by {r.name ?? "your match"}. You weren&apos;t charged.</span></div>}
         <h2 className="serif" style={{ margin: 0, fontSize: 24, fontWeight: 600, lineHeight: 1.2 }}>{r.content.title}</h2>
         {r.content.images?.map((src, i) => (
           <figure key={i} style={{ margin: 0 }} className="stack">
-            <img src={src} alt={`Imagined picture ${i + 1}`} style={{ width: "100%", borderRadius: 20, display: "block" }} />
+            <img src={src} alt={`Imagined picture ${i + 1}`} style={{ width: "100%", borderRadius: 12, display: "block" }} />
             <figcaption className="small" style={{ textAlign: "center", marginTop: 4 }}>Imagined, not a real photo</figcaption>
           </figure>
         ))}
-        {r.content.summary && <p className="sub" style={{ color: "#3D3560", fontSize: 15 }}>{r.content.summary}</p>}
+        {r.content.summary && <p className="sub" style={{ color: "#3A3632", fontSize: 15 }}>{r.content.summary}</p>}
         {r.content.sections.map((s, i) => (
-          <section key={s.heading} className="stack" style={{ padding: "14px 16px", borderRadius: 18, gap: 6, fontSize: 14, lineHeight: 1.55,
-            background: ["#FFF3D6", "#F3EEFF", "var(--rose-soft)", "var(--green-soft)"][i % 4] }}>
+          <section key={s.heading} className="stack" style={{ padding: "14px 16px", borderRadius: 12, gap: 6, fontSize: 14, lineHeight: 1.55,
+            background: ["#FFEDDE", "#FFF8EF", "var(--rose-soft)", "var(--green-soft)"][i % 4] }}>
             <strong style={{ fontSize: 15 }}>{i + 1} · {s.heading}</strong><span>{s.body}</span></section>
         ))}
         {r.content.try_this && <div className="note"><span><strong>Try this:</strong> {r.content.try_this}</span></div>}

@@ -58,10 +58,10 @@ export default function FiltersPage() {
           </div>
         </div>
         <div style={row}><span>Distance</span>
-          <span role="radiogroup" aria-label="Distance" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: "#ECE6FA" }}>
+          <span role="radiogroup" aria-label="Distance" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: "#EBE6DF" }}>
             {([["same_city", "Same city"], ["any_city", "Any city"]] as const).map(([v, l]) => (
               <button key={v} type="button" role="radio" aria-checked={f.distance === v} onClick={() => set({ distance: v })}
-                style={{ padding: "4px 10px", borderRadius: 8, border: 0, background: f.distance === v ? "#fff" : "transparent", font: `${f.distance === v ? 700 : 500} 13px var(--sans)`, color: f.distance === v ? "var(--ink)" : "#3D3560" }}>{l}</button>
+                style={{ padding: "4px 10px", borderRadius: 8, border: 0, background: f.distance === v ? "#fff" : "transparent", font: `${f.distance === v ? 700 : 500} 13px var(--sans)`, color: f.distance === v ? "var(--ink)" : "#3A3632" }}>{l}</button>
             ))}
           </span>
         </div>

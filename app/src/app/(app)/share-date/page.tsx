@@ -42,8 +42,8 @@ function ShareDate() {
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton /><h1>Share my date</h1></div>
       <p className="sub">Someone you trust knows where you are. We check in after.</p>
-      <section className="row" style={{ gap: 12, padding: 14, borderRadius: 20, background: "#fff", border: "1px solid var(--line)", alignItems: "flex-start" }}>
-        {m ? <Avatar name={m.first_name} photo={m.photo} size={44} /> : <span className="avatar" style={{ width: 44, height: 44, background: "#F3EEFF", color: "#5B44C9", fontSize: 18 }}>?</span>}
+      <section className="row" style={{ gap: 12, padding: 14, borderRadius: 12, background: "#fff", border: "1px solid var(--line)", alignItems: "flex-start" }}>
+        {m ? <Avatar name={m.first_name} photo={m.photo} size={44} /> : <span className="avatar" style={{ width: 44, height: 44, background: "#FFF8EF", color: "#C2410C", fontSize: 18 }}>?</span>}
         <div className="stack" style={{ flex: 1, gap: 8 }}>
           <label className="label" htmlFor="sd-who">Meeting</label>
           <select id="sd-who" className="input" value={matchId ?? ""} onChange={(e) => setMatchId(e.target.value || null)}>

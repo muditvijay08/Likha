@@ -28,14 +28,14 @@ export default function Waitlist() {
         <p className="sub">We open a city once {q?.threshold.toLocaleString("en-IN") ?? "1,000"} Founding Members join, so your feed is full from day one.</p>
       </div>
 
-      <section aria-label="Your place in line" style={{ borderRadius: 20, padding: 18, display: "flex", flexDirection: "column", gap: 12, background: "var(--ink)", color: "#fff" }}>
+      <section aria-label="Your place in line" style={{ borderRadius: 12, padding: 18, display: "flex", flexDirection: "column", gap: 12, background: "var(--ink)", color: "#fff" }}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
-          <span className="stack" style={{ gap: 2 }}><span className="small" style={{ color: "#C9BDEB" }}>Your place in {q?.city ?? "line"}</span>
+          <span className="stack" style={{ gap: 2 }}><span className="small" style={{ color: "#D8D2CB" }}>Your place in {q?.city ?? "line"}</span>
             <strong style={{ fontFamily: "var(--serif)", fontSize: 34 }}>#{q?.position ?? "…"}</strong></span>
           <span style={{ padding: "4px 10px", borderRadius: 999, background: "var(--saffron)", color: "var(--ink)", fontSize: 12, fontWeight: 700 }}>Founding Member</span>
         </div>
-        <div style={{ height: 8, borderRadius: 999, background: "#3D3560" }}><div style={{ width: `${pct}%`, height: 8, borderRadius: 999, background: "var(--saffron)" }} /></div>
-        <div className="row small" style={{ justifyContent: "space-between", color: "#C9BDEB" }}><span>{q?.members.toLocaleString("en-IN") ?? "…"} joined</span>
+        <div style={{ height: 8, borderRadius: 999, background: "#3A3632" }}><div style={{ width: `${pct}%`, height: 8, borderRadius: 999, background: "var(--saffron)" }} /></div>
+        <div className="row small" style={{ justifyContent: "space-between", color: "#D8D2CB" }}><span>{q?.members.toLocaleString("en-IN") ?? "…"} joined</span>
           <span>{q?.threshold.toLocaleString("en-IN") ?? "1,000"} unlocks {q?.city ?? "the city"}</span></div>
       </section>
 

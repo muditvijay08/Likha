@@ -9,7 +9,7 @@ import { Pair } from "@/components/couple";
 import { api, type Universe } from "@/lib/api";
 
 const SCENES: [string, string, string, string][] = [
-  ["travel", "On a trip", "A hill-station viewpoint at golden hour", "linear-gradient(160deg, #FFB27A, #7E5BEF)"],
+  ["travel", "On a trip", "A hill-station viewpoint at golden hour", "linear-gradient(160deg, #FFB27A, #C2410C)"],
   ["old_age", "At 70", "Grey hair, a cosy home, still laughing", "linear-gradient(160deg, #F6E7C8, #8A6F4E)"],
 ];
 
@@ -33,7 +33,7 @@ export default function Imagine() {
       <div className="stack" role="radiogroup" aria-label="Scene" style={{ gap: 8 }}>
         {SCENES.map(([k, t, d, bg]) => (
           <button key={k} type="button" role="radio" aria-checked={scene === k} onClick={() => setScene(k)}
-            style={{ display: "flex", gap: 12, alignItems: "center", padding: 10, borderRadius: 18, border: scene === k ? "2px solid var(--ink)" : "1px solid var(--line)", background: "#fff", textAlign: "left", font: "inherit", color: "var(--ink)" }}>
+            style={{ display: "flex", gap: 12, alignItems: "center", padding: 10, borderRadius: 12, border: scene === k ? "2px solid var(--ink)" : "1px solid var(--line)", background: "#fff", textAlign: "left", font: "inherit", color: "var(--ink)" }}>
             <span aria-hidden="true" style={{ width: 64, height: 64, borderRadius: 14, background: bg, flex: "none" }} />
             <span className="stack" style={{ gap: 2 }}><strong>{t}</strong><span className="small">{d}</span></span>
           </button>

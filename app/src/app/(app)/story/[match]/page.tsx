@@ -54,14 +54,14 @@ export default function StoryPage() {
             </span>
             <span className="stack" style={{ gap: 2, paddingBottom: 16 }}>
               <span className="small">{fmt(e.at)}</span><strong style={{ fontSize: 14 }}>{e.title}</strong>
-              {e.body && <span style={{ fontSize: 13, color: "#3D3560" }}>{e.body}</span>}
+              {e.body && <span style={{ fontSize: 13, color: "#3A3632" }}>{e.body}</span>}
               {e.photo && <img src={e.photo} alt={e.title} style={{ width: "100%", maxWidth: 260, borderRadius: 14, marginTop: 4 }} />}
             </span>
           </li>
         ))}
       </ol>
       {adding ? (
-        <section className="card stack" style={{ gap: 10, borderRadius: 20 }} aria-label="Add a moment">
+        <section className="card stack" style={{ gap: 10, borderRadius: 12 }} aria-label="Add a moment">
           <div className="field"><label className="label" htmlFor="m-title">What happened</label><input id="m-title" className="input" maxLength={80} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="First trip to Udaipur" /></div>
           <div className="field"><label className="label" htmlFor="m-when">When</label><input id="m-when" type="date" className="input" max={local(new Date())} min={s.matched_at.slice(0, 10)} value={when} onChange={(e) => setWhen(e.target.value)} /></div>
           <div className="field"><label className="label" htmlFor="m-body">A line about it <span style={{ fontWeight: 400, color: "var(--muted)" }}>· optional</span></label>

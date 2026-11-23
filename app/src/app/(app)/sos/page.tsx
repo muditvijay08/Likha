@@ -39,10 +39,10 @@ function Sos() {
       <div className="row" style={{ justifyContent: "space-between" }}><BackButton /><span style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: "var(--red)" }}>EMERGENCY</span><span style={{ width: 44 }} /></div>
       <h1 className="h1 big">Are you safe?</h1>
       <p className="sub">If you&apos;re in danger, call for help first. We&apos;ll do the rest.</p>
-      <a href="tel:112" className="stack" style={{ gap: 2, padding: "18px 20px", borderRadius: 20, background: "var(--red)", color: "#fff", textDecoration: "none" }}>
+      <a href="tel:112" className="stack" style={{ gap: 2, padding: "18px 20px", borderRadius: 12, background: "var(--red)", color: "#fff", textDecoration: "none" }}>
         <strong style={{ fontSize: 22 }}>Call 112</strong><span style={{ fontSize: 13, opacity: .9 }}>India emergency number · in the UAE, call 999</span></a>
       {live ? (
-        <div className="stack" style={{ gap: 8, padding: "16px 18px", borderRadius: 20, background: "var(--green-soft)" }}>
+        <div className="stack" style={{ gap: 8, padding: "16px 18px", borderRadius: 12, background: "var(--green-soft)" }}>
           <strong>Sharing your live location for 2 hours</strong>
           <span style={{ fontSize: 13 }}>Only people you send this private link to can see it. It stops by itself after 2 hours.</span>
           {contacts.map((c) => (

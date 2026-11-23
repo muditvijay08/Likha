@@ -68,7 +68,7 @@ function Chat() {
 
   return (
     <div className="app-body flush" style={{ paddingBottom: "var(--navh)", minHeight: "calc(100dvh - 26px)" }}>
-      <header className="row" style={{ gap: 10, padding: "16px 16px 12px", borderBottom: "1px solid #ECE6FA", background: "#fff", position: "sticky", top: 0, zIndex: 5 }}>
+      <header className="row" style={{ gap: 10, padding: "16px 16px 12px", borderBottom: "1px solid #EBE6DF", background: "#fff", position: "sticky", top: 0, zIndex: 5 }}>
         <button type="button" aria-label="Back" className="iconbtn tip desk-hide" data-tip="Back to chats" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push("/matches")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
         <Link href={`/profile/${c.other.id}`} className="row" style={{ gap: 10, flex: 1, minWidth: 0, color: "var(--ink)", textDecoration: "none" }}>
@@ -77,7 +77,7 @@ function Chat() {
             <span style={{ fontSize: 12, color: "#1F5E49" }}>{c.jodi_score != null ? `${c.jodi_score}% match` : "Matched"}</span></span>
         </Link>
         <Link href={`/safety/report?user=${c.other.id}&match=${c.match_id}`} aria-label="More options" className="tip tip-r" data-tip="Unmatch, block or report"
-          style={{ width: 40, height: 40, borderRadius: 999, background: "#F3EEFF", color: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          style={{ width: 40, height: 40, borderRadius: 999, background: "#FFF8EF", color: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg></Link>
       </header>
 
@@ -95,7 +95,7 @@ function Chat() {
         {c.messages.map((m, i) => (
           <div key={m.id} style={{ display: "contents" }}>
             {(i === 0 || day(c.messages[i - 1].created_at) !== day(m.created_at)) &&
-              <span style={{ alignSelf: "center", fontSize: 11, color: "var(--muted)", padding: "4px 10px", borderRadius: 999, background: "#F3EEFF" }}>{day(m.created_at)}</span>}
+              <span style={{ alignSelf: "center", fontSize: 11, color: "var(--muted)", padding: "4px 10px", borderRadius: 999, background: "#FFF8EF" }}>{day(m.created_at)}</span>}
             <div style={{ alignSelf: m.mine ? "flex-end" : "flex-start", maxWidth: "75%", padding: "10px 14px", fontSize: 14, lineHeight: 1.4,
               borderRadius: m.mine ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.mine ? "var(--saffron)" : "#fff", border: m.mine ? 0 : "1px solid var(--line)", opacity: m.held ? 0.6 : 1 }}>
               {m.kind === "voice" ? (m.media_url ? <audio controls src={m.media_url} style={{ height: 32, maxWidth: 220 }} aria-label="Voice note" /> : "Voice note") : m.body}
@@ -108,25 +108,25 @@ function Chat() {
       </div>
 
       <div style={{ position: "sticky", bottom: "var(--navh)", background: "var(--bg)", zIndex: 4 }}>
-        <div className="row" style={{ gap: 8, padding: "10px 32px 10px 16px", overflowX: "auto", scrollbarWidth: "none", borderTop: "1px solid #ECE6FA",
+        <div className="row" style={{ gap: 8, padding: "10px 32px 10px 16px", overflowX: "auto", scrollbarWidth: "none", borderTop: "1px solid #EBE6DF",
           maskImage: "linear-gradient(to right, #000 calc(100% - 40px), transparent)", WebkitMaskImage: "linear-gradient(to right, #000 calc(100% - 40px), transparent)" }}>
-          {[[`/guru/${c.match_id}`, "Ask Guru Ji", "#E4F4EE", "#1F5E49"], [`/universe/${c.match_id}`, "Our Universe", "#EDE6FF", "#3D3560"], [`/story/${c.match_id}`, "Our Story", "#FFF0F4", "#A3164C"],
-            [`/golden/${c.match_id}`, "Golden Hours", "#FFF3D6", "#8A4300"], [`/share-date?match=${c.match_id}`, "Share my date", "#fff", "var(--ink)"]].map(([href, label, bg, fg]) => (
+          {[[`/guru/${c.match_id}`, "Ask Guru Ji", "#E4F4EE", "#1F5E49"], [`/universe/${c.match_id}`, "Our Universe", "#FFF8EF", "#3A3632"], [`/story/${c.match_id}`, "Our Story", "#FFEDDE", "#A3164C"],
+            [`/golden/${c.match_id}`, "Golden Hours", "#FFEDDE", "#9A3412"], [`/share-date?match=${c.match_id}`, "Share my date", "#fff", "var(--ink)"]].map(([href, label, bg, fg]) => (
             <Link key={label} href={href} style={{ flex: "none", padding: "8px 12px", borderRadius: 999, background: bg, border: bg === "#fff" ? "1px solid var(--line)" : 0, color: fg, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>{label}</Link>
           ))}
         </div>
         <ErrorNote error={error} />
         {c.open ? (
-          <form onSubmit={(e) => { e.preventDefault(); send(); }} className="row" style={{ gap: 8, padding: "10px 12px", background: "#fff", borderTop: "1px solid #ECE6FA" }}>
+          <form onSubmit={(e) => { e.preventDefault(); send(); }} className="row" style={{ gap: 8, padding: "10px 12px", background: "#fff", borderTop: "1px solid #EBE6DF" }}>
             <button type="button" onClick={() => setSheet(true)} aria-label={`Cupid suggestions, ${price(prices, "cupid_opener", 15)} credits`}
-              style={{ height: 44, padding: "0 12px", flex: "none", borderRadius: 999, background: "var(--rose-soft)", border: "1px solid #FFC6D4", color: "var(--rose-ink)", font: "700 12px var(--sans)" }}>Cupid</button>
+              style={{ height: 44, padding: "0 12px", flex: "none", borderRadius: 999, background: "var(--rose-soft)", border: "1px solid #FFD2BC", color: "var(--rose-ink)", font: "700 12px var(--sans)" }}>Cupid</button>
             <label htmlFor="msg" className="sr">Message</label>
             <input id="msg" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder={rec ? "Recording… tap stop to send" : "Type a message"} autoComplete="off"
               style={{ flex: 1, minWidth: 0, height: 44, borderRadius: 999, border: "1px solid var(--line)", background: "var(--bg)", padding: "0 16px", font: "500 14px var(--sans)", color: "var(--ink)" }} />
             {text.trim() ? (
               <button type="submit" disabled={busy} aria-label="Send" className="tip tip-r tip-up" data-tip="Send"
                 style={{ width: 44, height: 44, flex: "none", borderRadius: 999, background: "var(--saffron)", border: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1838" strokeWidth="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z" /></svg></button>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z" /></svg></button>
             ) : (
               <button type="button" onClick={record} aria-label={rec ? "Stop and send voice note" : "Record voice note"} className="tip tip-r tip-up" data-tip={rec ? "Stop and send" : "Record voice note"}
                 style={{ width: 44, height: 44, flex: "none", borderRadius: 999, background: rec ? "var(--rose)" : "var(--saffron)", border: 0, color: rec ? "#fff" : "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center" }}>

@@ -36,9 +36,9 @@ export default function Match() {
               <Avatar name={home.first_name} size={116} ring="var(--star)" />
             </motion.div>
             <motion.div className="absolute right-0" initial={reduce ? false : { x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.8, ease: [0.2, 0.7, 0.2, 1] }}>
-              <Avatar name={m.first_name} photo={m.photo} size={116} ring="#FF9DBF" />
+              <Avatar name={m.first_name} photo={m.photo} size={116} ring="#FF8A4C" />
             </motion.div>
-            <motion.span className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full bg-action text-white shadow-lg"
+            <motion.span className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full bg-action text-ink shadow-lg"
               initial={reduce ? false : { scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.7, type: "spring", stiffness: 260, damping: 14 }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
             </motion.span>
@@ -54,7 +54,7 @@ export default function Match() {
           <section aria-label="Golden Hours" className="flex flex-col gap-1.5 rounded-[20px] border border-white/15 bg-white/8 px-4 py-3.5">
             <span className="font-sans text-xs font-bold tracking-[.1em] text-[var(--star)]">A GOOD TIME TO SAY HI</span>
             <strong className="font-sans text-[17px] text-white">{first.day} · {clockRange(first.start, first.end, tz)}</strong>
-            <span className="font-sans text-[13px] text-[#CFC6F2]">{BEST_FOR_LABEL[first.best_for]} in {city?.name}. More Golden Hours are in your chat.</span>
+            <span className="font-sans text-[13px] text-[#D8D2CB]">{BEST_FOR_LABEL[first.best_for]} in {city?.name}. More Golden Hours are in your chat.</span>
           </section>
         )}
 
@@ -62,7 +62,7 @@ export default function Match() {
         <div className="flex flex-col gap-2.5">
           <Button asChild><Link href={`/chat/${m.match_id}`}>Say hi to {m.first_name}</Link></Button>
           <Button asChild variant="night" size="md" className="w-full"><Link href={`/chat/${m.match_id}?opener=1`}>Stuck? Get an opener idea</Link></Button>
-          <Link href={`/share-date?match=${m.match_id}`} className="pt-1 text-center font-sans text-xs text-[#CFC6F2] hover:text-white">Share date with a friend</Link>
+          <Link href={`/share-date?match=${m.match_id}`} className="pt-1 text-center font-sans text-xs text-[#D8D2CB] hover:text-white">Share date with a friend</Link>
         </div>
       </div>
     </NightSky>

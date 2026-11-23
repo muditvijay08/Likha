@@ -29,15 +29,15 @@ function Report() {
 
   if (step === "choose") return (
     <div className="app-body" style={{ justifyContent: "flex-end", minHeight: "calc(100dvh - 120px)" }}>
-      <section role="dialog" aria-label={`Unmatch or block ${name}`} className="stack" style={{ gap: 10, padding: 20, borderRadius: 24, background: "#fff", boxShadow: "0 -8px 30px rgba(30,24,56,.12)" }}>
+      <section role="dialog" aria-label={`Unmatch or block ${name}`} className="stack" style={{ gap: 10, padding: 20, borderRadius: 12, background: "#fff", boxShadow: "0 -8px 30px rgba(30,24,56,.12)" }}>
         <span aria-hidden="true" style={{ alignSelf: "center", width: 40, height: 4, borderRadius: 999, background: "var(--line)" }} />
         <h1 className="serif" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>Unmatch or block {name}?</h1>
         <button type="button" className="rcard" onClick={unmatch} disabled={busy}><span className="stack" style={{ gap: 2 }}><strong>Unmatch</strong>
           <span style={{ fontSize: 13, color: "var(--muted)" }}>The chat closes for both of you. You may see each other in Discover again.</span></span></button>
         <button type="button" className="rcard" onClick={doBlock} disabled={busy}><span className="stack" style={{ gap: 2 }}><strong>Block</strong>
           <span style={{ fontSize: 13, color: "var(--muted)" }}>Unmatches and hides you from each other for good. {name} isn&apos;t told.</span></span></button>
-        <button type="button" className="rcard" onClick={() => setStep("report")} style={{ borderColor: "#FFC6D4", background: "var(--rose-soft)" }}><span className="stack" style={{ gap: 2 }}>
-          <strong style={{ color: "var(--rose-ink)" }}>Block and report</strong><span style={{ fontSize: 13, color: "#8A3A55" }}>Our safety team reviews your last 50 messages with {name}.</span></span></button>
+        <button type="button" className="rcard" onClick={() => setStep("report")} style={{ borderColor: "#FFD2BC", background: "var(--rose-soft)" }}><span className="stack" style={{ gap: 2 }}>
+          <strong style={{ color: "var(--rose-ink)" }}>Block and report</strong><span style={{ fontSize: 13, color: "#9A3412" }}>Our safety team reviews your last 50 messages with {name}.</span></span></button>
         <ErrorNote error={error} />
         <button type="button" className="btn text" onClick={() => router.back()}>Cancel</button>
       </section>

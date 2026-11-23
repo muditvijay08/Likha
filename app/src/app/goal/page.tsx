@@ -42,7 +42,7 @@ export default function GoalPage() {
           <button key={o.v} type="button" role="radio" aria-checked={goal === o.v} className="rcard" onClick={() => setGoal(o.v)}>
             <span style={{ width: 44, height: 44, flex: "none", borderRadius: 12, background: o.v === "dating" ? "#FFFFFF" : "var(--red-soft)",
               display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--line)" }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E0457B" strokeWidth="2" aria-hidden="true">{o.icon}</svg></span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" strokeWidth="2" aria-hidden="true">{o.icon}</svg></span>
             <span className="stack" style={{ gap: 4, flex: 1 }}><strong style={{ fontSize: 17 }}>{o.title}</strong><span className="sub" style={{ fontSize: 13 }}>{o.body}</span></span>
             {goal === o.v && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5590A" strokeWidth="2.6" aria-hidden="true" style={{ flex: "none", alignSelf: "center" }}><path d="M5 12l5 5L20 7" /></svg>}
           </button>

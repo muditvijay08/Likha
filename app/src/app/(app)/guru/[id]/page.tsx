@@ -33,7 +33,7 @@ export default function Guru() {
       <header className="row" style={{ gap: 10, padding: 16, background: "#fff", borderBottom: `1px solid ${G.line}`, position: "sticky", top: 0, zIndex: 5 }}>
         <button type="button" aria-label="Back" className="iconbtn tip" data-tip="Back to chat" style={{ border: 0, width: 40, height: 40 }} onClick={() => router.push(`/chat/${id}`)}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
-        <span className="stack" style={{ gap: 0, flex: 1 }}><span className="row" style={{ gap: 6 }}><strong style={{ fontSize: 15 }}>Guru Ji</strong><span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "var(--violet-soft)", color: "#3D3560" }}>Virtual</span></span>
+        <span className="stack" style={{ gap: 0, flex: 1 }}><span className="row" style={{ gap: 6 }}><strong style={{ fontSize: 15 }}>Guru Ji</strong><span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "var(--violet-soft)", color: "#3A3632" }}>Virtual</span></span>
           <span style={{ fontSize: 12, color: "var(--muted)" }}>{g ? `About you and ${g.other_name} · ${g.left} of ${g.allowed} questions left` : "…"}</span></span>
       </header>
 
@@ -44,14 +44,14 @@ export default function Guru() {
         )}
         {g?.messages.map((m) => (
           <div key={m.id} style={{ alignSelf: m.from === "guru" ? "flex-start" : "flex-end", maxWidth: m.from === "guru" ? "86%" : "78%", padding: m.from === "guru" ? "12px 14px" : "10px 14px",
-            borderRadius: m.from === "guru" ? "18px 18px 18px 6px" : "18px 18px 6px 18px", background: m.from === "guru" ? "#fff" : m.from === "me" ? "var(--saffron)" : "#FFE7B8",
+            borderRadius: m.from === "guru" ? "18px 18px 18px 6px" : "18px 18px 6px 18px", background: m.from === "guru" ? "#fff" : m.from === "me" ? "var(--saffron)" : "#FFEDDE",
             border: m.from === "guru" ? `1px solid ${G.line}` : 0, fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
             {m.from === "them" && <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--saffron-ink)" }}>{g.other_name}</span>}{m.body}
           </div>
         ))}
         {asking && <>
           <div style={{ alignSelf: "flex-end", maxWidth: "78%", padding: "10px 14px", borderRadius: "18px 18px 6px 18px", background: "var(--saffron)", fontSize: 14 }}>{asking}</div>
-          <div className="row" style={{ alignSelf: "flex-start", gap: 8, padding: "10px 14px", borderRadius: 18, background: "#fff", border: `1px solid ${G.line}`, fontSize: 13, color: "var(--muted)" }}>
+          <div className="row" style={{ alignSelf: "flex-start", gap: 8, padding: "10px 14px", borderRadius: 12, background: "#fff", border: `1px solid ${G.line}`, fontSize: 13, color: "var(--muted)" }}>
             <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} aria-hidden="true" />Guru Ji is reading your charts…</div>
         </>}
         {g && g.left > 0 && !asking && (
@@ -77,7 +77,7 @@ export default function Guru() {
               style={{ flex: 1, minWidth: 0, height: 44, borderRadius: 999, border: `1px solid ${G.line}`, background: G.bg, padding: "0 16px", font: "500 14px var(--sans)", color: "var(--ink)" }} />
             <button type="submit" disabled={busy || !text.trim()} aria-label="Ask" className="tip tip-r tip-up" data-tip="Ask Guru Ji"
               style={{ width: 44, height: 44, flex: "none", borderRadius: 999, background: "var(--saffron)", border: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1838" strokeWidth="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z" /></svg></button>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z" /></svg></button>
           </form>
         )}
         <div style={{ padding: "0 16px 10px", fontSize: 11, color: "var(--muted)", textAlign: "center" }}>Guru Ji is a virtual guide, not a real astrologer. Answers come from your two charts. Guidance, not a verdict. {g?.other_name ?? "Your match"} sees this chat too.</div>

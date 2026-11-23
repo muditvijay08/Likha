@@ -4,8 +4,9 @@
 @layer theme, legacy, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
-@import "@fontsource-variable/fraunces/full.css";
-@import "@fontsource-variable/manrope/index.css";
+@import "@fontsource-variable/fraunces/full.css";       /* wordmark only */
+@import "@fontsource/anton/400.css";
+@import "@fontsource-variable/inter/index.css";
 
 @theme inline {
   --color-ink: var(--ink);
@@ -24,5 +25,7 @@
   --color-good: var(--green);
   --color-good-soft: var(--green-soft);
   --font-serif: var(--serif);
+  --font-display: var(--display);
+  --color-ivory: var(--ivory);
   --font-sans: var(--sans);
 }

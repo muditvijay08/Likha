@@ -25,7 +25,7 @@ export default function Boost() {
   return (
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/menu" /><h1>Boost</h1></div>
-      <div style={{ padding: 20, borderRadius: 22, background: "linear-gradient(135deg, #FFD36E, #FF8A5B)", color: "var(--ink)" }} className="stack">
+      <div style={{ padding: 20, borderRadius: 12, background: "linear-gradient(135deg, #FFD36E, #FF8A5B)", color: "var(--ink)" }} className="stack">
         {b.boost ? live ? <>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em" }}>BOOST IS ON</span>
             <strong className="serif" style={{ fontSize: 34 }} aria-live="polite">{Math.floor(left / 60e3)}:{String(Math.floor(left / 1000) % 60).padStart(2, "0")}</strong>

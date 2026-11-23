@@ -75,10 +75,10 @@ export default function Vibe() {
       {box("about", "About you", f.about, (v) => setF({ ...f, about: v }), "Product designer, part-time chai critic…")}
       {box("fond", "What are you fond of?", f.fond, (v) => setF({ ...f, fond: v }), "Old Hindi songs, long drives…")}
 
-      <div className="row" style={{ gap: 12, padding: "12px 14px", borderRadius: 16, background: "#FFF0F4", border: "1px solid #FFC6D4" }}>
+      <div className="row" style={{ gap: 12, padding: "12px 14px", borderRadius: 16, background: "#FFEDDE", border: "1px solid #FFD2BC" }}>
         <button type="button" onClick={toggleRecord} className="tip" data-tip={rec === "recording" ? "Stop" : "Record voice intro"}
           aria-label={rec === "recording" ? "Stop recording" : "Record voice intro"}
-          style={{ width: 44, height: 44, flex: "none", borderRadius: 999, border: 0, background: "#E0457B", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          style={{ width: 44, height: 44, flex: "none", borderRadius: 999, border: 0, background: "#FF5A1F", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {rec === "recording" ? <span style={{ width: 14, height: 14, background: "#fff", borderRadius: 3 }} />
             : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>}
         </button>

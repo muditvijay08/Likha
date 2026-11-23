@@ -20,16 +20,16 @@ export function InstallCard() {
   useEffect(() => { const up = () => setState(installState()); up(); return onInstallChange(up); }, []);
   if (!state || state === "installed") return null;
   return (
-    <section aria-label="Add Likha to your home screen" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14, borderRadius: 18, background: "#1E1838", color: "#fff" }}>
+    <section aria-label="Add Likha to your home screen" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14, borderRadius: 12, background: "#111111", color: "#fff" }}>
       <div className="row" style={{ gap: 12 }}>
         <img src="/icons/apple-touch-icon.png" alt="" width={44} height={44} style={{ borderRadius: 12, flex: "none" }} />
         <span className="stack" style={{ gap: 2, flex: 1 }}><strong style={{ fontSize: 15 }}>Add Likha to your home screen</strong>
-          <span style={{ fontSize: 12, color: "#CFC7EE" }}>Opens like an app{state === "ios" ? ". On iPhone, notifications need this." : ", with notifications."}</span></span>
+          <span style={{ fontSize: 12, color: "#EBE6DF" }}>Opens like an app{state === "ios" ? ". On iPhone, notifications need this." : ", with notifications."}</span></span>
         {state === "prompt"
           ? <button type="button" className="chip sm" style={{ background: "var(--saffron)", border: 0 }} onClick={() => promptInstall()}>Install</button>
           : <button type="button" className="chip sm" style={{ background: "var(--saffron)", border: 0 }} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Hide" : "How"}</button>}
       </div>
-      {open && state !== "prompt" && <div style={{ color: "#EDE6FF" }}><InstallSteps ios={state === "ios"} /></div>}
+      {open && state !== "prompt" && <div style={{ color: "#FFF8EF" }}><InstallSteps ios={state === "ios"} /></div>}
     </section>
   );
 }

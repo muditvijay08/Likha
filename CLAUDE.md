@@ -6,7 +6,7 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 ## Repo layout
 | Folder | What | Run / test |
 |---|---|---|
-| `app/` | Member PWA, Next.js 16 + React 19 + TypeScript. Onboarding O1–O15, tour T1–T3, and the bottom-nav app (H1, H2, D1–D6, M1–M5, C1–C5, Q1, E1–E14, K1–K2, A1, N1, F1 Family view; public landings L1–L2 at /k and /g, family pages F2 at /f) in `src/app/(app)/`. | `npm run dev` · `npm run build` · `npm run test:e2e` · `npm run check:db` |
+| `app/` | Member PWA, Next.js 16 + React 19 + TypeScript. Onboarding O1–O15, tour T1–T3, and the bottom-nav app (H0 Home = companion at /home, H1 Kundli tab at /stars, H2, D1–D6, M1–M5, C1–C5, Q1, E1–E14, K1–K2, A1, N1, F1 Family view; public landings L1–L2 at /k and /g, family pages F2 at /f) in `src/app/(app)/`. | `npm run dev` · `npm run build` · `npm run test:e2e` · `npm run check:db` |
 | `supabase/schema/` | Postgres schema in 12 parts, concatenated into `likha_schema.sql`. | `supabase/test/*.sql` (456 checks) |
 | `admin/` | Team console, Next.js 16. Sign-in with email code + authenticator (MFA). Built so far: Dashboard, Users, Moderation, Selfie review, Support, Grievances, Data requests, Payments and refunds, Readings, AI spend, Cities, Be a Cupid, Rishta Maasi picks, Social media, Fraud, System health, Engine check (two births through the live kundli service, to compare with AstroSage/Drik), Team and audit, Keys & live mode, AI models, AI CEO + rules, and the Settings pages (pricing, features, comms, onboarding, content, payments, general and legal, security). A setting nothing reads yet must be listed in `private.unused_settings()` (and `UNUSED` in `admin/src/lib/demo-settings.ts`) or marked `unused: true` on its field, so Admin says so. Settings change only through `admin_set_settings` (note required, versioned in `setting_versions`); the shared `SettingsForm` component does this. Every admin action is a `public.admin_*` function that checks a permission and writes the audit log. | `npm run dev` (port 3100) · `npm run build` · `npm run test:e2e` |
 | `supabase/functions/` | Edge Functions: ai-gateway, kundli-worker, kick-batch, cupid-redirect, payout-worker, create-order, razorpay-webhook, safety-worker, reading-worker, admin-keys, admin-ops, social-worker (weekly social posts; see deploy/SOCIAL.md). | `deno test tests/` · `deno check` |
@@ -31,7 +31,8 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 ## Conventions
 - One screen = one route folder in `app/src/app/<route>/page.tsx`, with the design id in the first comment (`// O7 Photos`).
 - Styles: design tokens and classes in `app/src/app/globals.css` (CSS layer `legacy`); shared pieces in `app/src/components/ui.tsx`. Match the canvas; screenshot-compare before merging.
-- Design kit ("ink and night"): Tailwind v4 without preflight (`app/src/app/kit.css`, utilities win over `legacy`), shadcn/ui-style primitives and signature pieces in `app/src/components/kit.tsx` (Button, Badge, NightSky, GunaRing, MoonPortrait, Rise), Motion for three moments only (kundli draw, Guna count-up, match). One action colour (`--action`, Jaipur pink), gold only for kundli and scores, no colours by gender. Fonts are self-hosted (@fontsource), never Google Fonts.
+- Design system (Nov 2026 redesign, from M's "Ultimate master UI/UX" brief): white dominates (`--bg #FFFFFF`, ivory `#FFF8EF` for panels), near-black type `#111111`, one electric orange `--action #FF5A1F` for CTAs, numbers and active states, with near-black text on it (white on orange fails contrast). Headlines in Anton (`--display`, uppercase on `.h1`), body in Inter (`--sans`), the Fraunces wordmark untouched (`--wordmark`). Restrained radii (`--radius` 10px, cards 12–14px), thin borders, minimal shadows, no purple, no gradients except the dark NightSky panel. Tailwind v4 without preflight (`app/src/app/kit.css`, utilities win over `legacy`), primitives in `app/src/components/kit.tsx` (Button, Badge, NightSky, GunaRing, MoonPortrait, Rise). Motion for three moments only (kundli draw, Guna count-up, match). No colours by gender. Fonts self-hosted (@fontsource), never Google Fonts.
+- Bottom nav: Home (companion), Kundli (/stars), Discover, Connect (/matches, with Likes inside), You (/menu). Old `/home` dashboard lives at `/stars`.
 - Scores: Gunas lead, the Jodi Score is explained next to them (`GUNA_INFO`, `JODI_INFO` in `components/app.tsx`). No prices on the match screen.
 - Demo samples and the demo chart come from the real engine: `python -m tools.gen_demo_samples` in `kundli/` writes `app/src/lib/api/samples.generated.json`.
 - Any new database call: add it to `supabase.ts` and `demo.ts`, then run `npm run check:db` and add a step to `supabase/test/40_app_onboarding.sql` / `50_app_screens.sql` (or a new file).
@@ -41,6 +42,13 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 - Times of day (sunrise, Rahu Kaal, horas, Golden Hours) come from `src/lib/panchang.ts`; the same file is copied to `supabase/functions/_shared/panchang.ts`. Change both together.
 - Schema changes: new numbered part file in `supabase/schema/parts/`, rebuild `likha_schema.sql`, run all four test files on a fresh database.
 - Hinglish, playful copy; sentence case; short.
+
+## Decisions from M (Nov 2026 redesign)
+- Members never see the word "AI" (rule 2 stands). Both numbers stay: Gunas /36 and Jodi Score /100; Match Intelligence (real-life fit) is a third, separate section.
+- Companion romance: full romantic setting allowed, chosen by each member, off by default, 18+ only; never sexual, never claims to be human or to have real feelings, crisis replies and real-world nudges stay on.
+- "Why Not?" returns as before, with: first name only, ex's details deleted 30 days after the reading, member confirms they may use them.
+- Welcome credits stay 150 / 70 / 150. Referral rewards are credits; cash only after KYC and a 30-day hold.
+- Events: verified members post, the team approves each one (database layer on branch `events-wip`).
 
 ## Commands
 ```

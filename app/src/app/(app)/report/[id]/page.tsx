@@ -58,9 +58,9 @@ export default function Report() {
       </div>
 
       {p.kootas ? <>
-        <div className="row" style={{ gap: 14, padding: "14px 16px", borderRadius: 22, background: "var(--card)", border: "1px solid var(--line)" }}>
+        <div className="row" style={{ gap: 14, padding: "14px 16px", borderRadius: 12, background: "var(--card)", border: "1px solid var(--line)" }}>
           <GunaRing gunas={g} size={96} />
-          <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 16 }}>{title}</strong><span style={{ fontSize: 13, color: "#3D3560" }}>{line}</span></span>
+          <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 16 }}>{title}</strong><span style={{ fontSize: 13, color: "#3A3632" }}>{line}</span></span>
         </div>
         {p.jodi_score != null && (
           <div className="stack" style={{ gap: 4, padding: "12px 16px", borderRadius: 16, background: "#fff", border: "1px solid var(--line)" }}>
@@ -68,13 +68,13 @@ export default function Report() {
             <span style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>{JODI_INFO}</span>
           </div>
         )}
-        <section aria-label="Ashtakoot breakdown" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 20, padding: "10px 16px", display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
+        <section aria-label="Ashtakoot breakdown" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "10px 16px", display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
           {KOOTAS.map(([k, label, max, tip]) => {
             const v = Number(p.kootas?.[k] ?? 0);
             return (
               <div key={k} style={{ display: "grid", gridTemplateColumns: "104px 1fr 40px", alignItems: "center", gap: 10 }}>
                 <span>{label}<Info text={tip} /></span>
-                <div style={{ height: 6, borderRadius: 999, background: "#ECE6FA" }} role="meter" aria-label={`${label} ${v} of ${max}`} aria-valuemin={0} aria-valuemax={max} aria-valuenow={v}>
+                <div style={{ height: 6, borderRadius: 999, background: "#EBE6DF" }} role="meter" aria-label={`${label} ${v} of ${max}`} aria-valuemin={0} aria-valuemax={max} aria-valuenow={v}>
                   {v > 0 && <div style={{ width: `${(v / max) * 100}%`, height: 6, borderRadius: 999, background: "var(--gold)" }} />}</div>
                 <strong style={{ textAlign: "right" }}>{Number.isInteger(v) ? v : v.toFixed(1)}/{max}</strong>
               </div>
@@ -88,7 +88,7 @@ export default function Report() {
       </> : <div className="card"><strong>Your scores are on their way</strong><p className="sub">We&apos;re still working out this pair. Check back in a minute.</p></div>}
 
       {r?.status === "ready" && r.content ? <>
-        {r.content.summary && <p className="sub" style={{ color: "#3D3560" }}>{r.content.summary}</p>}
+        {r.content.summary && <p className="sub" style={{ color: "#3A3632" }}>{r.content.summary}</p>}
         <div className="grid2" style={{ gap: 8, fontSize: 13, lineHeight: 1.4 }}>
           {sections.slice(0, 2).map((s, i) => (
             <div key={s.heading} style={{ background: i === 0 ? "var(--green-soft)" : "var(--rose-soft)", borderRadius: 16, padding: 12, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -100,7 +100,7 @@ export default function Report() {
       </> : r?.status === "generating" ? (
         <div className="card row" style={{ gap: 12 }}><span className="spinner" aria-hidden="true" /><span className="sub">Writing your report. It usually takes under a minute; we&apos;ll notify you.</span></div>
       ) : p.kootas && (
-        <div className="card stack" style={{ gap: 10, borderRadius: 20 }}>
+        <div className="card stack" style={{ gap: 10, borderRadius: 12 }}>
           <strong style={{ fontSize: 15 }}>The written report</strong>
           <span className="sub">Strengths, watch-outs and how to make it work, written for you two from these scores.</span>
           <Primary onClick={buy} busy={busy}>Read it · {price(prices, "full_report", 29)} credits</Primary>

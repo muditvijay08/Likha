@@ -30,13 +30,13 @@ export default function Gift() {
   return (
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/store" /><h1>Gift a Reading</h1></div>
-      <div style={{ padding: 18, borderRadius: 22, background: "linear-gradient(135deg, #FFE7B8, #FFD3E0)", display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ padding: 18, borderRadius: 12, background: "var(--ivory)", display: "flex", flexDirection: "column", gap: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "var(--rose-ink)" }}>A GIFT FOR {(name.trim() || "THEM").toUpperCase()}</span>
         <span className="serif" style={{ fontSize: 22, fontWeight: 600 }}>{label}</span>
-        <span style={{ fontSize: 13, color: "#3D3560" }}>{note.trim() ? `"${note.trim()}" · ${home?.first_name ?? ""}` : "Add a note below. It shows here."}</span>
+        <span style={{ fontSize: 13, color: "#3A3632" }}>{note.trim() ? `"${note.trim()}" · ${home?.first_name ?? ""}` : "Add a note below. It shows here."}</span>
       </div>
       {sent ? <>
-        <div className="card stack" style={{ gap: 6, borderRadius: 20 }}><strong>Gift ready for {name.trim()}</strong>
+        <div className="card stack" style={{ gap: 6, borderRadius: 12 }}><strong>Gift ready for {name.trim()}</strong>
           <span className="sub">Send the link now; it opens on {day}. They join with this number to open it and add their own birth details.</span></div>
         <a className="btn" href={wa} target="_blank" rel="noopener noreferrer">Send on WhatsApp</a>
         <button type="button" className="btn ghost" onClick={() => navigator.clipboard?.writeText(link)}>Copy link</button>

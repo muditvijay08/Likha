@@ -42,7 +42,7 @@ export default function Settings() {
       <InstallCard />
       {!p || !n ? <div className="skel" style={{ height: 400 }} /> : <>
         <div className="stack"><span style={sec}>LANGUAGE</span>
-          <div role="radiogroup" aria-label="Language" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, padding: 4, borderRadius: 14, background: "#EDE6FF" }}>
+          <div role="radiogroup" aria-label="Language" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, padding: 4, borderRadius: 14, background: "#FFF8EF" }}>
             {([["en", "English"], ["hi", "हिंदी"], ["hinglish", "Hinglish"]] as const).map(([k, l]) => (
               <button key={k} type="button" role="radio" aria-checked={p.language_pref === k} onClick={() => lang(k)}
                 style={{ height: 40, border: 0, borderRadius: 10, background: p.language_pref === k ? "#fff" : "transparent", font: `${p.language_pref === k ? 700 : 600} 14px var(--sans)`, color: "var(--ink)" }}>{l}</button>
@@ -70,7 +70,7 @@ export default function Settings() {
           <Link href="/plans">Plans and credit history<span aria-hidden="true">›</span></Link>
           <Link href="/legal/terms">Terms, privacy and refunds<span aria-hidden="true">›</span></Link>
         </div>
-        <div className="stack" style={{ gap: 4, padding: "12px 14px", borderRadius: 16, background: "#F3EEFF", fontSize: 13 }}>
+        <div className="stack" style={{ gap: 4, padding: "12px 14px", borderRadius: 16, background: "#FFF8EF", fontSize: 13 }}>
           <strong>Grievance Officer: {g?.name ?? "Mudit Dudhoria"}</strong>
           <span>{g?.email ?? "grievance@likha.in"} · reply within {g?.ack_hours ?? 24} hours, resolved within {g?.resolve_days ?? 15} days</span>
           <Link href="/help#grievance">File a grievance</Link>

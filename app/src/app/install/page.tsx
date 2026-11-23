@@ -64,7 +64,7 @@ export default function Install() {
           ))}
         </ol>
       )}
-      <section aria-label="Notification preview" className="stack" style={{ gap: 10, padding: 14, borderRadius: 20, background: "#EDE6FF" }}>
+      <section aria-label="Notification preview" className="stack" style={{ gap: 10, padding: 14, borderRadius: 12, background: "#FFF8EF" }}>
         <span className="label">What you&apos;ll get</span>
         {[["Likha · 7:00 AM", "Good morning. Your stars have tea to spill. Today's Kick is ready."], ["Likha · now", "Someone with 94% compatibility just liked you"]].map(([h, b]) => (
           <div key={h} className="card row" style={{ gap: 12, alignItems: "flex-start" }}>

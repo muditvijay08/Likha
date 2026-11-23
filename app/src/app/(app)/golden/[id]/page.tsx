@@ -70,16 +70,16 @@ export default function Golden() {
           const locked = i > 0 && !open;
           return (
             <div key={h.start.toISOString()} className="row" style={{ justifyContent: "space-between", padding: "12px 14px", borderRadius: 16,
-              background: i === 0 ? "var(--rose-soft)" : "#fff", border: i === 0 ? "1px solid #FFC6D4" : "1px solid var(--line)" }}>
+              background: i === 0 ? "var(--rose-soft)" : "#fff", border: i === 0 ? "1px solid #FFD2BC" : "1px solid var(--line)" }}>
               <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 14 }}>{locked ? (h.best_for === "first_date" ? "Best day for a first date" : "Next deep-chat window") : fmtDay(h.start, h.day)}</strong>
-                <span style={{ fontSize: 12, color: i === 0 ? "#8A3A55" : "var(--muted)" }}>{BEST_FOR_LABEL[h.best_for]}</span></span>
-              {locked ? <LockIcon /> : <strong style={{ fontSize: 15, color: i === 0 ? "#D6336C" : "var(--ink)" }}>{clockRange(h.start, h.end, tz)}</strong>}
+                <span style={{ fontSize: 12, color: i === 0 ? "#9A3412" : "var(--muted)" }}>{BEST_FOR_LABEL[h.best_for]}</span></span>
+              {locked ? <LockIcon /> : <strong style={{ fontSize: 15, color: i === 0 ? "#FF5A1F" : "var(--ink)" }}>{clockRange(h.start, h.end, tz)}</strong>}
             </div>
           );
         })}
       </div>
 
-      <section aria-label="Next 14 days" className="lockbox" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 20 }}>
+      <section aria-label="Next 14 days" className="lockbox" style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12 }}>
         <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }} aria-hidden={!open || undefined}>
           <strong style={{ fontSize: 14 }}>Best day for a first date</strong>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 6, textAlign: "center", fontSize: 12 }}>
@@ -87,28 +87,28 @@ export default function Golden() {
             {days.map((d, k) => {
               const key = dkey(d), b = open && best.has(key), g = open && !b && good.has(key), x = open && !b && !g && skip.has(key);
               return <span key={key} aria-label={b ? "best day" : g ? "good day" : x ? "skip" : undefined} style={{ padding: "8px 0", borderRadius: 10, fontWeight: k === 0 || b || g ? 700 : 400,
-                background: b ? "var(--saffron)" : g ? "var(--rose-soft)" : k === 0 ? "#F3EEFF" : "transparent", color: g ? "var(--rose-ink)" : x ? "var(--muted)" : "var(--ink)",
+                background: b ? "var(--saffron)" : g ? "var(--rose-soft)" : k === 0 ? "#FFF8EF" : "transparent", color: g ? "var(--rose-ink)" : x ? "var(--muted)" : "var(--ink)",
                 textDecoration: x ? "line-through" : undefined }}>
                 {new Intl.DateTimeFormat("en-IN", { timeZone: tz, day: "numeric" }).format(d)}</span>;
             })}
           </div>
           <div className="row" style={{ gap: 14, fontSize: 11, color: "var(--muted)" }}>
             <span className="row" style={{ gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--saffron)" }} />Best (Jupiter hora)</span>
-            <span className="row" style={{ gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--rose-soft)", border: "1px solid #FFC6D4" }} />Good (Venus evening)</span>
+            <span className="row" style={{ gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--rose-soft)", border: "1px solid #FFD2BC" }} />Good (Venus evening)</span>
             <span className="row" style={{ gap: 6 }}><span style={{ textDecoration: "line-through" }}>12</span>Skip (Chandrashtama)</span>
           </div>
           <span className="small">{natal ? "Marked only when the day's Moon suits both your birth stars (Tara Bala) and sits in neither person's 8th sign." : "City timing only for now: both kundlis are needed to check each day for the two of you."}</span>
         </div>
         {!open && (
           <div className="veil">
-            <LockIcon color="#8A4300" /><strong>Every window for 14 days, for both of you</strong>
+            <LockIcon color="#9A3412" /><strong>Every window for 14 days, for both of you</strong>
             <button type="button" onClick={unlock} disabled={busy} className="btn" style={{ maxWidth: 260, height: 48, fontSize: 15 }}>{busy ? "Unlocking…" : `Unlock all · ${price(prices, "golden_hours", 19)} credits`}</button>
           </div>
         )}
       </section>
       <ErrorNote error={error} />
 
-      {plan && <div className="row" style={{ gap: 10, padding: "12px 14px", borderRadius: 16, background: "#F3EEFF", fontSize: 13 }}>
+      {plan && <div className="row" style={{ gap: 10, padding: "12px 14px", borderRadius: 16, background: "#FFF8EF", fontSize: 13 }}>
         <span>Rahu Kaal today: {range(plan.rahu[0], plan.rahu[1])}. Traditionally kept free of big talks and first dates.</span></div>}
       <div className="grow" />
       <Link href={`/chat/${id}`} className="btn">{hours[0] && isToday(hours[0].day) ? `Text ${name} in ${hours[0].day.toLowerCase()}'s window` : `Message ${name}`}</Link>

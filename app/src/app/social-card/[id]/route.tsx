@@ -18,7 +18,7 @@ const loadFonts = () => (fonts ??= Promise.all([
 
 type Card = { kind: string; post_date: string; card: Record<string, any> };
 
-const INK = "#1E1838", SAFFRON = "#FFB020", ROSE = "#E0457B", NIGHT = "#1B1533", MUTED = "#6B6585";
+const INK = "#111111", SAFFRON = "#FFB020", ROSE = "#FF5A1F", NIGHT = "#1B1533", MUTED = "#6B6585";
 const KIND_LABEL: Record<string, string> = {
   panchang: "AAJ KA PANCHANG", pair: "RASHI JODI", koota: "KUNDLI 101", feature: "LIKHA PE", myth: "MYTH VS FACT", golden: "GOLDEN HOURS", brand: "LIKHA DIARIES",
 };
@@ -45,7 +45,7 @@ function Facts({ facts }: { facts: [string, string][] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, marginTop: 44 }}>
       {facts.slice(0, 4).map(([k, v]) => (
-        <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 30px", borderRadius: 26, background: "rgba(255,255,255,0.09)", border: "2px solid rgba(255,255,255,0.14)" }}>
+        <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 30px", borderRadius: 12, background: "rgba(255,255,255,0.09)", border: "2px solid rgba(255,255,255,0.14)" }}>
           <div style={{ fontSize: 34, color: "#D9D3F0" }}>{k}</div>
           <div style={{ fontSize: 40, fontWeight: 800, color: "#FFFFFF" }}>{v}</div>
         </div>
@@ -66,7 +66,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const width = 1080, height = tall ? 1920 : 1350;
   return new ImageResponse(
     <div style={{ width, height, display: "flex", flexDirection: "column", position: "relative", padding: tall ? "150px 80px 120px" : "90px 80px 80px",
-      background: `linear-gradient(160deg, ${NIGHT} 0%, #2A1F55 55%, #4A2350 100%)`, color: "#FFFFFF", fontFamily: "Manrope" }}>
+      background: `linear-gradient(160deg, ${NIGHT} 0%, #1F1C19 55%, #2A2420 100%)`, color: "#FFFFFF", fontFamily: "Manrope" }}>
       <Stars tall={tall} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", fontSize: 54, fontWeight: 700, fontFamily: "Fraunces" }}><span>Likha</span><span style={{ color: SAFFRON }}>.</span></div>

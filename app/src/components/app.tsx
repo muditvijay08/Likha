@@ -86,17 +86,21 @@ export function useDesk(): boolean {
 // ---------------------------------------------------------------- bottom navigation
 const I = {
   home: <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />,
+  kundli: <><rect x="3.5" y="3.5" width="17" height="17" rx="1.5" /><path d="M3.5 3.5l17 17M20.5 3.5l-17 17M12 3.5L3.5 12 12 20.5 20.5 12z" /></>,
   discover: <path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z" />,
-  likes: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />,
-  chats: <path d="M4 5h16v11H8l-4 4z" />,
-  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  connect: <path d="M4 5h16v11H8l-4 4z" />,
+  you: <><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
 };
+// Nov 2026 redesign: Home (companion), Kundli, Discover, Connect (likes, matches, chats), You (profile, wallet, settings).
 const TABS = [
-  { href: "/home", label: "Home", tip: "Your day in the stars", icon: I.home, also: ["/kick"] },
-  { href: "/discover", label: "Discover", tip: "Find people your stars like", icon: I.discover, also: ["/profile", "/filters", "/report"] },
-  { href: "/likes", label: "Likes", tip: "See who liked you. Always free", icon: I.likes, also: [] },
-  { href: "/matches", label: "Chats", tip: "Matches, chats and Saathi", icon: I.chats, also: ["/match", "/chat"] },
-  { href: "/menu", label: "Menu", tip: "Wallet, kundli, store and settings", icon: I.menu, also: [] },
+  { href: "/home", label: "Home", tip: "Your companion and today", icon: I.home, also: ["/saathi"] },
+  { href: "/stars", label: "Kundli", tip: "Your chart, your day, your best matches", icon: I.kundli,
+    also: ["/my-kundli", "/kick", "/golden", "/readings", "/why-not", "/check", "/maasi", "/guru"] },
+  { href: "/discover", label: "Discover", tip: "Find people your stars like", icon: I.discover, also: ["/profile", "/filters", "/report", "/travel", "/boost"] },
+  { href: "/matches", label: "Connect", tip: "Likes, matches and chats", icon: I.connect,
+    also: ["/likes", "/match", "/chat", "/couple", "/universe", "/seven", "/together", "/imagine", "/story", "/share-date"] },
+  { href: "/menu", label: "You", tip: "Profile, wallet and settings", icon: I.you,
+    also: ["/me", "/wallet", "/store", "/settings", "/privacy", "/safety", "/plans", "/tiers", "/invite", "/cupid", "/family", "/trusted"] },
 ] as const;
 
 export function BottomNav() {
@@ -107,11 +111,11 @@ export function BottomNav() {
       <Link href="/home" className="nav-brand" aria-label="Likha home">Likha<span>.</span></Link>
       {TABS.map((t, i) => {
         const on = path === t.href || t.also.some((a) => path.startsWith(a));
-        const badge = t.href === "/likes" ? home?.likes_count : t.href === "/matches" ? home?.unread : 0;
+        const badge = t.href === "/matches" ? (home?.unread ?? 0) + (home?.likes_count ?? 0) : 0;
         return (
           <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined}
             className={`tip tip-up${i === 0 ? "" : i === 4 ? " tip-r" : " tip-c"}`} data-tip={t.tip}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill={on && t.href === "/home" ? "#FFE7B8" : "none"} stroke="currentColor" strokeWidth="2" aria-hidden="true">{t.icon}</svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={on ? 2.4 : 1.8} aria-hidden="true">{t.icon}</svg>
             {t.label}<span className="dot" />
             {!!badge && <span className="badge" aria-label={`${badge} new`}>{badge > 99 ? "99+" : badge}</span>}
           </Link>
@@ -126,7 +130,7 @@ export function Info({ text, cls = "" }: { text: string; cls?: string }) {
   return <span className={`info tip ${cls}`} tabIndex={0} role="note" aria-label={text} data-tip={text}>i</span>;
 }
 
-const PALETTE = [["#FFE4EC", "#E0457B"], ["#EDE6FF", "#7E5BEF"], ["#FFF3D6", "#B5590A"], ["#E4F4EE", "#2F7D63"], ["#DCEBFF", "#1F4FA8"]];
+const PALETTE = [["#FFEDDE", "#FF5A1F"], ["#FFF8EF", "#C2410C"], ["#FFEDDE", "#B5590A"], ["#E4F4EE", "#2F7D63"], ["#DCEBFF", "#1F4FA8"]];
 export const tint = (name: string) => PALETTE[(name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % PALETTE.length];
 
 export function Avatar({ name, photo, size = 56, ring, style }: { name: string; photo?: string | null; size?: number; ring?: string; style?: React.CSSProperties }) {
@@ -152,10 +156,10 @@ export function PhotoBlock({ name, photos, height, index = 0, children }: { name
   );
 }
 
-export const Chevron = ({ color = "#5E5780" }: { color?: string }) => (
+export const Chevron = ({ color = "#706C67" }: { color?: string }) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}><path d="M9 5l7 7-7 7" /></svg>
 );
-export const LockIcon = ({ color = "#5E5780" }: { color?: string }) => (
+export const LockIcon = ({ color = "#706C67" }: { color?: string }) => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
 );
 export const Coin = () => (
@@ -189,12 +193,12 @@ export const ago = (iso: string) => {
 /** ₹499, ₹1,299 (prices are stored in paise and include GST). */
 export const rupees = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-export function Progress({ label, value, max, color = "#7E5BEF" }: { label: string; value: number; max: number; color?: string }) {
+export function Progress({ label, value, max, color = "#C2410C" }: { label: string; value: number; max: number; color?: string }) {
   const pct = max <= 0 ? 100 : Math.min(100, (value / max) * 100);
   return (
     <div className="stack" style={{ gap: 6 }}>
-      <div className="row" style={{ justifyContent: "space-between", fontSize: 12, color: "#3D3560" }}><span>{label}</span><span>{Math.min(value, max)} / {max}{label.includes("streak") ? " days" : ""}</span></div>
-      <div style={{ height: 6, borderRadius: 999, background: "#E7E1F5" }} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(value, max)}>
+      <div className="row" style={{ justifyContent: "space-between", fontSize: 12, color: "#3A3632" }}><span>{label}</span><span>{Math.min(value, max)} / {max}{label.includes("streak") ? " days" : ""}</span></div>
+      <div style={{ height: 6, borderRadius: 999, background: "#EBE6DF" }} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(value, max)}>
         <div style={{ width: `${pct}%`, height: 6, borderRadius: 999, background: color }} /></div>
     </div>
   );

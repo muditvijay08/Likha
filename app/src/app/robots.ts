@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 
 // Search engines may read the website; everything behind sign-in, share links and the sign-up steps stays out.
-const PRIVATE = ["/open", "/home", "/discover", "/likes", "/matches", "/match/", "/chat/", "/profile/", "/me", "/settings", "/privacy", "/delete",
+const PRIVATE = ["/open", "/home", "/stars", "/discover", "/likes", "/matches", "/match/", "/chat/", "/profile/", "/me", "/settings", "/privacy", "/delete",
   "/wallet", "/store", "/checkout", "/payment/", "/invoice/", "/plans", "/tiers", "/inbox", "/menu", "/toolkit", "/readings", "/report/", "/kick",
   "/saathi", "/guru/", "/maasi", "/couple", "/universe", "/story", "/together/", "/seven/", "/imagine/", "/golden/", "/ask/", "/boost", "/travel",
   "/cupid", "/invite", "/trusted", "/share-date", "/sos", "/safety/report", "/checkin/", "/check", "/gift", "/why", "/why-not", "/my-kundli", "/filters",

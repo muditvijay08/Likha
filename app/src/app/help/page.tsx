@@ -52,17 +52,17 @@ function Help() {
   return (
     <Screen style={{ gap: 14 }}>
       <div className="titlebar"><BackButton /><h1>Help</h1></div>
-      <div style={{ padding: "12px 14px", borderRadius: 16, background: "#F3EEFF", fontSize: 14 }}>What can we help with? Pick a topic, or talk to a person.</div>
+      <div style={{ padding: "12px 14px", borderRadius: 16, background: "#FFF8EF", fontSize: 14 }}>What can we help with? Pick a topic, or talk to a person.</div>
       <div className="chips">
         {TOPICS.map((x) => <button key={x.key} type="button" className="chip sm" aria-pressed={topic === x.key} onClick={() => setTopic(topic === x.key ? null : x.key)}>{x.label}</button>)}
         <Link href={signedIn ? "/safety/report" : "/start"} className="chip sm" style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Safety concern</Link>
       </div>
       {T && <div className="listcard">{T.qa.map(([qq, a]) => <details key={qq} style={{ padding: "12px 16px", borderBottom: "1px solid var(--line-soft)" }}>
-        <summary style={{ fontWeight: 600, cursor: "pointer" }}>{qq}</summary><p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.5, color: "#3D3560" }}>{a}</p></details>)}</div>}
+        <summary style={{ fontWeight: 600, cursor: "pointer" }}>{qq}</summary><p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.5, color: "#3A3632" }}>{a}</p></details>)}</div>}
 
       {signedIn ? <>
         {talk ? (
-          <div className="card stack" style={{ gap: 10, borderRadius: 18 }}>
+          <div className="card stack" style={{ gap: 10, borderRadius: 12 }}>
             <label htmlFor="h-msg" className="label">Tell us what happened</label>
             <textarea id="h-msg" className="input" maxLength={2000} value={msg} onChange={(e) => setMsg(e.target.value)} />
             <ErrorNote error={t1.error} />
@@ -76,12 +76,12 @@ function Help() {
             <summary style={{ fontWeight: 600, cursor: "pointer" }}>{tk.subject} <span className="small">· {tk.status.replace("_", " ")}</span></summary>
             <div className="stack" style={{ gap: 6, marginTop: 8 }}>
               {tk.messages.map((m, i) => <div key={i} style={{ alignSelf: m.from === "me" ? "flex-end" : "flex-start", maxWidth: "85%", padding: "8px 12px", borderRadius: 14, fontSize: 13,
-                background: m.from === "me" ? "var(--saffron-soft)" : "#F3EEFF" }}>{m.body}</div>)}
+                background: m.from === "me" ? "var(--saffron-soft)" : "#FFF8EF" }}>{m.body}</div>)}
               <div className="row"><input aria-label="Reply" className="input" value={reply[tk.id] ?? ""} onChange={(e) => setReply({ ...reply, [tk.id]: e.target.value })} placeholder="Reply" />
                 <button type="button" className="btn" style={{ width: 80, height: 48 }} disabled={!reply[tk.id]?.trim() || t1.busy} onClick={() => sendReply(tk.id)}>Send</button></div>
             </div></details>)}
         </section>}
-        <section id="grievance" aria-label="File a grievance" className="stack" style={{ gap: 10, padding: 16, borderRadius: 20, background: "#fff", border: "1px solid var(--line)" }}>
+        <section id="grievance" aria-label="File a grievance" className="stack" style={{ gap: 10, padding: 16, borderRadius: 12, background: "#fff", border: "1px solid var(--line)" }}>
           <div className="stack" style={{ gap: 2 }}><strong>File a formal grievance</strong><span className="small">Under India&apos;s IT Rules. Reviewed by our Grievance Officer.</span></div>
           {filed ? <div className="note"><span>Grievance <strong>{filed}</strong> received. We acknowledge within {g?.ack_hours ?? 24} hours and resolve within {g?.resolve_days ?? 15} days.</span></div> : <>
             <div className="field"><label htmlFor="g-cat" className="label">Category</label>
@@ -96,7 +96,7 @@ function Help() {
           <span className="small">Grievance Officer: {g?.name ?? "Mudit Dudhoria"}, {g?.email ?? "grievance@likha.in"}</span>
         </section>
       </> : (
-        <div className="card stack" style={{ gap: 6, borderRadius: 18 }}>
+        <div className="card stack" style={{ gap: 6, borderRadius: 12 }}>
           <strong>Write to us</strong>
           <a href="mailto:help@likha.in">help@likha.in</a>
           <span className="small">Grievance Officer: {g?.name ?? "Mudit Dudhoria"}, <a href={`mailto:${g?.email ?? "grievance@likha.in"}`}>{g?.email ?? "grievance@likha.in"}</a>. We acknowledge within {g?.ack_hours ?? 24} hours and resolve within {g?.resolve_days ?? 15} days.</span>

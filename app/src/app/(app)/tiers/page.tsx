@@ -25,11 +25,11 @@ export default function Tiers() {
       {t.tiers.map((x) => {
         const i = order.indexOf(x.key), here = i === mine, done = i < mine;
         return (
-          <article key={x.key} style={{ padding: 16, borderRadius: 20, display: "flex", flexDirection: "column", gap: 8,
-            background: here ? "#F4EFFF" : "#fff", border: here ? "1.5px solid #9C88E6" : "1px solid var(--line)", opacity: done ? 0.75 : 1 }}>
+          <article key={x.key} style={{ padding: 16, borderRadius: 12, display: "flex", flexDirection: "column", gap: 8,
+            background: here ? "#FFF8EF" : "#fff", border: here ? "1.5px solid #9C88E6" : "1px solid var(--line)", opacity: done ? 0.75 : 1 }}>
             <div className="row" style={{ justifyContent: "space-between" }}><strong className="serif" style={{ fontSize: 20 }}>{x.label}</strong>
-              <span style={{ fontSize: 13, fontWeight: 700, color: here ? "#5B44C9" : "var(--muted)" }}>{here ? `You're here · ${x.discount}% off` : `${x.discount}% off`}</span></div>
-            <span style={{ fontSize: 13, color: "#3D3560" }}>{x.min_conversations > 0 ? `${x.min_conversations}+ real conversations and a ${x.min_streak_days}-day Kick streak. ` : ""}{PERKS[x.key]}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: here ? "#C2410C" : "var(--muted)" }}>{here ? `You're here · ${x.discount}% off` : `${x.discount}% off`}</span></div>
+            <span style={{ fontSize: 13, color: "#3A3632" }}>{x.min_conversations > 0 ? `${x.min_conversations}+ real conversations and a ${x.min_streak_days}-day Kick streak. ` : ""}{PERKS[x.key]}</span>
             {done && <span style={{ fontSize: 12, fontWeight: 700, color: "#1F5E49" }}>Unlocked</span>}
             {i > mine && x.min_conversations > 0 && <>
               <Progress label="Real conversations" value={t.conversations} max={x.min_conversations} />
@@ -39,7 +39,7 @@ export default function Tiers() {
           </article>
         );
       })}
-      <section className="stack" style={{ padding: "14px 16px", borderRadius: 18, background: "#fff", border: "1px solid var(--line)", gap: 6, fontSize: 13, lineHeight: 1.45 }}>
+      <section className="stack" style={{ padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1px solid var(--line)", gap: 6, fontSize: 13, lineHeight: 1.45 }}>
         <strong style={{ fontSize: 14 }}>How it works</strong>
         <span>A real conversation is 5+ messages from each of you. Likes alone don&apos;t count.</span>
         <span>Tiers update on the 1st of each month, based on the last 30 days.</span>

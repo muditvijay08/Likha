@@ -66,7 +66,7 @@ const TOOLKIT_KEYS = ["daily_kick", "golden_hours", "check_anyone", "saathi", "o
 const COUPLE_KINDS = ["our_stars", "our_alignment", "imagine_us", "seven_questions"];
 /** Demo stand-in for an Imagine Us picture: a drawn scene with the same "Imagined" label the real ones carry. */
 function imaginedSvg(scene: string, n: number) {
-  const sky = { travel: ["#FFB27A", "#7E5BEF"], wedding: ["#FFD36E", "#E8456B"], old_age: ["#F6E7C8", "#8A6F4E"] }[scene] ?? ["#FFB27A", "#7E5BEF"];
+  const sky = { travel: ["#FFB27A", "#C2410C"], wedding: ["#FFD36E", "#E8456B"], old_age: ["#F6E7C8", "#8A6F4E"] }[scene] ?? ["#FFB27A", "#C2410C"];
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">` +
     `<stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs><rect width="640" height="640" fill="url(#g)"/>` +
     `<circle cx="${n ? 470 : 170}" cy="150" r="60" fill="#fff" opacity=".55"/><path d="M0 470 Q160 400 320 450 T640 430 V640 H0Z" fill="#1F1A3D" opacity=".35"/>` +

@@ -77,9 +77,9 @@ export default function Selfie() {
       </div>
 
       <div style={{ position: "relative", alignSelf: "center", width: 240, height: 300, borderRadius: "50% / 45%", overflow: "hidden",
-        border: `4px solid ${done ? "#2F7D63" : "var(--saffron)"}`, background: "#1E1838", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        border: `4px solid ${done ? "#2F7D63" : "var(--saffron)"}`, background: "#111111", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <video ref={video} muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)", display: cam === "on" ? "block" : "none" }} />
-        {cam !== "on" && <span style={{ color: "#C9BDEB", fontSize: 13, padding: 20, textAlign: "center" }}>
+        {cam !== "on" && <span style={{ color: "#D8D2CB", fontSize: 13, padding: 20, textAlign: "center" }}>
           {cam === "blocked" ? "Camera is blocked. Allow camera access in your browser settings." : "Camera starts when you tap below"}</span>}
       </div>
       <div role="status" style={{ textAlign: "center", fontWeight: 700, fontSize: 15 }}>

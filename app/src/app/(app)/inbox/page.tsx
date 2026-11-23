@@ -7,7 +7,7 @@ import { ago, useApp } from "@/components/app";
 import { api, type Notice } from "@/lib/api";
 
 const TABS = [["all", "All"], ["likes", "Likes"], ["readings", "Readings"], ["account", "Account"]] as const;
-const DOT: Record<string, string> = { like: "var(--rose)", match: "var(--rose)", message: "var(--rose)", reading_ready: "#7E5BEF", crush_joined: "#7E5BEF", gift_opened: "#7E5BEF",
+const DOT: Record<string, string> = { like: "var(--rose)", match: "var(--rose)", message: "var(--rose)", reading_ready: "#C2410C", crush_joined: "#C2410C", gift_opened: "#C2410C",
   payment: "var(--green)", tier: "var(--saffron)", checkin: "var(--red)" };
 
 export default function Inbox() {
@@ -21,7 +21,7 @@ export default function Inbox() {
   const earlier = shown.filter((n) => !today.includes(n));
   const Row = ({ n }: { n: Notice }) => {
     const inner = <>
-      <span style={{ width: 36, height: 36, flex: "none", borderRadius: 12, background: "#F3EEFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+      <span style={{ width: 36, height: 36, flex: "none", borderRadius: 12, background: "#FFF8EF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
         {n.type === "tier" && n.data.discount ? `${n.data.discount}%` : <span style={{ width: 10, height: 10, borderRadius: 999, background: DOT[n.type] ?? "var(--muted)" }} />}</span>
       <span className="stack" style={{ gap: 2, flex: 1, minWidth: 0 }}><strong style={{ fontSize: 14, fontWeight: n.read ? 600 : 800 }}>{n.title}</strong>
         <span style={{ fontSize: 12, color: "var(--muted)" }}>{n.body} · {ago(n.created_at) === "New" ? "just now" : `${ago(n.created_at)} ago`}</span></span>
@@ -32,7 +32,7 @@ export default function Inbox() {
   };
   const section = (label: string, xs: Notice[]) => xs.length > 0 && <>
     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "var(--muted)" }}>{label}</span>
-    <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 18 }}>{xs.map((n, i) => <div key={n.id} style={{ borderTop: i ? "1px solid var(--line-soft)" : 0 }}><Row n={n} /></div>)}</div>
+    <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12 }}>{xs.map((n, i) => <div key={n.id} style={{ borderTop: i ? "1px solid var(--line-soft)" : 0 }}><Row n={n} /></div>)}</div>
   </>;
   return (
     <div className="app-body pad" style={{ gap: 12 }}>

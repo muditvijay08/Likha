@@ -24,7 +24,7 @@ export default function Me() {
         <Link href="/me/edit" className="btn ghost" style={{ width: "auto", height: 40, padding: "0 16px", fontSize: 14 }}>Edit</Link>
       </div>
       {p.profile_complete_pct < 100 && (
-        <Link href="/me/edit" className="stack" style={{ gap: 8, padding: "14px 16px", borderRadius: 18, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none" }}>
+        <Link href="/me/edit" className="stack" style={{ gap: 8, padding: "14px 16px", borderRadius: 12, background: "var(--saffron-soft)", color: "var(--ink)", textDecoration: "none" }}>
           <div className="row" style={{ justifyContent: "space-between" }}><strong>Profile {p.profile_complete_pct}% complete</strong>{p.bonus_waiting ? <span style={{ fontSize: 13, color: "var(--saffron-ink)", fontWeight: 700 }}>{p.bonus_waiting} credits waiting</span> : null}</div>
           <div style={{ height: 6, borderRadius: 999, background: "#fff" }}><div style={{ width: `${p.profile_complete_pct}%`, height: 6, borderRadius: 999, background: "var(--saffron)" }} /></div>
         </Link>

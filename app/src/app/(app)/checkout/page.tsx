@@ -35,7 +35,7 @@ function Checkout() {
     <div className="app-body pad" style={{ gap: 16 }}>
       <div className="titlebar"><BackButton href={type === "pack" ? "/wallet" : "/store"} /><h1>Checkout</h1></div>
       {!w ? <div className="skel" style={{ height: 120 }} /> : (
-        <section style={{ padding: "16px 18px", borderRadius: 20, background: "#fff", border: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 6 }}>
+        <section style={{ padding: "16px 18px", borderRadius: 12, background: "#fff", border: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 6 }}>
           <div className="row" style={{ justifyContent: "space-between" }}><strong style={{ fontSize: 17 }}>{pack ? `${pack.credits.toLocaleString("en-IN")} credits` : plan!.label}</strong><strong style={{ fontSize: 17 }}>{rupees(price)}</strong></div>
           <div className="row" style={{ justifyContent: "space-between", fontSize: 12, color: "var(--muted)" }}>
             <span>{pack ? (pack.bonus_pct ? `${base} + ${pack.credits - base} bonus (+${pack.bonus_pct}%)` : "Never expire") : `One ${plan!.interval}, prepaid. Doesn't renew by itself.`}</span><span>Price includes GST</span></div>

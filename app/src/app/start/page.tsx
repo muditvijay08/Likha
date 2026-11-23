@@ -33,7 +33,7 @@ export default function Start() {
   if (picked) return <Why gender={picked} credits={credits} onGo={go} onBack={() => setPicked(null)} />;
 
   const card = (g: Gender, label: string, icon: React.ReactNode) => (
-    <button type="button" onClick={() => choose(g)} style={{ height: 92, borderRadius: 18, background: "var(--card)", border: "1.5px solid var(--line)", color: "var(--ink)",
+    <button type="button" onClick={() => choose(g)} style={{ height: 92, borderRadius: 12, background: "var(--card)", border: "1.5px solid var(--line)", color: "var(--ink)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, font: "700 16px var(--sans)" }}>
       {icon}{label}
     </button>
@@ -80,7 +80,7 @@ const ART: ChartPlanet[] = [["Sun", 5], ["Moon", 7], ["Venus", 7], ["Mars", 10],
   .map(([planet, house]) => ({ planet: planet as string, house: house as number, sign: 0, sign_name: "", retro: false, nakshatra: "" }));
 function Hero() {
   return (
-    <NightSky className="relative h-[300px] flex-none rounded-[28px] shadow-[0_14px_34px_rgba(29,24,56,.22)]">
+    <NightSky className="relative h-[300px] flex-none rounded-[14px] shadow-[0_14px_34px_rgba(29,24,56,.22)]">
       <div className="flex h-[300px] items-center justify-center"><KundliChart lagnaSign={4} planets={ART} tone="night" draw size={220} /></div>
       <StockPhoto name="laugh" eager sizes="(max-width: 480px) 100vw, 480px" />
       <span style={{ position: "absolute", left: 14, bottom: 14, padding: "6px 12px", borderRadius: 999, background: "rgba(18,14,42,.78)", color: "var(--star)", font: "700 12px var(--sans)" }}>Kundli first, then coffee</span>
@@ -140,8 +140,8 @@ function Why({ gender, credits, onGo, onBack }: { gender: Gender; credits: numbe
           </li>
         ))}
       </ul>
-      <div className="stack" style={{ gap: 10, padding: 16, borderRadius: 20, background: "linear-gradient(150deg, #241C46, #3A2A6B)", color: "#fff" }}>
-        <span style={{ font: "800 11px var(--sans)", letterSpacing: ".14em", color: "#FFD98A" }}>YOUR DATING SIDEKICKS</span>
+      <div className="stack" style={{ gap: 10, padding: 16, borderRadius: 12, background: "linear-gradient(150deg, #241C46, #3A2A6B)", color: "#fff" }}>
+        <span style={{ font: "800 11px var(--sans)", letterSpacing: ".14em", color: "#FFB48F" }}>YOUR DATING SIDEKICKS</span>
         <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
           <span aria-hidden="true" style={{ fontSize: 26 }}>👵</span>
           <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 15 }}>Rishta Maasi</strong>
@@ -154,7 +154,7 @@ function Why({ gender, credits, onGo, onBack }: { gender: Gender; credits: numbe
         </div>
       </div>
       {credits > 0 && (
-        <div className="row" style={{ gap: 14, padding: "14px 18px", borderRadius: 18, background: "linear-gradient(120deg, #FFE7A8, #FFC94D)", border: "2px dashed rgba(120,70,0,.35)" }}>
+        <div className="row" style={{ gap: 14, padding: "14px 18px", borderRadius: 12, background: "linear-gradient(120deg, #FFE7A8, #FFC94D)", border: "2px dashed rgba(120,70,0,.35)" }}>
           <strong style={{ font: "700 40px/1 var(--serif)", color: "#5A3300" }}>{credits}</strong>
           <span className="stack" style={{ gap: 2 }}>
             <strong style={{ fontSize: 15, color: "#3D2300" }}>free credits, on us</strong>

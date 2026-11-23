@@ -16,12 +16,12 @@ export default function Tour() {
   const T1 = (
     <div style={{ position: "relative", width: 290, height: 290, margin: "0 auto" }}>
       <svg width="290" height="290" viewBox="0 0 290 290" aria-hidden="true" style={{ position: "absolute", inset: 0 }}>
-        <circle cx="145" cy="145" r="115" fill="none" stroke="#E7E1F5" strokeWidth="1.5" />
-        <circle cx="145" cy="145" r="80" fill="none" stroke="#E7E1F5" strokeWidth="1.5" strokeDasharray="4 6" />
-        <circle cx="145" cy="30" r="4" fill="#7E5BEF" /><circle cx="60" cy="68" r="5" fill="#FF7A9A" /><circle cx="260" cy="145" r="6" fill="#FFB020" />
+        <circle cx="145" cy="145" r="115" fill="none" stroke="#EBE6DF" strokeWidth="1.5" />
+        <circle cx="145" cy="145" r="80" fill="none" stroke="#EBE6DF" strokeWidth="1.5" strokeDasharray="4 6" />
+        <circle cx="145" cy="30" r="4" fill="#C2410C" /><circle cx="60" cy="68" r="5" fill="#FF5A1F" /><circle cx="260" cy="145" r="6" fill="#FFB020" />
       </svg>
       <Bubble l={me} x={50} y={105} bg="var(--g-soft)" fg="var(--g-ink)" />
-      <Bubble l={them} x={160} y={105} bg="#FFE4EC" fg="#E0457B" />
+      <Bubble l={them} x={160} y={105} bg="#FFEDDE" fg="#FF5A1F" />
       <div style={{ position: "absolute", left: 85, top: 190, width: 120, padding: "10px 8px", borderRadius: 14, background: "var(--saffron)", textAlign: "center",
         boxShadow: "0 8px 20px rgba(181,89,10,.25)" }}>
         <strong style={{ fontFamily: "var(--serif)", fontSize: 26, display: "block" }}>92%</strong>
@@ -30,11 +30,11 @@ export default function Tour() {
     </div>
   );
   const T2 = (
-    <div className="card stack" style={{ gap: 12, borderRadius: 20, padding: 18, boxShadow: "0 12px 30px rgba(30,24,56,.10)", border: 0 }}>
+    <div className="card stack" style={{ gap: 12, borderRadius: 12, padding: 18, boxShadow: "0 12px 30px rgba(30,24,56,.10)", border: 0 }}>
       <span className="kicker" style={{ color: "#C02660" }}>TODAY · {today}</span>
       <div className="grid2" style={{ gap: 8 }}>
-        <span className="tile" style={{ background: "#EDE6FF", border: 0 }}><span>Vibe</span><strong style={{ fontFamily: "var(--serif)", fontSize: 20 }}>7/10</strong></span>
-        <span className="tile" style={{ background: "#FFF0F4", border: 0 }}><span>Date score</span><strong style={{ fontFamily: "var(--serif)", fontSize: 20, color: "#C02660" }}>8/10</strong></span>
+        <span className="tile" style={{ background: "#FFF8EF", border: 0 }}><span>Vibe</span><strong style={{ fontFamily: "var(--serif)", fontSize: 20 }}>7/10</strong></span>
+        <span className="tile" style={{ background: "#FFEDDE", border: 0 }}><span>Date score</span><strong style={{ fontFamily: "var(--serif)", fontSize: 20, color: "#C02660" }}>8/10</strong></span>
       </div>
       <span style={{ padding: "8px 10px", borderRadius: 10, background: "var(--saffron-soft)", fontSize: 13, fontWeight: 700 }}>Good window 7:40–9:10 PM</span>
       <span style={{ fontSize: 13 }}>Wear yellow. Big talks after sunset.</span>
@@ -44,9 +44,9 @@ export default function Tour() {
     <div className="stack" style={{ gap: 16, alignItems: "center" }}>
       <div className="card stack" style={{ alignSelf: "flex-start", gap: 8, boxShadow: "0 8px 20px rgba(30,24,56,.08)", border: 0, marginLeft: 20 }}>
         <span style={{ fontSize: 14 }}>Hey, check our Jodi Score?</span>
-        <span style={{ padding: "6px 10px", borderRadius: 8, background: "#FFF0F4", color: "#C02660", fontSize: 12, fontWeight: 700 }}>likha.in/crush/…</span>
+        <span style={{ padding: "6px 10px", borderRadius: 8, background: "#FFEDDE", color: "#C02660", fontSize: 12, fontWeight: 700 }}>likha.in/crush/…</span>
       </div>
-      <div className="stack" style={{ gap: 2, alignItems: "center", padding: "16px 22px", borderRadius: 18, background: "#E0457B", color: "#fff",
+      <div className="stack" style={{ gap: 2, alignItems: "center", padding: "16px 22px", borderRadius: 12, background: "#FF5A1F", color: "#fff",
         boxShadow: "0 12px 26px rgba(224,69,123,.3)" }}>
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".06em" }}>YOUR STARS SAY</span>
         <strong style={{ fontFamily: "var(--serif)", fontSize: 34 }}>88%</strong>
@@ -76,7 +76,7 @@ export default function Tour() {
         <p className="sub" style={{ fontSize: 15 }}>{c.body}</p>
       </div>
       <div className="row" style={{ justifyContent: "center", gap: 6 }} aria-hidden="true">
-        {[1, 2, 3].map((k) => <span key={k} style={{ width: k === i ? 22 : 6, height: 6, borderRadius: 999, background: k === i ? "var(--ink)" : "#D5CFE6" }} />)}
+        {[1, 2, 3].map((k) => <span key={k} style={{ width: k === i ? 22 : 6, height: 6, borderRadius: 999, background: k === i ? "var(--ink)" : "#EBE6DF" }} />)}
       </div>
       <Link className="btn" href={i < 3 ? `/tour/${i + 1}` : "/home"}>{i < 3 ? "Next" : "Start exploring"}</Link>
     </Screen>
