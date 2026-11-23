@@ -2,17 +2,18 @@
 // Astro Store: Check With Anyone first, then readings and plans. Credit prices shown after the member's tier discount.
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Chevron, CreditsPill, price, rupees, useApp } from "@/components/app";
+import { Chevron, CreditsPill, featureOn, price, rupees, useApp } from "@/components/app";
 import { api, type Wallet } from "@/lib/api";
 
 export default function Store() {
-  const { prices } = useApp();
+  const { prices, features } = useApp();
   const [w, setW] = useState<Wallet | null>(null);
   useEffect(() => { api().wallet().then(setW).catch(() => {}); }, []);
   const plan = (k: string) => w?.plans.find((p) => p.key === k);
   const rows: [string, string, string, string][] = [
     ["/gift", "Gift a Reading", "A birthday surprise they open in the app", `${price(prices, "gift", 99)} cr`],
     ["/my-kundli?tab=suits", "Who Suits Me", "The partner your chart is looking for", `${price(prices, "who_suits_me", 49)} cr`],
+    ...(featureOn(features, "/why-not") ? [["/why-not", "Why It Didn't Work", "A kind, honest reading about a past relationship", `${price(prices, "why_not", 79)} cr`] as [string, string, string, string]] : []),
     ["/maasi", "Rishta Maasi", "Your Sunday picks, three people chosen for you", plan("rishta_maasi")?.active_until ? "Active" : `${rupees(plan("rishta_maasi")?.price_paise ?? 29900)}/mo`],
     ["/checkout?type=subscription&key=kick_pass", "Kick Pass", "Your full Daily Kick, every day", plan("kick_pass")?.active_until ? "Active" : `${rupees(plan("kick_pass")?.price_paise ?? 19900)}/mo`],
   ];

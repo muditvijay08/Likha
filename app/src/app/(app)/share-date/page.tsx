@@ -16,9 +16,10 @@ function ShareDate() {
   const [matchId, setMatchId] = useState<string | null>(q.get("match"));
   const [contacts, setContacts] = useState<TrustedContact[] | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
-  const [place, setPlace] = useState("");
+  const [place, setPlace] = useState(q.get("place") ?? "");             // filled in from a planned date (Plan a date > Share my plan)
   const now = new Date(Math.ceil(Date.now() / 900000) * 900000);
-  const [starts, setStarts] = useState(local(new Date(now.getTime() + 3600e3)));
+  const at = q.get("at") ? new Date(q.get("at")!) : null;
+  const [starts, setStarts] = useState(local(at && Number.isFinite(at.getTime()) ? at : new Date(now.getTime() + 3600e3)));
   const [hours, setHours] = useState(2.5);
   const { busy, error, run } = useAction();
   useEffect(() => {

@@ -1,5 +1,5 @@
 "use client";
-// M3 Chat: live messages, voice notes, Golden Hour banner, Cupid openers (paid), shortcuts to Guru Ji and Golden Hours.
+// M3 Chat: live messages, voice notes, Golden Hour banner, Cupid openers (paid), shortcuts to Plan a date, Intent check, Guru Ji and Golden Hours.
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -110,7 +110,8 @@ function Chat() {
       <div style={{ position: "sticky", bottom: "var(--navh)", background: "var(--bg)", zIndex: 4 }}>
         <div className="row" style={{ gap: 8, padding: "10px 32px 10px 16px", overflowX: "auto", scrollbarWidth: "none", borderTop: "1px solid #EBE6DF",
           maskImage: "linear-gradient(to right, #000 calc(100% - 40px), transparent)", WebkitMaskImage: "linear-gradient(to right, #000 calc(100% - 40px), transparent)" }}>
-          {[[`/guru/${c.match_id}`, "Ask Guru Ji", "#E4F4EE", "#1F5E49"], [`/universe/${c.match_id}`, "Our Universe", "#FFF8EF", "#3A3632"], [`/story/${c.match_id}`, "Our Story", "#FFEDDE", "#A3164C"],
+          {[[`/date/${c.match_id}`, "Plan a date", "var(--action)", "var(--ink)"], [`/intent/${c.match_id}`, "Intent check", "#FFF8EF", "var(--ink)"],
+            [`/guru/${c.match_id}`, "Ask Guru Ji", "#E4F4EE", "#1F5E49"], [`/universe/${c.match_id}`, "Our Universe", "#FFF8EF", "#3A3632"], [`/story/${c.match_id}`, "Our Story", "#FFEDDE", "#A3164C"],
             [`/golden/${c.match_id}`, "Golden Hours", "#FFEDDE", "#9A3412"], [`/share-date?match=${c.match_id}`, "Share my date", "#fff", "var(--ink)"]].map(([href, label, bg, fg]) => (
             <Link key={label} href={href} style={{ flex: "none", padding: "8px 12px", borderRadius: 999, background: bg, border: bg === "#fff" ? "1px solid var(--line)" : 0, color: fg, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>{label}</Link>
           ))}

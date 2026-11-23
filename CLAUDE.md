@@ -6,9 +6,9 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 ## Repo layout
 | Folder | What | Run / test |
 |---|---|---|
-| `app/` | Member PWA, Next.js 16 + React 19 + TypeScript. Onboarding O1–O15, tour T1–T3, and the bottom-nav app (H0 Home = companion at /home, H1 Kundli tab at /stars, H2, D1–D6, M1–M5, C1–C5, Q1, E1–E14, K1–K2, A1, N1, F1 Family view; public landings L1–L2 at /k and /g, family pages F2 at /f) in `src/app/(app)/`. | `npm run dev` · `npm run build` · `npm run test:e2e` · `npm run check:db` |
+| `app/` | Member PWA, Next.js 16 + React 19 + TypeScript. Onboarding O1–O15, tour T1–T3, and the bottom-nav app (H0 Home = companion at /home, H1 Kundli tab at /stars, H2, D1–D6, M1–M5, C1–C5, Q1, E1–E14, K1–K2, A1, N1, F1 Family view, C6 Plan a date /date/[match], C7 Intent check /intent/[match], V1–V3 Events /events; public landings L1–L2 at /k and /g, family pages F2 at /f) in `src/app/(app)/`. | `npm run dev` · `npm run build` · `npm run test:e2e` · `npm run check:db` |
 | `supabase/schema/` | Postgres schema in 12 parts, concatenated into `likha_schema.sql`. | `supabase/test/*.sql` (456 checks) |
-| `admin/` | Team console, Next.js 16. Sign-in with email code + authenticator (MFA). Built so far: Dashboard, Users, Moderation, Selfie review, Support, Grievances, Data requests, Payments and refunds, Readings, AI spend, Cities, Be a Cupid, Rishta Maasi picks, Social media, Fraud, System health, Engine check (two births through the live kundli service, to compare with AstroSage/Drik), Team and audit, Keys & live mode, AI models, AI CEO + rules, and the Settings pages (pricing, features, comms, onboarding, content, payments, general and legal, security). A setting nothing reads yet must be listed in `private.unused_settings()` (and `UNUSED` in `admin/src/lib/demo-settings.ts`) or marked `unused: true` on its field, so Admin says so. Settings change only through `admin_set_settings` (note required, versioned in `setting_versions`); the shared `SettingsForm` component does this. Every admin action is a `public.admin_*` function that checks a permission and writes the audit log. | `npm run dev` (port 3100) · `npm run build` · `npm run test:e2e` |
+| `admin/` | Team console, Next.js 16. Sign-in with email code + authenticator (MFA). Built so far: Dashboard, Users, Moderation, Selfie review, Events (approve/reject with reason, reports, insights), Support, Grievances, Data requests, Payments and refunds, Readings, AI spend, Cities, Be a Cupid, Rishta Maasi picks, Social media, Fraud, System health, Engine check (two births through the live kundli service, to compare with AstroSage/Drik), Team and audit, Keys & live mode, AI models, AI CEO + rules, and the Settings pages (pricing, features, comms, onboarding, content, payments, general and legal, security). A setting nothing reads yet must be listed in `private.unused_settings()` (and `UNUSED` in `admin/src/lib/demo-settings.ts`) or marked `unused: true` on its field, so Admin says so. Settings change only through `admin_set_settings` (note required, versioned in `setting_versions`); the shared `SettingsForm` component does this. Every admin action is a `public.admin_*` function that checks a permission and writes the audit log. | `npm run dev` (port 3100) · `npm run build` · `npm run test:e2e` |
 | `supabase/functions/` | Edge Functions: ai-gateway, kundli-worker, kick-batch, cupid-redirect, payout-worker, create-order, razorpay-webhook, safety-worker, reading-worker, admin-keys, admin-ops, social-worker (weekly social posts; see deploy/SOCIAL.md). | `deno test tests/` · `deno check` |
 | `kundli/` | Python FastAPI kundli service (NASA JPL DE421 via Skyfield, Lahiri, Ashtakoota rules `ak-2.0`), plus `/v1/media/*` (ffmpeg) for social cards and videos. | `pytest tests` · `python -m tools.crosscheck_pyjhora` (all 11,664 Guna Milan pairs vs PyJHora; every difference must be a documented table choice, see `kundli/CROSSCHECK.md`; needs `requirements-dev.txt`) |
 
@@ -50,7 +50,11 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 - Companion romance: full romantic setting allowed, chosen by each member, off by default, 18+ only; never sexual, never claims to be human or to have real feelings, crisis replies and real-world nudges stay on.
 - "Why Not?" returns as before, with: first name only, ex's details deleted 30 days after the reading, member confirms they may use them.
 - Welcome credits stay 150 / 70 / 150. Referral rewards are credits; cash only after KYC and a 30-day hold.
-- Events: verified members post, the team approves each one (database layer on branch `events-wip`).
+- Events: verified members post, the team approves each one (part 31). Members see counts, never who is going; insights hide groups under 5.
+- Plan a date (part 34): public place confirmed by an unticked box, no contact details, reminder the day before, check-in from 1h before to 12h after (not okay → /sos + team audit), private reflection; a second date shows only if both say yes. Cron `date-tick` every 15 min.
+- Intent check (part 35): four questions, the other's answers revealed only after you answer; shown side by side, never a score.
+- Cupid rewards (part 36): credits by default (selfie-check reward at once, first-payment reward after the 30-day hold); cash only for Cupids with verified KYC who switch.
+- Why Not (part 37): unticked confirm box, first name only, birth details wiped when the reading is written, daily `why-not-purge` backstop at 30 days.
 
 ## Commands
 ```
@@ -59,7 +63,7 @@ cat supabase/schema/parts/*.sql > supabase/schema/likha_schema.sql
 psql -f supabase/test/00_supabase_stub.sql -f supabase/schema/likha_schema.sql -f supabase/schema/guna_lookup.sql -f supabase/test/50_app_screens.sql
 # app
 cd app && cp .env.example .env.local && npm i && npm run dev
-NEXT_PUBLIC_DEMO=1 npm run build && npm start & npm run test:e2e   # onboarding (23) + member app (36) + chat and companions (25) + wallet and store (33) + account and safety (37) + couples and growth (61)
+NEXT_PUBLIC_DEMO=1 npm run build && npm start & npm run test:e2e   # onboarding (23) + member app (36) + chat and companions (25) + wallet and store (33) + account and safety (37) + couples and growth (62) + launch features (35)
 node --experimental-strip-types --test tests/unit/*.test.ts         # panchang maths; Moon-sign rules vs the kundli engine
 ```
 

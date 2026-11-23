@@ -83,6 +83,24 @@ await page.keyboard.press("a");
 ok(await seen(page.getByText(/Ritu approved/)), "Selfies: A approves");
 ok(await seen(page.getByText("Nothing to review.")), "Selfies: queue empty");
 
+// events: members post, the team approves each one
+await nav("Events");
+const ev1 = page.getByRole("region", { name: "Sunday cycling at Central Park" });
+ok(await seen(ev1) && await seen(page.getByText("What to check")), "Events: pending queue with review rules");
+await btn("Approve", ev1).click();
+ok(await seen(page.getByText("Approved; the host was told")), "Events: approve");
+const ev2 = page.getByRole("region", { name: "Board games and chai night" });
+await btn("Reject", ev2).click();
+await btn("Confirm", ev2).click();
+ok(await seen(page.getByText("Say why (the host sees it).")), "Events: reject needs a reason");
+await ev2.getByLabel("Note").fill("Please add the café's full address");
+await btn("Confirm", ev2).click();
+ok(await seen(page.getByText("Rejected; the host was told")) && await seen(page.getByText("Nothing here.")), "Events: rejected with reason, queue empty");
+await page.getByRole("tab", { name: "Live" }).click();
+ok(await seen(page.getByText("1 report")) && await seen(page.getByText("Sunday cycling at Central Park")), "Events: live list shows reports");
+await page.getByRole("tab", { name: "Insights" }).click();
+ok(await seen(page.getByText("Going, by kind")) && await seen(page.getByText(/groups under 5|group under 5/)), "Events: insights are counts, small groups hidden");
+
 // payments
 await nav("Payments and refunds");
 await page.getByRole("button", { name: "Unconfirmed", exact: true }).click();

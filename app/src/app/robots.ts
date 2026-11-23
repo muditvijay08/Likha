@@ -5,7 +5,7 @@ import { SITE_URL } from "@/lib/site";
 const PRIVATE = ["/open", "/home", "/stars", "/discover", "/likes", "/matches", "/match/", "/chat/", "/profile/", "/me", "/settings", "/privacy", "/delete",
   "/wallet", "/store", "/checkout", "/payment/", "/invoice/", "/plans", "/tiers", "/inbox", "/menu", "/toolkit", "/readings", "/report/", "/kick",
   "/saathi", "/guru/", "/maasi", "/couple", "/universe", "/story", "/together/", "/seven/", "/imagine/", "/golden/", "/ask/", "/boost", "/travel",
-  "/cupid", "/invite", "/trusted", "/share-date", "/sos", "/safety/report", "/checkin/", "/check", "/gift", "/why", "/why-not", "/my-kundli", "/filters",
+  "/cupid", "/date/", "/intent/", "/events", "/invite", "/trusted", "/share-date", "/sos", "/safety/report", "/checkin/", "/check", "/gift", "/why", "/why-not", "/my-kundli", "/filters",
   "/account-status", "/basics", "/birth", "/bonus", "/consent", "/goal", "/lifestyle", "/phone", "/photos", "/preferences", "/selfie", "/vibe", "/kundli",
   "/waitlist", "/tour/", "/install", "/login", "/offline", "/g/", "/i/", "/k/", "/s/", "/social-card/", "/social/", "/family", "/f/"];
 

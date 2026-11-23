@@ -269,7 +269,26 @@ export interface CupidState { is_cupid: boolean; enabled?: boolean; signup_paise
   rates?: { signup_paise: number; first_paid_paise: number; hold_days: number; min_payout_paise: number }; links?: CupidLink[];
   people?: { joined: number; verified: number; paid: number }; recent?: { initial: string; status: string; at: string }[];
   money?: { on_hold_paise: number; withdrawable_paise: number; paid_paise: number; tds_this_fy_paise: number }; kyc?: string | null;
-  payouts?: { id: string; gross: number; tds: number; net: number; status: string; requested_at: string; paid_at: string | null }[] }
+  payouts?: { id: string; gross: number; tds: number; net: number; status: string; requested_at: string; paid_at: string | null }[];
+  /** Rewards come as credits unless the Cupid switches to cash (needs verified KYC; cash after the 30-day hold). */
+  reward_mode?: "credits" | "cash"; credits_earned?: number }
+// Connect > Meet: a date invitation inside a match. The other person's reflection is never shown, only both_again.
+export type DatePhase = "proposed" | "declined" | "cancelled" | "upcoming" | "now" | "past";
+export interface DatePlan { id: string; idea: string; place: string; starts_at: string; status: "proposed" | "accepted" | "declined" | "cancelled";
+  note: string | null; mine: boolean; phase: DatePhase; my_checkin: boolean | null; my_reflection: "yes" | "maybe" | "no" | null; both_again: boolean }
+export interface DateInvite { idea: string; place: string; starts_at: string; public_place: boolean; note?: string }
+// Connect > Understand: four private questions; theirs is revealed only once I've answered too.
+export interface IntentAnswers { looking_for: "marriage" | "serious" | "getting_to_know"; timeline: "within_1y" | "1_2y" | "not_sure";
+  family: "soon" | "in_a_few_months" | "when_serious"; exclusive: "now" | "soon" | "not_yet" }
+export interface IntentState { mine: IntentAnswers | null; they_answered: boolean; theirs: IntentAnswers | null; other_name: string }
+// Events: members post, the team approves each one. Members see counts, never who is going.
+export type EventCategory = "music" | "food" | "fitness" | "culture" | "festival" | "workshop" | "social" | "spiritual" | "outdoors" | "other";
+export interface EventCard { id: string; title: string; category: EventCategory; starts_at: string; ends_at: string; venue_name: string; venue_area: string;
+  city: string; price_inr: number; capacity: number | null; singles_only: boolean; status: "pending" | "approved" | "rejected" | "cancelled";
+  host: { first_name: string; verified: boolean }; host_is_me: boolean; going: number; interested: number; my_rsvp: "going" | "interested" | null;
+  matches_going: number; strong_going: number; description?: string; status_reason?: string | null }
+export interface EventDraft { title: string; category: EventCategory; description: string; starts_at: string; ends_at: string; venue_name: string;
+  venue_area: string; price_inr: number; capacity: number | null; singles_only: boolean; public_venue: boolean }
 export interface CrushLanding { name: string; open: boolean }
 export interface GiftLanding { name: string; from: string; note: string | null; kind: string; deliver_on: string; open: boolean }
 
@@ -438,6 +457,24 @@ export interface Api {
   createCupidLink(code: string, label: string, target: string): Promise<void>;
   submitCupidKyc(legalName: string, pan: string, upi: string, resident: boolean): Promise<void>;
   requestPayout(): Promise<void>;
+  cupidRewardMode(mode: "credits" | "cash"): Promise<void>;
+  // Connect: dates and the intent check
+  matchDates(matchId: string): Promise<DatePlan[]>;
+  dateInvite(matchId: string, d: DateInvite): Promise<string>;
+  dateAnswer(dateId: string, yes: boolean): Promise<void>;
+  dateCancel(dateId: string): Promise<void>;
+  dateCheckin(dateId: string, ok: boolean): Promise<{ ok: boolean; sos: boolean }>;
+  dateReflect(dateId: string, again: "yes" | "maybe" | "no", note?: string): Promise<{ both_again: boolean }>;
+  intent(matchId: string): Promise<IntentState>;
+  intentSave(matchId: string, a: IntentAnswers): Promise<IntentState>;
+  // Events
+  events(category?: EventCategory | null): Promise<EventCard[]>;
+  event(id: string): Promise<EventCard | null>;
+  eventCreate(d: EventDraft): Promise<string>;
+  eventRsvp(id: string, status: "going" | "interested" | null): Promise<EventCard>;
+  eventCancel(id: string, reason?: string): Promise<void>;
+  myEvents(): Promise<{ hosting: EventCard[]; going: EventCard[] }>;
+  eventReport(id: string, reason: string): Promise<void>;
   crushLanding(token: string): Promise<CrushLanding | null>;
   giftLanding(token: string): Promise<GiftLanding | null>;
   claimCrush(token: string): Promise<string>;

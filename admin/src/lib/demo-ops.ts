@@ -1,5 +1,5 @@
 // Demo data for the daily-work screens. Sample people only (the demo bar says so). Rules mirror database part 15.
-import type { Appeal, Candidate, DataRequest, GrievanceRow, MaasiMember, PaymentRow, ReadingRow, RefundRow, ReportRow, SelfieRow, Ticket, TicketRow, UserDetail } from "./types";
+import type { AdminEvent, Appeal, Candidate, DataRequest, GrievanceRow, MaasiMember, PaymentRow, ReadingRow, RefundRow, ReportRow, SelfieRow, Ticket, TicketRow, UserDetail } from "./types";
 
 const H = 3600e3, D = 864e5;
 const iso = (msAgo: number) => new Date(Date.now() - msAgo).toISOString();
@@ -16,6 +16,24 @@ export interface Ops {
   maasi: { user_id: string; until: string }[]; picks: { id: string; user_id: string; pick_id: string; name: string; note: string; response: string | null; week_of: string }[];
   ledger: Record<string, { at: string; delta: number; kind: string; reason: string; balance: number }[]>; crush: { from: string; to: string; token: string; joined: boolean; expires: string; at: string }[];
   audit: { at: string; action: string; target: string; note: string }[];
+  events?: AdminEvent[];
+}
+// Sample events for the review queue (demo only). Starts move with today.
+export function seedEvents(): AdminEvent[] {
+  const at = (days: number, h: number) => { const d = new Date(); d.setDate(d.getDate() + days); d.setHours(h, 0, 0, 0); return d.toISOString(); };
+  const E = (id: string, title: string, category: string, days: number, h: number, venue_name: string, venue_area: string, price_inr: number, host: string, host_id: string,
+    status: AdminEvent["status"], description: string, extra: Partial<AdminEvent> = {}): AdminEvent =>
+    ({ id, title, category, description, starts_at: at(days, h), ends_at: at(days, h + 2), venue_name, venue_area, city: "Jaipur", price_inr, capacity: null, singles_only: false,
+       status, status_reason: null, created_at: iso((days + 1) * H), host: `${sid(host_id)} ${host}`, host_id, host_demo: true, host_events: 0, going: 0, reports: [], ...extra });
+  return [
+    E("ev-1", "Sunday cycling at Central Park", "fitness", 3, 6, "Central Park, Gate 2", "C-Scheme", 0, "Riya", "u-r1y4a7", "pending",
+      "An easy 10 km loop around Central Park, then chai. Bring your own cycle and a helmet. All levels welcome."),
+    E("ev-2", "Board games and chai night", "social", 5, 18, "Tapri Central", "C-Scheme", 250, "Aarav", "u-a1b2c3", "pending",
+      "Catan, Codenames and a lot of chai. Entry covers one drink and snacks, paid at the café.", { capacity: 24, singles_only: true, host_events: 1 }),
+    E("ev-3", "Kathak basics workshop", "workshop", 2, 11, "Jawahar Kala Kendra", "JLN Marg", 400, "Rahul", "u-r4hu11", "approved",
+      "Learn your first Kathak tukda with a trained teacher. Wear something comfortable.", { going: 18, host_events: 2,
+        reports: [{ reason: "Price on the poster was different", at: iso(5 * H) }] }),
+  ];
 }
 
 export function seedOps(): Ops {

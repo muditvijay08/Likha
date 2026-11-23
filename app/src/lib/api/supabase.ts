@@ -7,6 +7,7 @@ import type {
   CityCounter, WaitlistJoin, WaitlistResult,
   Api, Basics, Birth, Card, City, CityQueue, Filters, FamilyPage, FamilyShares, Gender, Goal, MaritalStatus, MarriageTimeline, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
+  DatePlan, DateInvite, IntentAnswers, IntentState, EventCard, EventCategory, EventDraft,
 } from "./types";
 
 /** Errors the database raises on purpose, in member words. */
@@ -672,6 +673,24 @@ export class SupabaseApi implements Api {
     await this.rpc("submit_cupid_kyc", { p_legal_name: name, p_pan: pan, p_upi: upi, p_resident_india: resident }, "Payout details");
   }
   async requestPayout() { await this.rpc("request_cupid_payout", {}, "Withdraw"); }
+  async cupidRewardMode(mode: "credits" | "cash") { await this.rpc("cupid_reward_mode", { p_mode: mode }, "Rewards"); }
+  async matchDates(matchId: string) { return (await this.rpc<DatePlan[]>("match_dates", { p_match: matchId })) ?? []; }
+  async dateInvite(matchId: string, d: DateInvite) { return this.rpc<string>("date_propose", { p_match: matchId, p: d }, "Invitation"); }
+  async dateAnswer(dateId: string, yes: boolean) { await this.rpc("date_answer", { p_date: dateId, p_yes: yes }, "Answer"); }
+  async dateCancel(dateId: string) { await this.rpc("date_cancel", { p_date: dateId }, "Cancel"); }
+  async dateCheckin(dateId: string, ok: boolean) { return this.rpc<{ ok: boolean; sos: boolean }>("date_checkin", { p_date: dateId, p_ok: ok }, "Check-in"); }
+  async dateReflect(dateId: string, again: "yes" | "maybe" | "no", note?: string) {
+    return this.rpc<{ both_again: boolean }>("date_reflect", { p_date: dateId, p_again: again, p_note: note ?? null }, "Saving");
+  }
+  async intent(matchId: string) { return this.rpc<IntentState>("intent_view", { p_match: matchId }); }
+  async intentSave(matchId: string, a: IntentAnswers) { return this.rpc<IntentState>("intent_save", { p_match: matchId, p: a }, "Saving"); }
+  async events(category?: EventCategory | null) { return (await this.rpc<EventCard[]>("events_list", { p_category: category ?? null, p_days: 30 })) ?? []; }
+  async event(id: string) { return (await this.rpc<EventCard | null>("event_view", { p_event: id })) ?? null; }
+  async eventCreate(d: EventDraft) { return this.rpc<string>("event_create", { p: d }, "Event"); }
+  async eventRsvp(id: string, status: "going" | "interested" | null) { return this.rpc<EventCard>("event_rsvp", { p_event: id, p_status: status }, "RSVP"); }
+  async eventCancel(id: string, reason?: string) { await this.rpc("event_cancel", { p_event: id, p_reason: reason ?? null }, "Cancel"); }
+  async myEvents() { return this.rpc<{ hosting: EventCard[]; going: EventCard[] }>("my_events"); }
+  async eventReport(id: string, reason: string) { await this.rpc("event_report", { p_event: id, p_reason: reason }, "Report"); }
   async crushLanding(token: string) { return (await this.rpc<CrushLanding | null>("crush_landing", { p_token: token })) ?? null; }
   async giftLanding(token: string) { return (await this.rpc<GiftLanding | null>("gift_landing", { p_token: token })) ?? null; }
   async claimCrush(token: string) {

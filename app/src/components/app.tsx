@@ -15,6 +15,7 @@ export const useApp = () => useContext(Ctx);
 export const FEATURE_OF: Record<string, string> = {
   "/kick": "daily_kick", "/saathi": "saathi", "/maasi": "rishta_maasi", "/imagine": "imagine_us", "/couple": "couple_mode",
   "/travel": "travel_mode", "/check": "check_anyone", "/matches": "golden_hours", "/why-not": "why_not",
+  "/events": "events",
 };
 export function FeatureGate({ path, children }: { path: string; children: ReactNode }) {
   const { features } = useApp();
@@ -96,9 +97,9 @@ const TABS = [
   { href: "/home", label: "Home", tip: "Your companion and today", icon: I.home, also: ["/saathi"] },
   { href: "/stars", label: "Kundli", tip: "Your chart, your day, your best matches", icon: I.kundli,
     also: ["/my-kundli", "/kick", "/golden", "/readings", "/why-not", "/check", "/maasi", "/guru"] },
-  { href: "/discover", label: "Discover", tip: "Find people your stars like", icon: I.discover, also: ["/profile", "/filters", "/report", "/travel", "/boost"] },
+  { href: "/discover", label: "Discover", tip: "Find people your stars like", icon: I.discover, also: ["/profile", "/filters", "/report", "/travel", "/boost", "/events"] },
   { href: "/matches", label: "Connect", tip: "Likes, matches and chats", icon: I.connect,
-    also: ["/likes", "/match", "/chat", "/couple", "/universe", "/seven", "/together", "/imagine", "/story", "/share-date"] },
+    also: ["/likes", "/match", "/chat", "/couple", "/universe", "/seven", "/together", "/imagine", "/story", "/share-date", "/date", "/intent"] },
   { href: "/menu", label: "You", tip: "Profile, wallet and settings", icon: I.you,
     also: ["/me", "/wallet", "/store", "/settings", "/privacy", "/safety", "/plans", "/tiers", "/invite", "/cupid", "/family", "/trusted"] },
 ] as const;

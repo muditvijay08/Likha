@@ -203,6 +203,8 @@ select pg_temp.step('Rohan''s second account tries his link', $q$select public.a
 select pg_temp.act_as_server();
 select pg_temp.check('Same device: referral blocked',
   $q$select status='blocked' from public.cupid_referrals where referred_user_id='b0000000-0000-0000-0000-000000000005'$q$);
+-- Rohan is a cash partner (KYC done offline in this test); credits-mode Cupids are covered in F3_launch.sql
+update public.cupids set reward_mode = 'cash' where user_id = 'b0000000-0000-0000-0000-000000000001';
 -- Neha and the faker verify
 update public.profiles set profile_complete_pct=100, selfie_status='passed', status='active'
  where id in ('b0000000-0000-0000-0000-000000000004','b0000000-0000-0000-0000-000000000005');
@@ -227,6 +229,9 @@ select pg_temp.check('Hold over and Neha still active: earnings released', $q$se
 -- second level: Neha becomes a Cupid and brings Arjun
 select pg_temp.act_as('b0000000-0000-0000-0000-000000000004');
 select pg_temp.step('Neha becomes a Cupid', $q$select public.become_cupid('1.0')$q$);
+select pg_temp.act_as_server();
+update public.cupids set reward_mode = 'cash' where user_id = 'b0000000-0000-0000-0000-000000000004';   -- cash path, as for Rohan
+select pg_temp.act_as('b0000000-0000-0000-0000-000000000004');
 select pg_temp.act_as_server();
 select set_config('test.neha_code', (select code::text from public.cupid_links where cupid_id='b0000000-0000-0000-0000-000000000004' limit 1), false);
 select pg_temp.act_as('b0000000-0000-0000-0000-000000000006');

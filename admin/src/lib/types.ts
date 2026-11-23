@@ -149,6 +149,9 @@ export interface AdminApi {
   appeals(): Promise<Appeal[]>;
   decideAppeal(id: string, overturn: boolean, note: string): Promise<void>;
   selfies(): Promise<SelfieQueue>;
+  events(status: AdminEventStatus): Promise<AdminEvent[]>;
+  decideEvent(id: string, approve: boolean, reason?: string | null): Promise<void>;
+  eventInsights(days: number): Promise<EventInsights>;
   decideSelfie(id: string, decision: "approve" | "retry" | "reject", reason?: string): Promise<void>;
   payments(filter: string, query: string): Promise<Payments>;
   recheckPayment(id: string): Promise<{ ok: boolean; note: string }>;
@@ -302,3 +305,16 @@ export interface EngineCheck {
   milan: { kootas: Record<string, number>; total: number; adjusted_total: number; doshas: Record<string, EngineDosha>; rules_version: string;
     details: Record<"boy" | "girl", Record<string, string | number>> };
 }
+
+// Events: members post, the team approves each one. Insights are aggregates only; groups under min_group are hidden.
+export type AdminEventStatus = "pending" | "approved" | "rejected" | "cancelled";
+export interface AdminEvent { id: string; title: string; category: string; description: string; starts_at: string; ends_at: string; venue_name: string; venue_area: string;
+  city: string; price_inr: number; capacity: number | null; singles_only: boolean; status: AdminEventStatus; status_reason: string | null; created_at: string;
+  host: string; host_id: string; host_demo: boolean; host_events: number; going: number; reports: { reason: string; at: string }[] }
+export interface EventInsights { days: number; min_group: number;
+  totals: { posted: number; approved: number; rejected: number; cancelled: number; pending: number; hosts: number };
+  rsvps: { going: number; interested: number; people: number };
+  by_category: { category: string; events: number; going: number; interested: number }[];
+  by_weekday: { dow: number; going: number }[]; by_hour: { hour: number; going: number }[];
+  by_area: { city: string; area: string; events: number; going: number }[];
+  by_element: { element: string; category: string; going: number }[]; repeat_goers: number }

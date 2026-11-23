@@ -15,17 +15,19 @@ export default function WhyNot() {
   const [dob, setDob] = useState("");
   const [tob, setTob] = useState("");
   const [dur, setDur] = useState("6m_2y");
+  const [ok, setOk] = useState(false);                    // DPDP: starts unticked
+  const first = name.trim().split(/\s+/)[0] ?? "";
   const { busy, error, run } = useAction();
   const buy = () => run(async () => {
-    const id = await api().startReading("why_not", { name: name.trim(), birth_date: dob, birth_time: tob || null, duration: dur });
+    const id = await api().startReading("why_not", { name: first, birth_date: dob, birth_time: tob || null, duration: dur, confirm: ok });
     await reload(); router.push(`/readings/${id}`);
   });
   return (
     <div className="app-body pad" style={{ gap: 14 }}>
       <div className="titlebar"><BackButton href="/store" /><h1>Why It Didn&apos;t Work</h1></div>
       <p className="sub">Close the chapter with a kind, honest reading. Then find someone who fits better.</p>
-      <div className="field"><label htmlFor="wn-name" className="label">Their name or a nickname</label>
-        <input id="wn-name" className="input" maxLength={40} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" /></div>
+      <div className="field"><label htmlFor="wn-name" className="label">Their first name or a nickname</label>
+        <input id="wn-name" className="input" maxLength={20} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" /></div>
       <div className="grid2">
         <div className="field"><label htmlFor="wn-dob" className="label">Date of birth</label>
           <input id="wn-dob" className="input" type="date" min="1940-01-01" max={new Date(Date.now() - 16 * 365.25 * 864e5).toISOString().slice(0, 10)} value={dob} onChange={(e) => setDob(e.target.value)} /></div>
@@ -39,10 +41,14 @@ export default function WhyNot() {
         <span>1 · What pulled you together</span><span>2 · Where your charts clashed</span><span>3 · What to look for next time</span>
         <span>4 · People in your feed who suit you better</span>
       </div>
-      <div className="note"><span>Only you see this. Their details are used once, then deleted, and never matched.</span></div>
+      <div className="note"><span>Only you see this. We keep only a first name. Their birth details are deleted as soon as your reading is ready (30 days at most) and are never matched or shown to anyone.</span></div>
+      <label className="consent-box" htmlFor="wn-ok">
+        <input id="wn-ok" type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} />
+        <span>I knew this person and I&apos;m okay using their birth details for my own private reading.</span>
+      </label>
       <ErrorNote error={error} />
       <div className="grow" />
-      <Primary onClick={buy} busy={busy} disabled={!name.trim() || !dob}>Get my reading · {price(prices, "why_not", 79)} credits</Primary>
+      <Primary onClick={buy} busy={busy} disabled={!first || !dob || !ok}>Get my reading · {price(prices, "why_not", 79)} credits</Primary>
       <span className="small" style={{ textAlign: "center" }}>If it can&apos;t be written, your credits come straight back.</span>
     </div>
   );

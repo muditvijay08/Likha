@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { BirthInput, EngineCheck } from "./types";
 import type { AdminApi, Ai, Keys, Me, MfaState, Model, TestResult, Overview, UserList, UserDetail, ModAction, TokenInfo, ReportRow, ReportDetail, Appeal,
-  SelfieQueue, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate,
+  SelfieQueue, AdminEvent, AdminEventStatus, EventInsights, Payments, ReadingRow, ReadingContent, Tickets, Ticket, Grievances, GrievanceReport, DataRequest, Maasi, Candidate,
   SettingValue, SettingVersion, Cities, CupidAdmin, AiSpend, Fraud, Health, Team, AuditRow,
   Pricing, Catalog, Flag, Consents, Content, AppString, Security, AiCeo, Verification, PhotoQueue, SecurityAudit, PushStats, Social, SocialPlatform } from "./types";
 
@@ -84,6 +84,9 @@ export class SupabaseAdmin implements AdminApi {
   async appeals() { return this.rpc<Appeal[]>("admin_appeals"); }
   async decideAppeal(id: string, overturn: boolean, note: string) { await this.rpc("admin_decide_appeal", { p_appeal: id, p_overturn: overturn, p_note: note }); }
   async selfies() { return this.rpc<SelfieQueue>("admin_selfie_queue"); }
+  async events(status: AdminEventStatus) { return (await this.rpc<AdminEvent[]>("admin_events", { p_status: status })) ?? []; }
+  async decideEvent(id: string, approve: boolean, reason?: string | null) { await this.rpc("admin_event_decide", { p_event: id, p_approve: approve, p_reason: reason ?? null }); }
+  async eventInsights(days: number) { return this.rpc<EventInsights>("admin_event_insights", { p_days: days }); }
   async decideSelfie(id: string, decision: "approve" | "retry" | "reject", reason?: string) { await this.rpc("admin_selfie_decide", { p_check: id, p_decision: decision, p_reason: reason ?? null }); }
   async payments(filter: string, query: string) { return this.rpc<Payments>("admin_payments", { p_filter: filter, p_query: query || null }); }
   async recheckPayment(id: string) { return this.fn<{ ok: boolean; note: string }>({ action: "recheck_payment", payment_id: id }, "admin-ops"); }

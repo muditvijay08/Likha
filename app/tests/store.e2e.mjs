@@ -94,9 +94,10 @@ await btn("Or get a 5-pack for 119 credits").click();
 ok(await seen(page.getByRole("button", { name: /uses 1 of 5/ })), "5-pack: the next check uses a prepaid one");
 ok(await seen(page.getByText("Waiting for them to join")), "Your checks: Tanvi waiting to join");
 
-// S3 Why It Didn't Work is retired: switched off, and the store no longer lists it
+// S3 Why It Didn't Work is back with safeguards (tested in launch.e2e): listed in the store again
+await page.goto(`${BASE}/store`);
+ok(await seen(page.getByRole("link", { name: /Why It Didn't Work/ })), "Store lists Why It Didn't Work again");
 await page.goto(`${BASE}/why-not`);
-ok(await seen(page.getByText("Not available right now")), "Why It Didn't Work is switched off");
 await shot("08-whynot");
 await shot("09-reading");
 

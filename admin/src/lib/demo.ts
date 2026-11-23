@@ -1,6 +1,7 @@
 // Demo admin: everything lives in this browser. Any team email works, codes are 123456. Mirrors the database rules in part 14.
 import type { AdminApi, Ai, Feature, KeySlot, Keys, Me, MfaState, Model, TestResult, ModAction, Overview, UserList, Payments, Tickets, Grievances, GrievanceReport } from "./types";
-import { candidates, maasiMembers, nextSunday, seedOps, shortId, userDetail, type Ops } from "./demo-ops";
+import { candidates, maasiMembers, nextSunday, seedEvents, seedOps, shortId, userDetail, type Ops } from "./demo-ops";
+import type { AdminEvent, AdminEventStatus, EventInsights } from "./types";
 import { PERMISSIONS, seedGrowth, type Growth } from "./demo-growth";
 import type { AiSpend, Cities, CupidAdmin, Fraud, Health, Team } from "./types";
 import type { AiCeo, AppString, Catalog, Consents, Content, Flag, Pricing, Security, PhotoQueue, PhotoRow, Verification, VerifyMode } from "./types";
@@ -288,6 +289,30 @@ export class DemoAdmin implements AdminApi {
     this.opsEdit((o) => { const s = o.selfies.find((x) => x.id === id); if (!s) throw new Error("Already decided.");
       const u = o.users.find((x) => x.id === s.user_id)!; u.selfie = decision === "approve" ? "passed" : decision === "reject" ? "failed" : "not_started";
       if (decision === "approve" && u.status === "under_review") u.status = "active"; o.selfies = o.selfies.filter((x) => x.id !== id); });
+  }
+  async events(status: AdminEventStatus): Promise<AdminEvent[]> {
+    await wait(120); const all = this.ops().events ?? seedEvents();
+    return all.filter((e) => e.status === status).sort((a, b) => status === "pending" ? a.created_at.localeCompare(b.created_at) : b.starts_at.localeCompare(a.starts_at));
+  }
+  async decideEvent(id: string, approve: boolean, reason?: string | null) {
+    await wait(150);
+    if (!approve && !reason?.trim()) throw new Error("Say why (the host sees it).");
+    this.opsEdit((o) => { o.events ??= seedEvents(); const e = o.events.find((x) => x.id === id); if (!e) throw new Error("Event not found.");
+      if (e.status === "cancelled") throw new Error("The host cancelled this event.");
+      e.status = approve ? "approved" : "rejected"; e.status_reason = approve ? null : reason!.trim();
+      o.audit.unshift({ at: new Date().toISOString(), action: approve ? "event_approved" : "event_rejected", target: e.title, note: reason ?? "" }); });
+  }
+  async eventInsights(days: number): Promise<EventInsights> {
+    await wait(120);
+    // Sample numbers for the demo console, shaped like admin_event_insights (groups under 5 hidden)
+    return { days, min_group: 5, totals: { posted: 42, approved: 35, rejected: 4, cancelled: 1, pending: 2, hosts: 19 },
+      rsvps: { going: 612, interested: 380, people: 401 },
+      by_category: [{ category: "music", events: 8, going: 190, interested: 96 }, { category: "outdoors", events: 7, going: 142, interested: 70 },
+        { category: "food", events: 6, going: 101, interested: 88 }, { category: "workshop", events: 6, going: 84, interested: 51 }, { category: "fitness", events: 5, going: 61, interested: 40 }],
+      by_weekday: [{ dow: 5, going: 88 }, { dow: 6, going: 214 }, { dow: 7, going: 241 }], by_hour: [{ hour: 6, going: 96 }, { hour: 11, going: 70 }, { hour: 18, going: 160 }, { hour: 19, going: 210 }],
+      by_area: [{ city: "Jaipur", area: "C-Scheme", events: 9, going: 170 }, { city: "Jaipur", area: "Amer", events: 6, going: 150 }, { city: "Jaipur", area: "Malviya Nagar", events: 5, going: 80 }],
+      by_element: [{ element: "Fire", category: "outdoors", going: 51 }, { element: "Earth", category: "food", going: 38 }, { element: "Air", category: "social", going: 29 }, { element: "Water", category: "music", going: 62 }],
+      repeat_goers: 97 };
   }
   async payments(filter: string, query: string): Promise<Payments> {
     await wait(120); const o = this.ops(); const q = query.trim();

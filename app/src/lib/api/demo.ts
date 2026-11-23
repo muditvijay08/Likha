@@ -9,6 +9,7 @@ import type {
   CityCounter, WaitlistJoin, WaitlistResult,
   Api, Basics, Birth, Card, City, CityQueue, Filters, FamilyPage, FamilyShareStatus, FamilyShares, Gender, Goal, MaritalStatus, MarriageTimeline, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
+  DatePlan, DateInvite, IntentAnswers, IntentState, EventCard, EventCategory, EventDraft,
 } from "./types";
 import { SAMPLE_CHART, SAMPLES, sampleProfile } from "./samples";
 import { dayPlan, range } from "../panchang";
@@ -51,8 +52,32 @@ interface Db {
   couples?: Record<string, { otherAt: number; ended?: boolean }>; seven?: Record<string, { reading: string; mine: Record<string, string> }>;
   moments?: Record<string, StoryEvent[]>; checked?: string[]; boostAt?: { id: string; starts: number; ends: number };
   trip?: { id: string; city: string; from: string; to: string }; consentDone?: string[]; inviteUsed?: string; cupidFrom?: string;
-  cupid?: { links: CupidLink[]; kyc: string | null };
+  cupid?: { links: CupidLink[]; kyc: string | null; mode?: "credits" | "cash" };
+  dates?: Record<string, (Omit<DatePlan, "phase" | "both_again"> & { other_again?: "yes" | "maybe" | "no" })[]>;
+  intent?: Record<string, IntentAnswers>;
+  myEvents?: (EventCard & { description: string })[]; rsvps?: Record<string, "going" | "interested">; eventReports?: string[];
 }
+// Demo only: a sample match answers the intent check the same way every time, so the reveal can be reviewed.
+// Same rule as private.no_contact_text: no phone numbers, links, emails or handles.
+const noContact = (t: string) => !(/(\d[\s-]?){10,}/.test(t) || /(https?:\/\/|www\.|\.(com|in|net|org|ly|me|link)\b)/i.test(t)
+  || /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(t) || /(^|\s)@[A-Za-z0-9_.]{3,}/.test(t));
+const SAMPLE_INTENT: IntentAnswers = { looking_for: "serious", timeline: "1_2y", family: "in_a_few_months", exclusive: "soon" };
+// Demo only: sample events, always shown with a SAMPLE EVENT tag. Dates move with today so they never look stale.
+const sampleEvents = (): (EventCard & { description: string })[] => {
+  const at = (days: number, h: number) => { const d = new Date(); d.setDate(d.getDate() + days); d.setHours(h, 0, 0, 0); return d.toISOString(); };
+  const base = { city: "Jaipur", capacity: null, singles_only: false, status: "approved" as const, host_is_me: false, my_rsvp: null, status_reason: null };
+  return [
+    { ...base, id: "e-sample-1", title: "Sunrise walk at Nahargarh", category: "outdoors", starts_at: at(2, 6), ends_at: at(2, 8), venue_name: "Nahargarh Fort gate", venue_area: "Amer Road",
+      price_inr: 0, host: { first_name: "Arjun", verified: true }, going: 14, interested: 9, matches_going: 0, strong_going: 2, singles_only: true, capacity: 30,
+      description: "An easy walk up to the fort for sunrise, then chai at the top. Comfortable shoes, water bottle. Sample event in demo mode." },
+    { ...base, id: "e-sample-2", title: "Block printing workshop", category: "workshop", starts_at: at(4, 11), ends_at: at(4, 14), venue_name: "Anokhi Museum courtyard", venue_area: "Amer",
+      price_inr: 600, host: { first_name: "Nidhi", verified: true }, going: 11, interested: 6, matches_going: 0, strong_going: 1, capacity: 20,
+      description: "Print your own dupatta with hand-carved blocks. All material included. Sample event in demo mode." },
+    { ...base, id: "e-sample-3", title: "Sufi night at the stepwell", category: "music", starts_at: at(6, 19), ends_at: at(6, 22), venue_name: "Panna Meena ka Kund", venue_area: "Amer",
+      price_inr: 300, host: { first_name: "Rohan", verified: true }, going: 32, interested: 21, matches_going: 0, strong_going: 4,
+      description: "Live qawwali and sufi songs by local musicians. Seating on durries, bring a shawl. Sample event in demo mode." },
+  ];
+};
 const CRISIS = /suicide|kill myself|end my life|self.?harm|marna chahta|marna chahti|jeena nahi/i;
 const CRISIS_REPLY = "I'm really glad you told me. You deserve support from a real person right now. Please call Tele-MANAS on 14416 " +
   "(free, 24x7, many languages) or 1-800-891-4416. If you are in danger right now, call 112. I'm here to keep talking too.";
@@ -114,7 +139,7 @@ export class DemoApi implements Api {
              verification_modes: adminView().verification ?? { selfie: "api", photos: "api" }, photos: { min: 2, max: 6 }, prompts: { required: 2, max_length: 300, interests_min: 3, interests_max: 10 }, saathi: { max_session_minutes: 45 } };
   }
 
-  async myFeatures() { return { love_stories: false, hindi: false, porutham: false, why_not: false, ...(adminView().features ?? {}) }; }
+  async myFeatures() { return { love_stories: false, hindi: false, porutham: false, ...(adminView().features ?? {}) }; }
   async myAnnouncement() { return adminView().announcement ?? null; }
   async consentsNeeded() {
     const c = adminView().consent; const db = this.load();
@@ -550,6 +575,8 @@ export class DemoApi implements Api {
   // ---------------------------------------------------------------- store readings (demo: sample text, ready after 1.5 s)
   async startReading(kind: "who_suits_me" | "why_not", subject?: Record<string, unknown>) {
     if (kind === "why_not" && (!subject?.name || !subject?.birth_date)) throw new Error("Name and date of birth, please.");
+    if (kind === "why_not" && subject?.confirm !== true) throw new Error("Please confirm first.");
+    if (kind === "why_not") subject = { ...subject, name: String(subject!.name).trim().split(/\s+/)[0].slice(0, 20) };
     this.spend(kind);
     const id = `r-${kind}-${Date.now()}`;
     const name = kind === "why_not" ? String(subject?.name) : null;
@@ -1023,7 +1050,8 @@ export class DemoApi implements Api {
     const db = this.load(); const c = db.cupid;
     if (!c) return { is_cupid: false, enabled: true, signup_paise: 2000, first_paid_paise: 5000 };
     return { is_cupid: true, status: "active", rates: { signup_paise: 2000, first_paid_paise: 5000, hold_days: 30, min_payout_paise: 50000 }, links: c.links,
-      people: { joined: 0, verified: 0, paid: 0 }, recent: [], money: { on_hold_paise: 0, withdrawable_paise: 0, paid_paise: 0, tds_this_fy_paise: 0 }, kyc: c.kyc, payouts: [] };
+      people: { joined: 0, verified: 0, paid: 0 }, recent: [], money: { on_hold_paise: 0, withdrawable_paise: 0, paid_paise: 0, tds_this_fy_paise: 0 }, kyc: c.kyc, payouts: [],
+      reward_mode: c.mode ?? "credits", credits_earned: 0 };
   }
   async becomeCupid() {
     await wait(200);
@@ -1050,6 +1078,137 @@ export class DemoApi implements Api {
     if (!/^[\w.-]{2,}@[a-z]{2,}$/i.test(upi.trim())) throw new Error("That UPI ID doesn't look right (like name@okbank).");
     this.edit((d) => { if (d.cupid) d.cupid.kyc = "submitted"; });
   }
+  async cupidRewardMode(mode: "credits" | "cash") {
+    const c = this.load().cupid;
+    if (!c) throw new Error("Become a Cupid first.");
+    if (mode === "cash" && c.kyc !== "verified") throw new Error("Cash needs your PAN and UPI checked first.");
+    this.edit((d) => { d.cupid!.mode = mode; });
+  }
+
+  // ---------------------------------------------------------------- Connect: dates and the intent check
+  private matchOf(db: Db, matchId: string) { const m = (db.matches ?? []).find((x) => x.id === matchId); if (!m) throw new Error("Match not found."); return m; }
+  private datePhase(d: { status: DatePlan["status"]; starts_at: string }): DatePlan["phase"] {
+    if (d.status !== "accepted") return d.status;
+    const t = new Date(d.starts_at).getTime(), now = Date.now();
+    return now < t - 3600e3 ? "upcoming" : now <= t + 12 * 3600e3 ? "now" : "past";
+  }
+  async matchDates(matchId: string): Promise<DatePlan[]> {
+    const db = this.load(); this.matchOf(db, matchId);
+    return (db.dates?.[matchId] ?? []).map(({ other_again, ...d }) => ({ ...d, phase: this.datePhase(d), both_again: d.my_reflection === "yes" && other_again === "yes" }))
+      .sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+  }
+  async dateInvite(matchId: string, d: DateInvite) {
+    await wait(150);
+    const db = this.load(); this.matchOf(db, matchId);
+    if (!d.public_place) throw new Error("First dates are at a public place.");
+    const t = new Date(d.starts_at).getTime();
+    if (!Number.isFinite(t) || t < Date.now() + 2 * 3600e3) throw new Error("Pick a time at least 2 hours from now.");
+    if (t > Date.now() + 60 * 864e5) throw new Error("Pick a date in the next 60 days.");
+    if (d.idea.trim().length < 3 || d.place.trim().length < 3) throw new Error("Add what and where.");
+    if (!noContact(`${d.idea} ${d.place} ${d.note ?? ""}`)) throw new Error("No phone numbers, links or handles in invitations.");
+    if ((db.dates?.[matchId] ?? []).filter((x) => x.status === "proposed").length >= 2) throw new Error("Two invitations are waiting already.");
+    const id = crypto.randomUUID();
+    this.edit((x) => { (x.dates ??= {})[matchId] = [...(x.dates[matchId] ?? []), { id, idea: d.idea.trim(), place: d.place.trim(), starts_at: new Date(t).toISOString(),
+      status: "proposed", note: d.note?.trim() || null, mine: true, my_checkin: null, my_reflection: null }]; });
+    // Demo only: the sample match says yes a moment later, so the rest of the flow can be reviewed.
+    setTimeout(() => this.edit((x) => { const r = x.dates?.[matchId]?.find((y) => y.id === id); if (r && r.status === "proposed") r.status = "accepted"; }), 1200);
+    return id;
+  }
+  private dateRow(db: Db, dateId: string) {
+    for (const [m, list] of Object.entries(db.dates ?? {})) { const r = list.find((x) => x.id === dateId); if (r) return { m, r }; }
+    throw new Error("Date not found.");
+  }
+  async dateAnswer(dateId: string, yes: boolean) {
+    this.edit((db) => { const { r } = this.dateRow(db, dateId);
+      if (r.mine) throw new Error("Invitation not found."); if (r.status !== "proposed") throw new Error("Already answered.");
+      r.status = yes ? "accepted" : "declined"; });
+  }
+  async dateCancel(dateId: string) {
+    this.edit((db) => { const { r } = this.dateRow(db, dateId); if (!["proposed", "accepted"].includes(r.status)) throw new Error("Nothing to cancel."); r.status = "cancelled"; });
+  }
+  async dateCheckin(dateId: string, ok: boolean) {
+    this.edit((db) => { const { r } = this.dateRow(db, dateId);
+      if (this.datePhase(r) !== "now") throw new Error("Check-ins open an hour before the date."); r.my_checkin = ok; });
+    return { ok, sos: !ok };
+  }
+  async dateReflect(dateId: string, again: "yes" | "maybe" | "no", _note?: string) {
+    let both = false;
+    this.edit((db) => { const { r } = this.dateRow(db, dateId);
+      if (r.status !== "accepted" || Date.now() < new Date(r.starts_at).getTime()) throw new Error("After the date.");
+      r.my_reflection = again; r.other_again = "yes";                      // demo only: the sample match would meet again
+      both = again === "yes"; });
+    return { both_again: both };
+  }
+  async intent(matchId: string): Promise<IntentState> {
+    const db = this.load(); const m = this.matchOf(db, matchId);
+    const mine = db.intent?.[matchId] ?? null;
+    return { mine, they_answered: true, theirs: mine ? SAMPLE_INTENT : null, other_name: sampleProfile(m.other)?.first_name ?? "" };
+  }
+  async intentSave(matchId: string, a: IntentAnswers) {
+    await wait(150);
+    if (!a.looking_for || !a.timeline || !a.family || !a.exclusive) throw new Error("Answer all four.");
+    this.edit((db) => { this.matchOf(db, matchId); (db.intent ??= {})[matchId] = a; });
+    return this.intent(matchId);
+  }
+
+  // ---------------------------------------------------------------- Events (sample events in demo, tagged)
+  private eventsAll(db: Db) {
+    const rs = db.rsvps ?? {};
+    const all = [...sampleEvents(), ...(db.myEvents ?? [])];
+    return all.map((e) => {
+      const my = rs[e.id] ?? null;
+      return { ...e, my_rsvp: my, going: e.going + (my === "going" ? 1 : 0), interested: e.interested + (my === "interested" ? 1 : 0) };
+    });
+  }
+  async events(category?: EventCategory | null) {
+    const db = this.load();
+    return this.eventsAll(db).filter((e) => e.status === "approved" && new Date(e.ends_at).getTime() > Date.now() && (!category || e.category === category))
+      .map(({ description: _d, status_reason: _r, ...e }) => e as EventCard).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  }
+  async event(id: string) { return this.eventsAll(this.load()).find((e) => e.id === id) ?? null; }
+  async eventCreate(d: EventDraft) {
+    await wait(150);
+    const db = this.load(); const me = this.me(db);
+    if (me.selfie_status !== "passed") throw new Error("Verify your selfie to host events.");
+    if (!d.public_venue) throw new Error("Events must be at a public venue.");
+    if (d.title.trim().length < 6) throw new Error("A title of at least 6 letters, please.");
+    if (d.description.trim().length < 20) throw new Error("Tell people a little more (20 letters or more).");
+    if (d.venue_name.trim().length < 3 || d.venue_area.trim().length < 2) throw new Error("Add the venue and area.");
+    const s = new Date(d.starts_at).getTime(), e = new Date(d.ends_at).getTime();
+    if (!Number.isFinite(s) || !Number.isFinite(e)) throw new Error("Check the date and time.");
+    if (s < Date.now() + 2 * 3600e3) throw new Error("Events need to start at least 2 hours from now.");
+    if (s > Date.now() + 90 * 864e5) throw new Error("Events can be up to 90 days ahead.");
+    if (e <= s || e > s + 24 * 3600e3) throw new Error("An event ends after it starts, within 24 hours.");
+    if (!noContact(`${d.title} ${d.description} ${d.venue_name} ${d.venue_area}`)) throw new Error("No phone numbers, links, emails or handles in events.");
+    if ((db.myEvents ?? []).filter((x) => x.status === "pending").length >= 3) throw new Error("You have 3 events waiting for review already.");
+    const id = crypto.randomUUID();
+    this.edit((x) => { x.myEvents = [{ id, title: d.title.trim(), category: d.category, description: d.description.trim(), starts_at: new Date(s).toISOString(),
+      ends_at: new Date(e).toISOString(), venue_name: d.venue_name.trim(), venue_area: d.venue_area.trim(), city: "Jaipur", price_inr: d.price_inr || 0,
+      capacity: d.capacity, singles_only: d.singles_only, status: "pending", status_reason: null, host: { first_name: me.first_name, verified: true },
+      host_is_me: true, going: 0, interested: 0, my_rsvp: null, matches_going: 0, strong_going: 0 }, ...(x.myEvents ?? [])]; });
+    return id;
+  }
+  async eventRsvp(id: string, status: "going" | "interested" | null) {
+    const e = await this.event(id);
+    if (!e || e.status !== "approved") throw new Error("Event not found.");
+    if (e.host_is_me) throw new Error("You're hosting this one.");
+    if (new Date(e.starts_at).getTime() < Date.now()) throw new Error("This event has started.");
+    if (status === "going" && e.capacity != null && e.going - (e.my_rsvp === "going" ? 1 : 0) >= e.capacity) throw new Error("This event is full.");
+    this.edit((db) => { db.rsvps ??= {}; if (status) db.rsvps[id] = status; else delete db.rsvps[id]; });
+    return (await this.event(id))!;
+  }
+  async eventCancel(id: string) {
+    this.edit((db) => { const e = (db.myEvents ?? []).find((x) => x.id === id); if (!e) throw new Error("Event not found."); e.status = "cancelled"; });
+  }
+  async myEvents() {
+    const all = this.eventsAll(this.load());
+    return { hosting: all.filter((e) => e.host_is_me), going: all.filter((e) => e.my_rsvp && new Date(e.ends_at).getTime() > Date.now()) };
+  }
+  async eventReport(id: string, reason: string) {
+    if (reason.trim().length < 3) throw new Error("Tell us what's wrong.");
+    this.edit((db) => { db.eventReports = [...new Set([...(db.eventReports ?? []), id])]; });
+  }
+
   async requestPayout() {
     const c = this.load().cupid;
     if (c?.kyc !== "verified") throw new Error("Add your PAN and UPI details first. We check them within 2 working days.");
