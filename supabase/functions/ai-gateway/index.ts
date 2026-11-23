@@ -34,14 +34,14 @@ async function alertTeam(h: Hold) {
 
 /** One model call inside a budget hold. Throws {capped} when the budget says no. */
 async function run(userId: string | null, feature: string, req: Omit<ClaudeRequest, "model" | "maxTokens" | "temperature">,
-  opts: { readingId?: string; attempt?: number; check?: (text: string) => { ok: boolean; problems: string[] } } = {}) {
+  opts: { readingId?: string; attempt?: number; check?: (text: string) => { ok: boolean; problems: string[] }; timeoutMs?: number } = {}) {
   const est = estimateTokens(req.system, ...req.messages.map((m) => m.content));
   const hold = await rpc<Hold>("svc_ai_reserve", { p_user: userId, p_feature: feature, p_est_input_tokens: est,
     p_reading: opts.readingId ?? null, p_attempt: opts.attempt ?? 1 });
   if (!hold.ok) throw Object.assign(new Error(hold.reason), { capped: hold.reason });
   alertTeam(hold);
   try {
-    const out = await callLLM(hold.provider, { ...req, model: hold.model!, maxTokens: hold.max_output_tokens!, temperature: hold.temperature! });
+    const out = await callLLM(hold.provider, { ...req, model: hold.model!, maxTokens: hold.max_output_tokens!, temperature: hold.temperature! }, opts.timeoutMs);
     const verdict = opts.check && hold.number_check !== false ? opts.check(out.text) : { ok: true, problems: [] };
     await rpc("svc_ai_finish", { p_call: hold.call_id, p_in: out.inputTokens, p_out: out.outputTokens, p_cache: out.cacheReadTokens,
       p_status: verdict.ok ? "ok" : "regenerated", p_number_check: opts.check ? verdict.ok : null, p_latency_ms: out.latencyMs,
@@ -190,10 +190,14 @@ async function saathi(userId: string, client: any, character: "chandni" | "dhruv
     const still = (await client.rpc("saathi_messages_left")).data ?? 0;
     return json({ reply: CRISIS_REPLY, crisis: true, left: still });
   }
-  const left = (await client.rpc("saathi_messages_left")).data ?? 0;
+  // one lookup: settings, history and messages left (counted on the server, so a failed lookup can't look like "none left")
+  const ctx = await rpc<any>("svc_saathi_context", { p_user: userId, p_char: character, p_last: 19 });
+  const left: number = ctx.left ?? 0;
   if (left <= 0) return json({ reply: null, topup: true, message: "That's today's free chats. Top up for 50 more." }, 402);
-  await rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "user", p_body: msg, p_crisis: false });
-  const ctx = await rpc<any>("svc_saathi_context", { p_user: userId, p_char: character, p_last: 20 });
+  // the member's message is saved while the reply is being written
+  const saved = rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "user", p_body: msg, p_crisis: false });
+  saved.catch(() => {});                                          // handled where it's awaited; never an unhandled rejection
+  ctx.history = [...(ctx.history ?? []), { role: "user", body: msg }];
   const facts = ctx.summary ? { first_name: cleanName(ctx.first_name), lagna: ctx.summary.lagna, moon_sign: ctx.summary.moon_sign,
     nakshatra: ctx.summary.nakshatra, dasha_now: ctx.summary.current_dasha } : { first_name: cleanName(ctx.first_name) };
   const history = (ctx.history as any[]).map((h) => ({ role: h.role, content: h.role === "user" ? `<user_text>${h.body}</user_text>` : h.body }));
@@ -203,7 +207,8 @@ async function saathi(userId: string, client: any, character: "chandni" | "dhruv
     memoryOn: !!ctx.memory_on, memories: ctx.memories ?? [] };
   try {
     const { text } = await run(userId, "saathi", { system: saathiSystem(character, facts, ctx.styles ?? [], opts), messages: history, cacheSystem: true },
-      { check: (t) => companionCheck(companionParse(t, opts.memoryOn!).reply) });
+      { check: (t) => companionCheck(companionParse(t, opts.memoryOn!).reply), timeoutMs: 15_000 });
+    await saved;
     const parsed = companionParse(text, opts.memoryOn!);
     const s = companionCheck(parsed.reply);
     const reply = s.ok ? parsed.reply : "Hmm, let me put that better. Tell me a bit more about what's on your mind?";
@@ -211,8 +216,10 @@ async function saathi(userId: string, client: any, character: "chandni" | "dhruv
     // a memory is only a suggestion: the member approves it in the chat before anything is stored
     return json({ reply, left: left - 1, remember: s.ok ? parsed.remember : null });
   } catch (e) {
+    await saved.catch(() => {});
     const reason = (e as any).capped as string | undefined;
-    return json({ reply: null, capped: reason ?? "error", message: CAP_MESSAGES[reason ?? ""] ?? "Saathi is offline for a moment." }, reason ? 429 : 503);
+    const slow = (e as Error).name === "TimeoutError" || (e as Error).name === "AbortError";
+    return json({ reply: null, capped: reason ?? "error", message: CAP_MESSAGES[reason ?? ""] ?? (slow ? "That took too long. Send it again?" : "Saathi is offline for a moment.") }, reason ? 429 : 503);
   }
 }
 
@@ -279,11 +286,12 @@ async function opener(userId: string, client: any, matchId: string) {
 
 // ---------------------------------------------------------------- router
 Deno.serve(async (req) => {
-  await loadKeys();
-  const pre = preflight(req); if (pre) return pre;
+  const pre = preflight(req); if (pre) return pre;              // answer the browser's preflight at once, before any database work
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
+  await loadKeys();
+  if (body.action === "warm") return json({ ok: true });       // cron every 4 minutes keeps the function booted
 
   try {
     if (body.action === "reading") {

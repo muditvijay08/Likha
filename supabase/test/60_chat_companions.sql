@@ -53,7 +53,7 @@ select pg_temp.check('Riya sees all three of her messages', $q$select jsonb_arra
 select pg_temp.act_as('e0000000-0000-0000-0000-000000000002');
 select pg_temp.check('Aarav sees two (held one hidden), none marked mine', $q$select jsonb_array_length(m) = 2 and not (m -> 0 ->> 'mine')::boolean
   from (select public.chat_open('ee000000-0000-0000-0000-000000000001') -> 'messages' m) x$q$);
-select pg_temp.check('Aarav got a notification', $q$select count(*) = 2 from public.notifications where user_id = 'e0000000-0000-0000-0000-000000000002' and type = 'message'$q$);
+select pg_temp.check('Aarav got one notification for the burst (part 38)', $q$select count(*) = 1 from public.notifications where user_id = 'e0000000-0000-0000-0000-000000000002' and type = 'message'$q$);
 select pg_temp.check('mark_read marks 2', $q$select public.mark_read('ee000000-0000-0000-0000-000000000001') = 2$q$);
 select pg_temp.step('Aarav replies', $q$select public.send_message('ee000000-0000-0000-0000-000000000001', 'Train, always.')$q$);
 select pg_temp.act_as('e0000000-0000-0000-0000-000000000003');

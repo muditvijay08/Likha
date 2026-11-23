@@ -2,11 +2,22 @@
 // M3 Chat: live messages, voice notes, Golden Hour banner, Cupid openers (paid), shortcuts to Plan a date, Intent check, Guru Ji and Golden Hours.
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ErrorNote, useAction } from "@/components/ui";
 import { Avatar, SampleTag, price, useApp, useTried } from "@/components/app";
 import { api, type ChatData, type Msg } from "@/lib/api";
 import { clock, goldenHours } from "@/lib/panchang";
+
+// A message on screen: sent ones come from the server; mine start "pending" (shown at once) until the server confirms.
+type Line = Msg & { pending?: boolean; failed?: boolean };
+const PAGE = 100;                                           // chat_open returns the latest 100
+
+/** Server list + anything of mine still in flight, no duplicates, in time order. */
+function merge(server: Msg[], local: Line[]): Line[] {
+  const ids = new Set(server.map((m) => m.id));
+  const inflight = local.filter((m) => (m.pending || m.failed) && !ids.has(m.id));
+  return [...server, ...inflight];
+}
 
 const day = (iso: string) => {
   const d = new Date(iso), t = new Date();
@@ -30,21 +41,89 @@ function Chat() {
   const { busy, error, run, setError } = useAction();
   const tried = useTried();
 
+  // the queue sends my messages one after another in the background, so typing never waits for the network
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const readTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [older, setOlder] = useState<"more" | "loading" | "none">("none");
+  const setLines = useCallback((f: (l: Line[]) => Line[]) => setC((x) => x && ({ ...x, messages: f(x.messages as Line[]) })), []);
+  // mark read once a burst of messages settles, and only while the chat is actually on screen
+  const markReadSoon = useCallback(() => {
+    if (readTimer.current) clearTimeout(readTimer.current);
+    readTimer.current = setTimeout(() => { if (document.visibilityState === "visible") api().markRead(id).catch(() => {}); }, 700);
+  }, [id]);
+  const resync = useCallback(() => {
+    api().chat(id).then((x) => { setC((cur) => cur ? { ...x, messages: merge(x.messages, cur.messages as Line[]) } : x); markReadSoon(); }).catch(() => {});
+  }, [id, markReadSoon]);
+
   useEffect(() => {
-    api().chat(id).then((x) => { setC(x); api().markRead(id).then(reload).catch(() => {}); }).catch((e) => setGone(e instanceof Error ? e.message : "Chat not available."));
-    return api().onMessages(id, (m) => { setC((x) => x && ({ ...x, messages: [...x.messages, m] })); api().markRead(id).catch(() => {}); });
-  }, [id, reload]);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [c?.messages.length]);
+    api().chat(id).then((x) => {
+      setC(x); setOlder(x.messages.length >= PAGE ? "more" : "none");
+      api().markRead(id).then(reload).catch(() => {});
+    }).catch((e) => setGone(e instanceof Error ? e.message : "Chat not available."));
+    const off = api().onMessages(id, {
+      message: (m) => { setLines((l) => l.some((x) => x.id === m.id) ? l : [...l, m]); markReadSoon(); },
+      read: (ids, at) => { const set = new Set(ids); setLines((l) => l.map((x) => set.has(x.id) && !x.read_at ? { ...x, read_at: at } : x)); },
+      resync,
+    });
+    // phones pause the connection in the background: catch up when the chat is looked at again
+    const onVisible = () => { if (document.visibilityState === "visible") resync(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", resync);
+    return () => { off(); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("online", resync);
+      if (readTimer.current) clearTimeout(readTimer.current); };
+  }, [id, reload, setLines, markReadSoon, resync]);
+
+  // follow the conversation, unless the member has scrolled up to read older messages
+  const lastId = c?.messages.at(-1)?.id;
+  const lastMine = c?.messages.at(-1)?.mine;
+  const firstLoad = useRef(true);
+  useEffect(() => {
+    if (!lastId) return;
+    const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 320;
+    if (firstLoad.current || nearBottom || lastMine) end.current?.scrollIntoView({ block: "end" });
+    firstLoad.current = false;
+  }, [lastId, lastMine]);
 
   const city = home?.city;
   const golden = useMemo(() => city ? goldenHours(city.lat, city.lng, city.timezone, new Date(), 2)[0] : null, [city]);
   const now = Date.now();
-  const add = (m: Msg) => setC((x) => x && ({ ...x, messages: [...x.messages, m] }));
+  const add = (m: Msg) => setLines((l) => l.some((x) => x.id === m.id) ? l : [...l, m]);
 
-  const send = () => run(async () => {
+  const deliver = useCallback((tmp: string, body: string) => {
+    queue.current = queue.current.then(async () => {
+      try {
+        const m = await api().sendMessage(id, body);
+        setLines((l) => l.map((x) => x.id === tmp ? m : x));
+      } catch (e) {
+        setLines((l) => l.map((x) => x.id === tmp ? { ...x, pending: false, failed: true } : x));
+        setError(e instanceof Error ? e.message : "Not sent. Tap the message to try again.");
+      }
+    });
+  }, [id, setLines, setError]);
+  const send = () => {
     const body = text.trim(); if (!body) return;
-    const m = await api().sendMessage(id, body); setText(""); add(m);
-  });
+    setText(""); setError(null);
+    const tmp = `tmp-${crypto.randomUUID()}`;
+    setLines((l) => [...l, { id: tmp, mine: true, kind: "text", body, media_url: null, held: false, read_at: null, created_at: new Date().toISOString(), pending: true }]);
+    deliver(tmp, body);
+  };
+  const retry = useCallback((m: Line) => {
+    if (!m.failed || !m.body) return;
+    setLines((l) => l.map((x) => x.id === m.id ? { ...x, failed: false, pending: true } : x));
+    deliver(m.id, m.body);
+  }, [setLines, deliver]);
+  const loadOlder = async () => {
+    const first = c?.messages.find((m) => !(m as Line).pending);
+    if (!first) return;
+    setOlder("loading");
+    const h = document.documentElement.scrollHeight;
+    try {
+      const prev = await api().chatEarlier(id, first.created_at);
+      setLines((l) => [...prev.filter((p) => !l.some((x) => x.id === p.id)), ...l]);
+      setOlder(prev.length >= PAGE ? "more" : "none");
+      requestAnimationFrame(() => window.scrollTo(0, document.documentElement.scrollHeight - h + window.scrollY));   // keep the reading position
+    } catch { setOlder("more"); }
+  };
   const getOpeners = () => run(async () => { setOpeners(await api().openers(id)); await reload(); tried("cupid_opener", "Cupid openers"); });
   const record = async () => {
     if (rec) { rec.stop(); return; }
@@ -64,7 +143,6 @@ function Chat() {
 
   if (gone) return <div className="app-body"><div className="empty card"><strong>{gone}</strong><Link className="btn" href="/matches">Back to Chats</Link></div></div>;
   if (!c) return <div className="app-body"><div className="skel" style={{ height: 400 }} /></div>;
-  const lastMineSeen = [...c.messages].reverse().find((m) => m.mine && m.read_at);
 
   return (
     <div className="app-body flush" style={{ paddingBottom: "var(--navh)", minHeight: "calc(100dvh - 26px)" }}>
@@ -91,19 +169,10 @@ function Chat() {
       )}
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, padding: "14px 16px", justifyContent: "flex-end" }} aria-live="polite">
+        {older !== "none" && <button type="button" className="btn sm outline" style={{ alignSelf: "center" }} disabled={older === "loading"} onClick={loadOlder}>
+          {older === "loading" ? "Loading…" : "Load earlier messages"}</button>}
         {c.messages.length === 0 && <div className="empty" style={{ padding: 12 }}><strong>Say hi to {c.other.first_name}</strong><span className="sub">A question about their prompts works better than &quot;hey&quot;.</span></div>}
-        {c.messages.map((m, i) => (
-          <div key={m.id} style={{ display: "contents" }}>
-            {(i === 0 || day(c.messages[i - 1].created_at) !== day(m.created_at)) &&
-              <span style={{ alignSelf: "center", fontSize: 11, color: "var(--muted)", padding: "4px 10px", borderRadius: 999, background: "#FFF8EF" }}>{day(m.created_at)}</span>}
-            <div style={{ alignSelf: m.mine ? "flex-end" : "flex-start", maxWidth: "75%", padding: "10px 14px", fontSize: 14, lineHeight: 1.4,
-              borderRadius: m.mine ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.mine ? "var(--saffron)" : "#fff", border: m.mine ? 0 : "1px solid var(--line)", opacity: m.held ? 0.6 : 1 }}>
-              {m.kind === "voice" ? (m.media_url ? <audio controls src={m.media_url} style={{ height: 32, maxWidth: 220 }} aria-label="Voice note" /> : "Voice note") : m.body}
-            </div>
-            {m.held && <span style={{ alignSelf: "flex-end", fontSize: 11, color: "var(--red)" }}>Not delivered: no numbers or links in the first few messages, for everyone&apos;s safety.</span>}
-          </div>
-        ))}
-        {lastMineSeen && c.messages.at(-1)?.mine && <span style={{ alignSelf: "flex-end", fontSize: 11, color: "var(--muted)" }}>Seen {new Date(lastMineSeen.read_at!).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</span>}
+        <Lines lines={c.messages as Line[]} onRetry={retry} />
         <div ref={end} style={{ scrollMarginBottom: 240 }} />
       </div>
 
@@ -125,7 +194,7 @@ function Chat() {
             <input id="msg" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder={rec ? "Recording… tap stop to send" : "Type a message"} autoComplete="off"
               style={{ flex: 1, minWidth: 0, height: 44, borderRadius: 999, border: "1px solid var(--line)", background: "var(--bg)", padding: "0 16px", font: "500 14px var(--sans)", color: "var(--ink)" }} />
             {text.trim() ? (
-              <button type="submit" disabled={busy} aria-label="Send" className="tip tip-r tip-up" data-tip="Send"
+              <button type="submit" aria-label="Send" className="tip tip-r tip-up" data-tip="Send"
                 style={{ width: 44, height: 44, flex: "none", borderRadius: 999, background: "var(--saffron)", border: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z" /></svg></button>
             ) : (
@@ -158,5 +227,30 @@ function Chat() {
     </div>
   );
 }
+
+/** The conversation. Memoised so typing in the box doesn't redraw every message. */
+const Lines = memo(function Lines({ lines, onRetry }: { lines: Line[]; onRetry(m: Line): void }) {
+  const days = useMemo(() => lines.map((m) => day(m.created_at)), [lines]);
+  const last = lines.at(-1);
+  return <>
+    {lines.map((m, i) => (
+      <div key={m.id} style={{ display: "contents" }}>
+        {(i === 0 || days[i - 1] !== days[i]) &&
+          <span style={{ alignSelf: "center", fontSize: 11, color: "var(--muted)", padding: "4px 10px", borderRadius: 999, background: "#FFF8EF" }}>{days[i]}</span>}
+        <div onClick={m.failed ? () => onRetry(m) : undefined} role={m.failed ? "button" : undefined} aria-label={m.failed ? `Not sent: ${m.body}. Tap to try again` : undefined}
+          style={{ alignSelf: m.mine ? "flex-end" : "flex-start", maxWidth: "75%", padding: "10px 14px", fontSize: 14, lineHeight: 1.4, cursor: m.failed ? "pointer" : undefined,
+          borderRadius: m.mine ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.mine ? "var(--saffron)" : "#fff", border: m.mine ? 0 : "1px solid var(--line)",
+          opacity: m.held || m.pending ? 0.6 : 1, outline: m.failed ? "2px solid var(--red)" : undefined }}>
+          {m.kind === "voice" ? (m.media_url ? <audio controls src={m.media_url} style={{ height: 32, maxWidth: 220 }} aria-label="Voice note" /> : "Voice note") : m.body}
+        </div>
+        {m.failed && <span style={{ alignSelf: "flex-end", fontSize: 11, color: "var(--red)" }}>Not sent · tap to try again</span>}
+        {m.held && <span style={{ alignSelf: "flex-end", fontSize: 11, color: "var(--red)" }}>Not delivered: no numbers or links in the first few messages, for everyone&apos;s safety.</span>}
+      </div>
+    ))}
+    {last?.mine && last.pending && <span style={{ alignSelf: "flex-end", fontSize: 11, color: "var(--muted)" }}>Sending…</span>}
+    {last?.mine && last.read_at && <span style={{ alignSelf: "flex-end", fontSize: 11, color: "var(--muted)" }}>
+      Seen {new Date(last.read_at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</span>}
+  </>;
+});
 
 export default function ChatPage() { return <Suspense><Chat /></Suspense>; }

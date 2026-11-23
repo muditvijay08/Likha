@@ -8,6 +8,7 @@ import type {
   Api, Basics, Birth, Card, City, CityQueue, Filters, FamilyPage, FamilyShares, Gender, Goal, MaritalStatus, MarriageTimeline, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
   DatePlan, DateInvite, IntentAnswers, IntentState, EventCard, EventCategory, EventDraft,
+  ChatEvents,
 } from "./types";
 
 /** Errors the database raises on purpose, in member words. */
@@ -388,17 +389,35 @@ export class SupabaseApi implements Api {
     return this.send(matchId, null, "voice", path);
   }
   async markRead(matchId: string) { await this.rpc("mark_read", { p_match: matchId }); }
-  onMessages(matchId: string, cb: (m: Msg) => void) {
-    let me = "";
-    this.uid().then((u) => { me = u; }).catch(() => {});
+  async chatEarlier(matchId: string, before: string) {
+    const c = await this.rpc<{ messages: (Omit<Msg, "media_url"> & { media_path: string | null })[] }>("chat_open", { p_match: matchId, p_before: before }, "Chat");
+    return this.msgs(c.messages);
+  }
+  onMessages(matchId: string, h: ChatEvents) {
+    type Row = { id: string; sender_id: string; kind: Msg["kind"]; body: string | null; media_path: string | null; held: boolean; read_at: string | null; created_at: string };
+    let me = "", joined = false, closed = false;
     const ch = this.sb.channel(`chat:${matchId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `match_id=eq.${matchId}` }, async (p) => {
-        const r = p.new as { id: string; sender_id: string; kind: Msg["kind"]; body: string | null; media_path: string | null; held: boolean; read_at: string | null; created_at: string };
-        if (r.sender_id === me) return;                                    // own messages are already on screen
+        const r = p.new as Row;
+        if (!me || r.sender_id === me) return;                             // own messages are already on screen
         const [m] = await this.msgs([{ id: r.id, mine: false, kind: r.kind, body: r.body, media_path: r.media_path, held: r.held, read_at: r.read_at, created_at: r.created_at }]);
-        cb(m);
-      }).subscribe();
-    return () => { this.sb.removeChannel(ch); };
+        h.message(m);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `match_id=eq.${matchId}` }, (p) => {
+        const r = p.new as Row;
+        if (me && r.sender_id === me && r.read_at) h.read?.([r.id], r.read_at);   // "Seen" on my messages, live
+      });
+    // subscribe only once we know who "me" is, so our own messages never echo back as theirs
+    this.uid().then((u) => {
+      me = u;
+      if (closed) return;
+      ch.subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        if (joined) h.resync?.();                                          // back after a drop: fetch what we missed
+        joined = true;
+      });
+    }).catch(() => {});
+    return () => { closed = true; this.sb.removeChannel(ch); };
   }
   private async gateway<T>(body: Record<string, unknown>): Promise<T> {
     const { data, error } = await this.sb.functions.invoke("ai-gateway", { body });

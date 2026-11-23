@@ -38,6 +38,7 @@ export const CORS = {
   "access-control-allow-origin": Deno.env.get("LIKHA_SITE") ?? "*",
   "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
   "access-control-allow-methods": "POST, OPTIONS",
+  "access-control-max-age": "86400",          // browsers reuse the preflight for a day instead of asking before every message
 };
 export const preflight = (req: Request) => req.method === "OPTIONS" ? new Response("ok", { headers: CORS }) : null;
 

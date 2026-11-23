@@ -169,6 +169,7 @@ export type Prices = Record<string, number>;
 // ---------------------------------------------------------------- chat, Guru Ji, Saathi
 export interface Msg { id: string; mine: boolean; kind: "text" | "voice" | "image" | "system"; body: string | null; media_url: string | null;
   held: boolean; read_at: string | null; created_at: string }
+export interface ChatEvents { message(m: Msg): void; read?(ids: string[], at: string): void; resync?(): void }
 export interface ChatData {
   match_id: string; open: boolean; jodi_score: number | null; gunas: number | null;
   other: { id: string; first_name: string; age: number | null; photo: string | null; is_sample?: boolean }; messages: Msg[];
@@ -356,7 +357,10 @@ export interface Api {
   sendVoice(matchId: string, audio: Blob): Promise<Msg>;
   markRead(matchId: string): Promise<void>;
   /** Live updates for one chat. Returns a function that stops listening. */
-  onMessages(matchId: string, cb: (m: Msg) => void): () => void;
+  /** Messages before a time (the chat opens with the latest 100). */
+  chatEarlier(matchId: string, before: string): Promise<Msg[]>;
+  /** Live chat: new messages from the other person, "Seen" on mine, and a resync after the connection comes back. */
+  onMessages(matchId: string, h: ChatEvents): () => void;
   openers(matchId: string): Promise<string[]>;
   guru(matchId: string): Promise<GuruState>;
   askGuru(matchId: string, question: string): Promise<GuruState>;

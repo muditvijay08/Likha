@@ -64,7 +64,7 @@ export default function Saathi() {
     setText(""); setTyping(true);
     started.current ??= Date.now();
     if (Date.now() - started.current >= breakAfter * 60e3) setLongChat(true);
-    setS({ ...s, history: [...s.history, { role: "user", body: msg.trim() }] });
+    setS((x) => x && { ...x, history: [...x.history, { role: "user", body: msg.trim() }] });
     try {
       const r = await api().saathiSend(s.character, msg.trim());
       if (r.reply) {

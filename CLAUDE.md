@@ -54,6 +54,7 @@ Design source of truth: the "Likha App Screens" design canvas (screen ids like O
 - Plan a date (part 34): public place confirmed by an unticked box, no contact details, reminder the day before, check-in from 1h before to 12h after (not okay → /sos + team audit), private reflection; a second date shows only if both say yes. Cron `date-tick` every 15 min.
 - Intent check (part 35): four questions, the other's answers revealed only after you answer; shown side by side, never a score.
 - Cupid rewards (part 36): credits by default (selfie-check reward at once, first-payment reward after the 30-day hold); cash only for Cupids with verified KYC who switch.
+- Chat speed (part 38): messages show at once and send in the background (queue, retry on failure); live "Seen"; resync on reconnect/visible; latest 100 then "Load earlier"; one push per chat burst (2 min). The companion gets `left` in `svc_saathi_context`; the gateway answers preflights first (cached a day) and is pinged every 4 min (`gateway-warm`).
 - Why Not (part 37): unticked confirm box, first name only, birth details wiped when the reading is written, daily `why-not-purge` backstop at 30 days.
 
 ## Commands
@@ -63,7 +64,7 @@ cat supabase/schema/parts/*.sql > supabase/schema/likha_schema.sql
 psql -f supabase/test/00_supabase_stub.sql -f supabase/schema/likha_schema.sql -f supabase/schema/guna_lookup.sql -f supabase/test/50_app_screens.sql
 # app
 cd app && cp .env.example .env.local && npm i && npm run dev
-NEXT_PUBLIC_DEMO=1 npm run build && npm start & npm run test:e2e   # onboarding (23) + member app (36) + chat and companions (25) + wallet and store (33) + account and safety (37) + couples and growth (62) + launch features (35)
+NEXT_PUBLIC_DEMO=1 npm run build && npm start & npm run test:e2e   # onboarding (23) + member app (36) + chat and companions (25) + wallet and store (33) + account and safety (37) + couples and growth (62) + launch features (35) + chat under load (14)
 node --experimental-strip-types --test tests/unit/*.test.ts         # panchang maths; Moon-sign rules vs the kundli engine
 ```
 

@@ -10,6 +10,7 @@ import type {
   Api, Basics, Birth, Card, City, CityQueue, Filters, FamilyPage, FamilyShareStatus, FamilyShares, Gender, Goal, MaritalStatus, MarriageTimeline, HomeData, Interest, Kick, LikeCard, LikeResult, Lifestyle,
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
   DatePlan, DateInvite, IntentAnswers, IntentState, EventCard, EventCategory, EventDraft,
+  ChatEvents,
 } from "./types";
 import { SAMPLE_CHART, SAMPLES, sampleProfile } from "./samples";
 import { dayPlan, range } from "../panchang";
@@ -398,16 +399,25 @@ export class DemoApi implements Api {
     const o = this.other(matchId);
     if (!o) throw new Error("This chat has ended.");
     return { match_id: matchId, open: true, jodi_score: o.jodi_score, gunas: o.gunas,
-             other: { id: o.id, first_name: o.first_name, age: o.age, photo: null, is_sample: true }, messages: this.load().chats?.[matchId] ?? [] };
+             other: { id: o.id, first_name: o.first_name, age: o.age, photo: null, is_sample: true }, messages: (this.load().chats?.[matchId] ?? []).slice(-100) };
+  }
+  async chatEarlier(matchId: string, before: string) {
+    await wait(80);
+    return (this.load().chats?.[matchId] ?? []).filter((m) => m.created_at < before).slice(-100);
   }
   private push(matchId: string, m: Msg) { this.edit((d) => { d.chats = { ...(d.chats ?? {}), [matchId]: [...(d.chats?.[matchId] ?? []), m] }; }); }
-  private listeners = new Map<string, (m: Msg) => void>();
+  private listeners = new Map<string, ChatEvents>();
   private replyLater(matchId: string) {
     const mine = (this.load().chats?.[matchId] ?? []).filter((m) => m.mine).length;
     if (mine !== 1) return;                                                  // one sample reply per chat, then it's quiet
     setTimeout(() => {
       const m: Msg = { id: crypto.randomUUID(), mine: false, kind: "text", body: "Ha, nice one! (sample reply in demo mode)", media_url: null, held: false, read_at: null, created_at: new Date().toISOString() };
-      this.push(matchId, m); this.listeners.get(matchId)?.(m);
+      // the sample read my message, then replied (demo only)
+      const at = new Date().toISOString();
+      const read: string[] = [];
+      this.edit((d) => { for (const x of d.chats?.[matchId] ?? []) if (x.mine && !x.read_at) { x.read_at = at; read.push(x.id); } });
+      this.listeners.get(matchId)?.read?.(read, at);
+      this.push(matchId, m); this.listeners.get(matchId)?.message(m);
     }, 1200);
   }
   async sendMessage(matchId: string, body: string): Promise<Msg> {
@@ -424,7 +434,7 @@ export class DemoApi implements Api {
     return m;
   }
   async markRead() { /* nothing to do in demo */ }
-  onMessages(matchId: string, cb: (m: Msg) => void) { this.listeners.set(matchId, cb); return () => { this.listeners.delete(matchId); }; }
+  onMessages(matchId: string, h: ChatEvents) { this.listeners.set(matchId, h); return () => { this.listeners.delete(matchId); }; }
   async openers(matchId: string) {
     this.spend("cupid_opener"); await wait(600);
     const o = this.other(matchId);
