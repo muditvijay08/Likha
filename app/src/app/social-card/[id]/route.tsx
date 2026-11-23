@@ -12,13 +12,14 @@ export const runtime = "nodejs";
 const FONT_DIR = join(process.cwd(), "src/app/social-card/fonts");
 let fonts: Promise<{ name: string; data: Buffer; weight: 400 | 600 | 700 | 800; style: "normal" }[]> | null = null;
 const loadFonts = () => (fonts ??= Promise.all([
-  ["Manrope", "manrope-latin-400-normal.woff", 400], ["Manrope", "manrope-latin-600-normal.woff", 600], ["Manrope", "manrope-latin-800-normal.woff", 800],
-  ["Fraunces", "fraunces-latin-700-normal.woff", 700],
+  ["Inter", "inter-latin-400-normal.woff", 400], ["Inter", "inter-latin-600-normal.woff", 600], ["Inter", "inter-latin-800-normal.woff", 800],
+  ["Anton", "anton-latin-400-normal.woff", 400], ["Fraunces", "fraunces-latin-700-normal.woff", 700],   // Fraunces: the wordmark only
 ].map(async ([name, file, weight]) => ({ name: name as string, data: await readFile(join(FONT_DIR, file as string)), weight: weight as 400 | 600 | 700 | 800, style: "normal" as const }))));
 
 type Card = { kind: string; post_date: string; card: Record<string, any> };
 
-const INK = "#111111", SAFFRON = "#FFB020", ROSE = "#FF5A1F", NIGHT = "#1B1533", MUTED = "#6B6585";
+// Nov 2026 redesign: near-black panel, electric orange for the label and numbers, Anton headlines.
+const INK = "#111111", SAFFRON = "#FF5A1F", ROSE = "#FF5A1F", NIGHT = "#111111", MUTED = "#8A847E";
 const KIND_LABEL: Record<string, string> = {
   panchang: "AAJ KA PANCHANG", pair: "RASHI JODI", koota: "KUNDLI 101", feature: "LIKHA PE", myth: "MYTH VS FACT", golden: "GOLDEN HOURS", brand: "LIKHA DIARIES",
 };
@@ -38,7 +39,7 @@ async function load(id: string, token: string): Promise<Card | null> {
 function Stars({ tall }: { tall: boolean }) {
   // only in the margins, never behind words
   const dots = [[330, 70, 4], [560, 40, 3], [700, 95, 5], [1030, 260, 3], [1045, 520, 4], [1040, tall ? 1500 : 1080, 3]];
-  return <>{dots.map(([x, y, r], i) => <div key={i} style={{ position: "absolute", left: x, top: y, width: r * 2, height: r * 2, borderRadius: 99, background: i % 3 ? "#FFE7A8" : "#FFFFFF", opacity: 0.8 }} />)}</>;
+  return <>{dots.map(([x, y, r], i) => <div key={i} style={{ position: "absolute", left: x, top: y, width: r * 2, height: r * 2, borderRadius: 99, background: i % 3 ? "#FFD2BC" : "#FFFFFF", opacity: 0.8 }} />)}</>;
 }
 
 function Facts({ facts }: { facts: [string, string][] }) {
@@ -46,7 +47,7 @@ function Facts({ facts }: { facts: [string, string][] }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 18, marginTop: 44 }}>
       {facts.slice(0, 4).map(([k, v]) => (
         <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 30px", borderRadius: 12, background: "rgba(255,255,255,0.09)", border: "2px solid rgba(255,255,255,0.14)" }}>
-          <div style={{ fontSize: 34, color: "#D9D3F0" }}>{k}</div>
+          <div style={{ fontSize: 34, color: "#D8D2CB" }}>{k}</div>
           <div style={{ fontSize: 40, fontWeight: 800, color: "#FFFFFF" }}>{v}</div>
         </div>
       ))}
@@ -66,24 +67,24 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const width = 1080, height = tall ? 1920 : 1350;
   return new ImageResponse(
     <div style={{ width, height, display: "flex", flexDirection: "column", position: "relative", padding: tall ? "150px 80px 120px" : "90px 80px 80px",
-      background: `linear-gradient(160deg, ${NIGHT} 0%, #1F1C19 55%, #2A2420 100%)`, color: "#FFFFFF", fontFamily: "Manrope" }}>
+      background: NIGHT, color: "#FFFFFF", fontFamily: "Inter" }}>
       <Stars tall={tall} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", fontSize: 54, fontWeight: 700, fontFamily: "Fraunces" }}><span>Likha</span><span style={{ color: SAFFRON }}>.</span></div>
-        <div style={{ display: "flex", padding: "10px 22px", borderRadius: 99, background: SAFFRON, color: INK, fontSize: 24, fontWeight: 800, letterSpacing: 2 }}>{KIND_LABEL[data.kind] ?? "LIKHA"}</div>
+        <div style={{ display: "flex", padding: "10px 22px", borderRadius: 10, background: SAFFRON, color: INK, fontSize: 24, fontWeight: 800, letterSpacing: 2 }}>{KIND_LABEL[data.kind] ?? "LIKHA"}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, justifyContent: "center" }}>
         {c.kicker && <div style={{ fontSize: 32, color: SAFFRON, fontWeight: 800, marginBottom: 18 }}>{String(c.kicker)}</div>}
-        <div style={{ fontSize: tall ? 96 : 86, fontWeight: 700, lineHeight: 1.05, fontFamily: "Fraunces" }}>{String(c.headline ?? "")}</div>
-        {c.sub && <div style={{ fontSize: 38, lineHeight: 1.35, color: "#E4DEF7", marginTop: 26 }}>{String(c.sub)}</div>}
-        {big && <div style={{ display: "flex", marginTop: 40, fontSize: 160, fontWeight: 700, color: SAFFRON, lineHeight: 1, fontFamily: "Fraunces" }}>{big}</div>}
+        <div style={{ fontSize: tall ? 116 : 104, fontWeight: 400, lineHeight: 1, fontFamily: "Anton", textTransform: "uppercase" }}>{String(c.headline ?? "")}</div>
+        {c.sub && <div style={{ fontSize: 38, lineHeight: 1.35, color: "#E7E2DC", marginTop: 26 }}>{String(c.sub)}</div>}
+        {big && <div style={{ display: "flex", marginTop: 40, fontSize: 180, fontWeight: 400, color: SAFFRON, lineHeight: 1, fontFamily: "Anton" }}>{big}</div>}
         {facts.length > 0 && <Facts facts={facts} />}
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 30, color: "#CFC8EA" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 30, color: "#D8D2CB" }}>
         <div style={{ display: "flex" }}>{String(c.footer ?? "Kundli milao, dil milao.")}</div>
         <div style={{ display: "flex", color: "#FFFFFF", fontWeight: 800 }}>likha.in</div>
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 10, display: "flex", background: `linear-gradient(90deg, ${SAFFRON}, ${ROSE})` }} />
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 10, display: "flex", background: SAFFRON }} />
       {c.note && <div style={{ position: "absolute", left: 80, bottom: 26, fontSize: 20, color: MUTED, display: "flex" }}>{String(c.note)}</div>}
     </div>,
     { width, height, fonts: await loadFonts(), headers: { "cache-control": "no-store" } },

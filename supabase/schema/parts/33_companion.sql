@@ -163,7 +163,8 @@ begin
     'free_per_day', coalesce((public.setting('saathi') ->> 'free_messages_per_day')::int, 30));
 end $$;
 
--- The data export (DPDP) includes companion settings and memories; cleared chats stay cleared.
+-- The data export (DPDP): companion settings and memories (cleared chats stay cleared), events, dates and intent answers.
+-- Tables from parts 34/35 are referenced at call time, so this definition can sit before them.
 create or replace function public.admin_export_user(p_request uuid) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare d public.data_requests; v jsonb; u uuid;
@@ -190,7 +191,16 @@ begin
     'readings', coalesce((select jsonb_agg(jsonb_build_object('kind', kind, 'status', status, 'at', created_at, 'content', content) order by created_at) from public.readings where user_id = u), '[]'),
     'credits', coalesce((select jsonb_agg(jsonb_build_object('at', created_at, 'delta', delta, 'kind', kind, 'reason', reason) order by id) from public.credit_ledger where user_id = u), '[]'),
     'payments', coalesce((select jsonb_agg(jsonb_build_object('at', created_at, 'item', item_key, 'amount_paise', amount_paise, 'status', status, 'invoice', invoice_no)) from public.payments where user_id = u), '[]'),
-    'support', coalesce((select jsonb_agg(jsonb_build_object('subject', t.subject, 'at', t.created_at)) from public.support_tickets t where t.user_id = u), '[]'));
+    'support', coalesce((select jsonb_agg(jsonb_build_object('subject', t.subject, 'at', t.created_at)) from public.support_tickets t where t.user_id = u), '[]'),
+    'events_hosted', coalesce((select jsonb_agg(to_jsonb(e) - 'host_id' - 'reviewed_by' order by e.created_at) from public.events e where e.host_id = u), '[]'),
+    'event_rsvps', coalesce((select jsonb_agg(jsonb_build_object('event', e.title, 'starts_at', e.starts_at, 'status', r.status, 'at', r.created_at) order by r.created_at)
+                             from public.event_rsvps r join public.events e on e.id = r.event_id where r.user_id = u), '[]'),
+    'event_reports', coalesce((select jsonb_agg(jsonb_build_object('event', e.title, 'reason', r.reason, 'at', r.created_at))
+                               from public.event_reports r join public.events e on e.id = r.event_id where r.reporter_id = u), '[]'),
+    'dates', coalesce((select jsonb_agg(jsonb_build_object('idea', dp.idea, 'place', dp.place, 'starts_at', dp.starts_at, 'status', dp.status, 'proposed_by_me', dp.proposer = u) order by dp.created_at)
+                       from public.date_plans dp join public.matches mm on mm.id = dp.match_id where u in (mm.user_a, mm.user_b)), '[]'),
+    'date_reflections', coalesce((select jsonb_agg(jsonb_build_object('again', again, 'note', note, 'at', at)) from public.date_reflections where user_id = u), '[]'),
+    'intent_answers', coalesce((select jsonb_agg(jsonb_build_object('answers', answers, 'at', updated_at)) from public.intent_answers where user_id = u), '[]'));
   update public.data_requests set status = 'resolved', completed_at = now(), handled_by = auth.uid(),
     proof = jsonb_build_object('exported_at', now(), 'by', auth.uid(), 'sections', (select jsonb_agg(k) from jsonb_object_keys(v) k)) where id = p_request;
   perform private.audit('data_export', 'profile', u::text, 'Export request', null, jsonb_build_object('request', p_request));

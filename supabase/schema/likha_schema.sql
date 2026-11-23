@@ -10101,6 +10101,346 @@ create or replace function private.unused_settings() returns text[] language sql
 $$;
 
 select private.lockdown();
+-- 31 Events: members post local events (verified hosts, public venues, every event checked by the team before anyone sees it).
+-- Members see counts, never who else is going. The team sees aggregate insights only (small groups hidden), never attendee lists.
+
+create table if not exists public.events (
+  id          uuid primary key default gen_random_uuid(),
+  host_id     uuid not null references public.profiles(id) on delete cascade,
+  city_id     uuid not null references public.cities(id),
+  title       text not null check (char_length(title) between 6 and 80),
+  category    text not null check (category in ('music','food','fitness','culture','festival','workshop','social','spiritual','outdoors','other')),
+  description text not null check (char_length(description) between 20 and 1000),
+  starts_at   timestamptz not null,
+  ends_at     timestamptz not null check (ends_at > starts_at),
+  venue_name  text not null check (char_length(venue_name) between 3 and 80),
+  venue_area  text not null check (char_length(venue_area) between 2 and 60),
+  price_inr   int not null default 0 check (price_inr between 0 and 10000),
+  capacity    int check (capacity is null or capacity between 2 and 500),
+  singles_only boolean not null default false,
+  status      text not null default 'pending' check (status in ('pending','approved','rejected','cancelled')),
+  status_reason text check (status_reason is null or char_length(status_reason) <= 300),
+  reviewed_by uuid,
+  reviewed_at timestamptz,
+  created_at  timestamptz not null default now()
+);
+create index if not exists events_city_time_idx on public.events (city_id, starts_at) where status = 'approved';
+create index if not exists events_host_idx on public.events (host_id, created_at desc);
+create index if not exists events_status_idx on public.events (status, created_at) where status = 'pending';
+
+create table if not exists public.event_rsvps (
+  event_id   uuid not null references public.events(id) on delete cascade,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  status     text not null check (status in ('going','interested')),
+  created_at timestamptz not null default now(),
+  primary key (event_id, user_id)
+);
+create index if not exists event_rsvps_user_idx on public.event_rsvps (user_id);
+
+create table if not exists public.event_reports (
+  event_id    uuid not null references public.events(id) on delete cascade,
+  reporter_id uuid not null references public.profiles(id) on delete cascade,
+  reason      text not null check (char_length(reason) between 3 and 300),
+  created_at  timestamptz not null default now(),
+  primary key (event_id, reporter_id)
+);
+
+-- reached only through the functions below
+alter table public.events enable row level security;
+alter table public.event_rsvps enable row level security;
+alter table public.event_reports enable row level security;
+revoke all on public.events, public.event_rsvps, public.event_reports from anon, authenticated;
+
+insert into public.feature_flags (key, enabled, rollout_pct, city_slugs, description)
+values ('events', true, 100, '{}', 'Events: members post local events; the team approves each one')
+on conflict (key) do nothing;
+
+-- Phone numbers, links, emails and handles stay out of events: people meet through Likha, and scams start off-app.
+create or replace function private.event_text_ok(p text) returns boolean
+language sql immutable set search_path = public as $$
+  select not (p ~ '(\d[\s-]?){10,}' or p ~* '(https?://|www\.|\.(com|in|net|org|ly|me|link)\b)' or p ~* '[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}' or p ~ '(^|\s)@[A-Za-z0-9_.]{3,}')
+$$;
+
+-- An event as a member sees it: counts, never names. "Matches going" and "strong Guna matches going" are counts too.
+create or replace function private.event_card(e public.events, p_full boolean default false) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'id', e.id, 'title', e.title, 'category', e.category, 'starts_at', e.starts_at, 'ends_at', e.ends_at,
+    'venue_name', e.venue_name, 'venue_area', e.venue_area, 'city', c.name, 'price_inr', e.price_inr, 'capacity', e.capacity,
+    'singles_only', e.singles_only, 'status', e.status,
+    'host', jsonb_build_object('first_name', h.first_name, 'verified', h.selfie_status = 'passed'),
+    'host_is_me', e.host_id = auth.uid(),
+    'going', (select count(*) from public.event_rsvps r where r.event_id = e.id and r.status = 'going'),
+    'interested', (select count(*) from public.event_rsvps r where r.event_id = e.id and r.status = 'interested'),
+    'my_rsvp', (select r.status from public.event_rsvps r where r.event_id = e.id and r.user_id = auth.uid()),
+    'matches_going', (select count(*) from public.event_rsvps r join public.matches m
+                        on m.unmatched_at is null and r.user_id in (m.user_a, m.user_b) and auth.uid() in (m.user_a, m.user_b)
+                       where r.event_id = e.id and r.status = 'going' and r.user_id <> auth.uid()),
+    'strong_going', (select count(*) from public.event_rsvps r join public.compatibility cmp
+                        on cmp.user_a = least(auth.uid(), r.user_id) and cmp.user_b = greatest(auth.uid(), r.user_id)
+                      where r.event_id = e.id and r.status = 'going' and r.user_id <> auth.uid() and cmp.gunas >= 25
+                        and public.can_see_profile(r.user_id))
+  ) || case when p_full then jsonb_build_object('description', e.description,
+         'status_reason', case when e.host_id = auth.uid() then e.status_reason end) else '{}'::jsonb end
+  from public.cities c, public.profiles h where c.id = e.city_id and h.id = e.host_id
+$$;
+
+-- Which events a member may see: approved, not over, same demo/real world as the host, host active, no block between them.
+create or replace function private.event_visible(e public.events) returns boolean
+language sql stable security definer set search_path = public as $$
+  select e.host_id = auth.uid() or public.has_perm('users.moderate') or (
+    e.status = 'approved' and e.ends_at > now()
+    and exists (select 1 from public.profiles h, public.profiles me
+                where h.id = e.host_id and me.id = auth.uid() and me.status = 'active'
+                  and h.status = 'active' and h.deleted_at is null and h.is_demo = me.is_demo)
+    and not public.is_blocked_between(auth.uid(), e.host_id))
+$$;
+
+create or replace function public.event_create(p jsonb) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare me public.profiles; v_id uuid; v_start timestamptz; v_end timestamptz; v_city text;
+begin
+  select * into me from public.profiles where id = auth.uid();
+  if me.id is null then raise exception 'not signed in'; end if;
+  select slug into v_city from public.cities where id = me.city_id;
+  if not public.flag_on('events', v_city) then raise exception 'events are not open in your city yet'; end if;
+  if me.status <> 'active' then raise exception 'finish your profile first'; end if;
+  if me.selfie_status <> 'passed' then raise exception 'verify your selfie to host events'; end if;
+  if me.city_id is null then raise exception 'set your city first'; end if;
+  if (select count(*) from public.events where host_id = me.id and status = 'pending') >= 3 then
+    raise exception 'you have 3 events waiting for review already'; end if;
+  if (select count(*) from public.events where host_id = me.id and created_at > now() - interval '7 days') >= 5 then
+    raise exception 'that''s 5 events this week. Try again in a few days'; end if;
+  begin
+    v_start := (p ->> 'starts_at')::timestamptz; v_end := (p ->> 'ends_at')::timestamptz;
+  exception when others then raise exception 'check the date and time'; end;
+  if v_start is null or v_end is null then raise exception 'check the date and time'; end if;
+  if v_start < now() + interval '2 hours' then raise exception 'events need to start at least 2 hours from now'; end if;
+  if v_start > now() + interval '90 days' then raise exception 'events can be up to 90 days ahead'; end if;
+  if v_end <= v_start or v_end > v_start + interval '24 hours' then raise exception 'an event ends after it starts, within 24 hours'; end if;
+  if not private.event_text_ok(concat_ws(' ', p ->> 'title', p ->> 'description', p ->> 'venue_name', p ->> 'venue_area')) then
+    raise exception 'no phone numbers, links, emails or handles in events'; end if;
+  if coalesce((p ->> 'public_venue')::boolean, false) is not true then
+    raise exception 'events must be at a public venue'; end if;
+  insert into public.events (host_id, city_id, title, category, description, starts_at, ends_at, venue_name, venue_area, price_inr, capacity, singles_only)
+  values (me.id, me.city_id, btrim(p ->> 'title'), p ->> 'category', btrim(p ->> 'description'), v_start, v_end,
+          btrim(p ->> 'venue_name'), btrim(p ->> 'venue_area'), coalesce((p ->> 'price_inr')::int, 0), nullif(p ->> 'capacity', '')::int,
+          coalesce((p ->> 'singles_only')::boolean, false))
+  returning id into v_id;
+  return v_id;
+end $$;
+
+create or replace function public.events_list(p_category text default null, p_days int default 30) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(private.event_card(e) order by e.starts_at), '[]')
+  from (select e.* from public.events e
+         where e.status = 'approved' and e.ends_at > now() and e.starts_at < now() + make_interval(days => least(greatest(coalesce(p_days, 30), 1), 90))
+           and e.city_id = (select city_id from public.profiles where id = auth.uid())
+           and (p_category is null or e.category = p_category)
+           and public.flag_on('events', (select c.slug from public.cities c where c.id = e.city_id))
+           and private.event_visible(e)
+         order by e.starts_at limit 100) e
+$$;
+
+create or replace function public.event_view(p_event uuid) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare e public.events;
+begin
+  select * into e from public.events where id = p_event;
+  if e.id is null or not private.event_visible(e) then return null; end if;
+  return private.event_card(e, true);
+end $$;
+
+create or replace function public.event_rsvp(p_event uuid, p_status text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare e public.events;
+begin
+  select * into e from public.events where id = p_event for update;
+  if e.id is null or not private.event_visible(e) or e.status <> 'approved' then raise exception 'event not found'; end if;
+  if e.host_id = auth.uid() then raise exception 'you''re hosting this one'; end if;
+  if e.starts_at < now() then raise exception 'this event has started'; end if;
+  if p_status is null then
+    delete from public.event_rsvps where event_id = p_event and user_id = auth.uid();
+  elsif p_status in ('going','interested') then
+    if p_status = 'going' and e.capacity is not null and (select count(*) from public.event_rsvps
+        where event_id = p_event and status = 'going' and user_id <> auth.uid()) >= e.capacity then
+      raise exception 'this event is full'; end if;
+    insert into public.event_rsvps (event_id, user_id, status) values (p_event, auth.uid(), p_status)
+    on conflict (event_id, user_id) do update set status = excluded.status, created_at = now();
+  else raise exception 'going, interested or nothing'; end if;
+  return private.event_card(e, true);
+end $$;
+
+create or replace function public.event_cancel(p_event uuid, p_reason text default null) returns void
+language plpgsql security definer set search_path = public as $$
+declare e public.events; r record;
+begin
+  update public.events set status = 'cancelled', status_reason = left(nullif(btrim(p_reason), ''), 300)
+   where id = p_event and host_id = auth.uid() and status in ('pending','approved') returning * into e;
+  if e.id is null then raise exception 'event not found'; end if;
+  for r in select user_id from public.event_rsvps where event_id = p_event and status = 'going' loop
+    perform private.notify(r.user_id, 'event', 'Event cancelled', e.title || ' won''t happen. Sorry!', '/events');
+  end loop;
+end $$;
+
+create or replace function public.my_events() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'hosting', coalesce((select jsonb_agg(private.event_card(e, true) order by e.starts_at desc)
+                         from (select * from public.events where host_id = auth.uid() order by starts_at desc limit 30) e), '[]'),
+    'going', coalesce((select jsonb_agg(private.event_card(e) order by e.starts_at)
+                       from public.events e join public.event_rsvps r on r.event_id = e.id and r.user_id = auth.uid()
+                       where e.ends_at > now() and private.event_visible(e)), '[]'))
+$$;
+
+-- Three different reports send an approved event back to the team before anyone else sees it.
+create or replace function public.event_report(p_event uuid, p_reason text) returns void
+language plpgsql security definer set search_path = public as $$
+declare e public.events;
+begin
+  select * into e from public.events where id = p_event;
+  if e.id is null or not private.event_visible(e) or e.host_id = auth.uid() then raise exception 'event not found'; end if;
+  if char_length(btrim(coalesce(p_reason, ''))) < 3 then raise exception 'tell us what''s wrong'; end if;
+  insert into public.event_reports (event_id, reporter_id, reason) values (p_event, auth.uid(), left(btrim(p_reason), 300))
+  on conflict (event_id, reporter_id) do update set reason = excluded.reason, created_at = now();
+  if e.status = 'approved' and (select count(*) from public.event_reports where event_id = p_event) >= 3 then
+    update public.events set status = 'pending', status_reason = 'Back for review after reports' where id = p_event;
+  end if;
+end $$;
+
+-- ------------------------------------------------------------------ Team
+create or replace function public.admin_events(p_status text default 'pending') returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  perform private.need('users.moderate');
+  return coalesce((select jsonb_agg(jsonb_build_object(
+      'id', e.id, 'title', e.title, 'category', e.category, 'description', e.description, 'starts_at', e.starts_at, 'ends_at', e.ends_at,
+      'venue_name', e.venue_name, 'venue_area', e.venue_area, 'city', c.name, 'price_inr', e.price_inr, 'capacity', e.capacity,
+      'singles_only', e.singles_only, 'status', e.status, 'status_reason', e.status_reason, 'created_at', e.created_at,
+      'host', private.short_id(e.host_id) || ' ' || h.first_name, 'host_id', e.host_id, 'host_demo', h.is_demo,
+      'host_events', (select count(*) from public.events x where x.host_id = e.host_id and x.status = 'approved'),
+      'going', (select count(*) from public.event_rsvps r where r.event_id = e.id and r.status = 'going'),
+      'reports', (select coalesce(jsonb_agg(jsonb_build_object('reason', rp.reason, 'at', rp.created_at) order by rp.created_at desc), '[]')
+                  from public.event_reports rp where rp.event_id = e.id))
+    order by case when p_status = 'pending' then e.created_at end, e.starts_at desc)
+    from (select * from public.events where status = coalesce(p_status, status) order by created_at desc limit 200) e
+    join public.cities c on c.id = e.city_id join public.profiles h on h.id = e.host_id), '[]');
+end $$;
+
+create or replace function public.admin_event_decide(p_event uuid, p_approve boolean, p_reason text default null) returns void
+language plpgsql security definer set search_path = public as $$
+declare e public.events; r record;
+begin
+  perform private.need('users.moderate');
+  select * into e from public.events where id = p_event for update;
+  if e.id is null then raise exception 'event not found'; end if;
+  if e.status = 'cancelled' then raise exception 'the host cancelled this event'; end if;
+  if not p_approve and coalesce(btrim(p_reason), '') = '' then raise exception 'say why (the host sees it)'; end if;
+  if p_approve and e.ends_at < now() then raise exception 'this event is over'; end if;
+  update public.events set status = case when p_approve then 'approved' else 'rejected' end,
+         status_reason = case when p_approve then null else left(btrim(p_reason), 300) end, reviewed_by = auth.uid(), reviewed_at = now()
+   where id = p_event;
+  if p_approve then
+    perform private.notify(e.host_id, 'event', 'Your event is live', e.title || ' is now on Likha Events.', '/events/' || e.id);
+  else
+    perform private.notify(e.host_id, 'event', 'Your event wasn''t approved', btrim(p_reason), '/events/' || e.id);
+    if e.status = 'approved' then
+      for r in select user_id from public.event_rsvps where event_id = p_event and status = 'going' loop
+        perform private.notify(r.user_id, 'event', 'Event removed', e.title || ' was taken down by Likha.', '/events');
+      end loop;
+    end if;
+  end if;
+  perform private.audit('event_' || case when p_approve then 'approved' else 'rejected' end, 'event', p_event::text, p_reason, null,
+    jsonb_build_object('host', e.host_id, 'was', e.status));
+end $$;
+
+-- What members come out for: totals by category, day, hour, area and Moon-sign element. Groups under 5 people are hidden.
+create or replace function public.admin_event_insights(p_days int default 30) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare d timestamptz := now() - make_interval(days => least(greatest(coalesce(p_days, 30), 1), 365));
+begin
+  if not public.is_team() then raise exception 'not allowed'; end if;
+  return jsonb_build_object(
+    'days', least(greatest(coalesce(p_days, 30), 1), 365),
+    'min_group', 5,
+    'totals', (select jsonb_build_object(
+        'posted', count(*), 'approved', count(*) filter (where e.status = 'approved'), 'rejected', count(*) filter (where e.status = 'rejected'),
+        'cancelled', count(*) filter (where e.status = 'cancelled'), 'pending', count(*) filter (where e.status = 'pending'),
+        'hosts', count(distinct host_id))
+      from public.events e join public.profiles h on h.id = e.host_id where e.created_at >= d and not h.is_demo),
+    'rsvps', (select jsonb_build_object('going', count(*) filter (where r.status = 'going'), 'interested', count(*) filter (where r.status = 'interested'),
+        'people', count(distinct r.user_id))
+      from public.event_rsvps r join public.profiles u on u.id = r.user_id where r.created_at >= d and not u.is_demo),
+    'by_category', coalesce((select jsonb_agg(x order by (x ->> 'going')::int desc) from (
+        select jsonb_build_object('category', e.category, 'events', count(distinct e.id),
+          'going', count(r.*) filter (where r.status = 'going'), 'interested', count(r.*) filter (where r.status = 'interested')) x
+        from public.events e join public.profiles h on h.id = e.host_id and not h.is_demo
+        left join public.event_rsvps r on r.event_id = e.id
+        where e.status = 'approved' and e.starts_at >= d group by e.category) s), '[]'),
+    'by_weekday', coalesce((select jsonb_agg(jsonb_build_object('dow', dow, 'going', n) order by dow) from (
+        select extract(isodow from e.starts_at at time zone 'Asia/Kolkata')::int dow, count(*) n
+        from public.events e join public.profiles h on h.id = e.host_id and not h.is_demo
+        join public.event_rsvps r on r.event_id = e.id and r.status = 'going'
+        where e.status = 'approved' and e.starts_at >= d group by 1 having count(*) >= 5) s), '[]'),
+    'by_hour', coalesce((select jsonb_agg(jsonb_build_object('hour', hr, 'going', n) order by hr) from (
+        select extract(hour from e.starts_at at time zone 'Asia/Kolkata')::int hr, count(*) n
+        from public.events e join public.profiles h on h.id = e.host_id and not h.is_demo
+        join public.event_rsvps r on r.event_id = e.id and r.status = 'going'
+        where e.status = 'approved' and e.starts_at >= d group by 1 having count(*) >= 5) s), '[]'),
+    'by_area', coalesce((select jsonb_agg(jsonb_build_object('city', city, 'area', area, 'events', ev, 'going', n) order by n desc) from (
+        select c.name city, initcap(lower(btrim(e.venue_area))) area, count(distinct e.id) ev, count(r.*) n
+        from public.events e join public.profiles h on h.id = e.host_id and not h.is_demo join public.cities c on c.id = e.city_id
+        left join public.event_rsvps r on r.event_id = e.id and r.status = 'going'
+        where e.status = 'approved' and e.starts_at >= d group by 1, 2 having count(r.*) >= 5 order by 4 desc limit 15) s), '[]'),
+    'by_element', coalesce((select jsonb_agg(jsonb_build_object('element', el, 'category', cat, 'going', n) order by el, n desc) from (
+        select (array['Fire','Earth','Air','Water'])[(ks.moon_sign_index % 4) + 1] el, e.category cat, count(*) n
+        from public.event_rsvps r join public.events e on e.id = r.event_id and e.status = 'approved' and e.starts_at >= d
+        join public.profiles u on u.id = r.user_id and not u.is_demo
+        join public.kundli_summary ks on ks.user_id = r.user_id
+        where r.status = 'going' group by 1, 2 having count(*) >= 5) s), '[]'),
+    'repeat_goers', (select count(*) from (select r.user_id from public.event_rsvps r join public.profiles u on u.id = r.user_id and not u.is_demo
+        where r.status = 'going' and r.created_at >= d group by 1 having count(*) >= 2) s));
+end $$;
+
+-- The data export (DPDP) includes events hosted, RSVPs and reports.
+create or replace function public.admin_export_user(p_request uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare d public.data_requests; v jsonb; u uuid;
+begin
+  perform private.need('data.manage');
+  select * into d from public.data_requests where id = p_request and kind = 'export' for update;
+  if not found then raise exception 'not an export request'; end if;
+  u := d.user_id;
+  v := jsonb_build_object(
+    'generated_at', now(), 'notes', 'Selfie images are never stored. Other people''s messages are not included.',
+    'profile', (select to_jsonb(p) - 'tier_override' - 'tier_override_until' from public.profiles p where p.id = u),
+    'birth_details', (select to_jsonb(b) - 'user_id' from private.birth_details b where b.user_id = u),
+    'kundli', (select to_jsonb(k) - 'user_id' from public.kundli_summary k where k.user_id = u),
+    'preferences', (select to_jsonb(x) - 'user_id' from public.preferences x where x.user_id = u),
+    'prompts', coalesce((select jsonb_agg(to_jsonb(x) - 'user_id') from public.profile_prompts x where x.user_id = u), '[]'),
+    'photos', coalesce((select jsonb_agg(jsonb_build_object('position', position, 'path', storage_path, 'status', moderation_status)) from public.photos where user_id = u), '[]'),
+    'consents', coalesce((select jsonb_agg(to_jsonb(x) - 'user_id') from public.user_consents x where x.user_id = u), '[]'),
+    'likes_sent', (select count(*) from public.likes where from_user = u),
+    'matches', (select count(*) from public.matches where u in (user_a, user_b)),
+    'messages_sent', coalesce((select jsonb_agg(jsonb_build_object('at', created_at, 'body', body, 'kind', kind) order by created_at) from public.messages where sender_id = u and deleted_at is null), '[]'),
+    'saathi', coalesce((select jsonb_agg(jsonb_build_object('at', created_at, 'role', role, 'body', body) order by id) from public.saathi_messages where user_id = u), '[]'),
+    'readings', coalesce((select jsonb_agg(jsonb_build_object('kind', kind, 'status', status, 'at', created_at, 'content', content) order by created_at) from public.readings where user_id = u), '[]'),
+    'credits', coalesce((select jsonb_agg(jsonb_build_object('at', created_at, 'delta', delta, 'kind', kind, 'reason', reason) order by id) from public.credit_ledger where user_id = u), '[]'),
+    'payments', coalesce((select jsonb_agg(jsonb_build_object('at', created_at, 'item', item_key, 'amount_paise', amount_paise, 'status', status, 'invoice', invoice_no)) from public.payments where user_id = u), '[]'),
+    'support', coalesce((select jsonb_agg(jsonb_build_object('subject', t.subject, 'at', t.created_at)) from public.support_tickets t where t.user_id = u), '[]'),
+    'events_hosted', coalesce((select jsonb_agg(to_jsonb(e) - 'host_id' - 'reviewed_by' order by e.created_at) from public.events e where e.host_id = u), '[]'),
+    'event_rsvps', coalesce((select jsonb_agg(jsonb_build_object('event', e.title, 'starts_at', e.starts_at, 'status', r.status, 'at', r.created_at) order by r.created_at)
+                             from public.event_rsvps r join public.events e on e.id = r.event_id where r.user_id = u), '[]'),
+    'event_reports', coalesce((select jsonb_agg(jsonb_build_object('event', e.title, 'reason', r.reason, 'at', r.created_at))
+                               from public.event_reports r join public.events e on e.id = r.event_id where r.reporter_id = u), '[]'));
+  update public.data_requests set status = 'resolved', completed_at = now(), handled_by = auth.uid(),
+    proof = jsonb_build_object('exported_at', now(), 'by', auth.uid(), 'sections', (select jsonb_agg(k) from jsonb_object_keys(v) k)) where id = p_request;
+  perform private.audit('data_export', 'profile', u::text, 'Export request', null, jsonb_build_object('request', p_request));
+  perform private.notify(u, 'data', 'Your data export is ready', 'We''ve emailed it to you as a file. It includes everything Likha holds about you.', '/help');
+  return v;
+end $$;
+
+select private.lockdown();
 -- 32 Match Intelligence: real-life fit, kept separate from the kundli. A few optional "life and values" answers,
 -- shown on the profile like everything else Match Intelligence compares. The comparison itself runs in the app
 -- (app/src/lib/match-intel.ts), from the two profiles only: nothing is inferred, and religion and caste are never scored.
@@ -10308,7 +10648,8 @@ begin
     'free_per_day', coalesce((public.setting('saathi') ->> 'free_messages_per_day')::int, 30));
 end $$;
 
--- The data export (DPDP) includes companion settings and memories; cleared chats stay cleared.
+-- The data export (DPDP): companion settings and memories (cleared chats stay cleared), events, dates and intent answers.
+-- Tables from parts 34/35 are referenced at call time, so this definition can sit before them.
 create or replace function public.admin_export_user(p_request uuid) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare d public.data_requests; v jsonb; u uuid;
@@ -10335,7 +10676,16 @@ begin
     'readings', coalesce((select jsonb_agg(jsonb_build_object('kind', kind, 'status', status, 'at', created_at, 'content', content) order by created_at) from public.readings where user_id = u), '[]'),
     'credits', coalesce((select jsonb_agg(jsonb_build_object('at', created_at, 'delta', delta, 'kind', kind, 'reason', reason) order by id) from public.credit_ledger where user_id = u), '[]'),
     'payments', coalesce((select jsonb_agg(jsonb_build_object('at', created_at, 'item', item_key, 'amount_paise', amount_paise, 'status', status, 'invoice', invoice_no)) from public.payments where user_id = u), '[]'),
-    'support', coalesce((select jsonb_agg(jsonb_build_object('subject', t.subject, 'at', t.created_at)) from public.support_tickets t where t.user_id = u), '[]'));
+    'support', coalesce((select jsonb_agg(jsonb_build_object('subject', t.subject, 'at', t.created_at)) from public.support_tickets t where t.user_id = u), '[]'),
+    'events_hosted', coalesce((select jsonb_agg(to_jsonb(e) - 'host_id' - 'reviewed_by' order by e.created_at) from public.events e where e.host_id = u), '[]'),
+    'event_rsvps', coalesce((select jsonb_agg(jsonb_build_object('event', e.title, 'starts_at', e.starts_at, 'status', r.status, 'at', r.created_at) order by r.created_at)
+                             from public.event_rsvps r join public.events e on e.id = r.event_id where r.user_id = u), '[]'),
+    'event_reports', coalesce((select jsonb_agg(jsonb_build_object('event', e.title, 'reason', r.reason, 'at', r.created_at))
+                               from public.event_reports r join public.events e on e.id = r.event_id where r.reporter_id = u), '[]'),
+    'dates', coalesce((select jsonb_agg(jsonb_build_object('idea', dp.idea, 'place', dp.place, 'starts_at', dp.starts_at, 'status', dp.status, 'proposed_by_me', dp.proposer = u) order by dp.created_at)
+                       from public.date_plans dp join public.matches mm on mm.id = dp.match_id where u in (mm.user_a, mm.user_b)), '[]'),
+    'date_reflections', coalesce((select jsonb_agg(jsonb_build_object('again', again, 'note', note, 'at', at)) from public.date_reflections where user_id = u), '[]'),
+    'intent_answers', coalesce((select jsonb_agg(jsonb_build_object('answers', answers, 'at', updated_at)) from public.intent_answers where user_id = u), '[]'));
   update public.data_requests set status = 'resolved', completed_at = now(), handled_by = auth.uid(),
     proof = jsonb_build_object('exported_at', now(), 'by', auth.uid(), 'sections', (select jsonb_agg(k) from jsonb_object_keys(v) k)) where id = p_request;
   perform private.audit('data_export', 'profile', u::text, 'Export request', null, jsonb_build_object('request', p_request));
@@ -10344,4 +10694,430 @@ begin
 end $$;
 
 grant select on public.saathi_settings to authenticated;
+select private.lockdown();
+-- 34 Plan a date (Connect > Meet): an invitation to a public place, the other person says yes or no, a reminder the day
+-- before, a safety check-in once it starts, and a private "how did it go?". A second date is only revealed if both say yes.
+
+create table if not exists public.date_plans (
+  id           uuid primary key default gen_random_uuid(),
+  match_id     uuid not null references public.matches(id) on delete cascade,
+  proposer     uuid not null references public.profiles(id) on delete cascade,
+  idea         text not null check (char_length(idea) between 3 and 80),
+  place        text not null check (char_length(place) between 3 and 80),
+  starts_at    timestamptz not null,
+  status       text not null default 'proposed' check (status in ('proposed','accepted','declined','cancelled')),
+  note         text check (note is null or char_length(note) <= 200),
+  responded_at timestamptz,
+  reminded_at  timestamptz,
+  checkin_sent_at timestamptz,
+  created_at   timestamptz not null default now()
+);
+create index if not exists date_plans_match_idx on public.date_plans (match_id, starts_at desc);
+create index if not exists date_plans_due_idx on public.date_plans (starts_at) where status = 'accepted';
+
+create table if not exists public.date_checkins (
+  date_id uuid not null references public.date_plans(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  ok      boolean not null,
+  at      timestamptz not null default now(),
+  primary key (date_id, user_id)
+);
+create table if not exists public.date_reflections (
+  date_id uuid not null references public.date_plans(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  again   text not null check (again in ('yes','maybe','no')),
+  note    text check (note is null or char_length(note) <= 300),          -- private: never shown to the other person
+  at      timestamptz not null default now(),
+  primary key (date_id, user_id)
+);
+alter table public.date_plans enable row level security;
+alter table public.date_checkins enable row level security;
+alter table public.date_reflections enable row level security;
+revoke all on public.date_plans, public.date_checkins, public.date_reflections from anon, authenticated;
+
+-- no phone numbers, links, emails or handles in date invitations (people meet through Likha; scams start off-app)
+create or replace function private.no_contact_text(p text) returns boolean
+language sql immutable set search_path = public as $$
+  select not (coalesce(p, '') ~ '(\d[\s-]?){10,}' or coalesce(p, '') ~* '(https?://|www\.|\.(com|in|net|org|ly|me|link)\b)'
+              or coalesce(p, '') ~* '[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}' or coalesce(p, '') ~ '(^|\s)@[A-Za-z0-9_.]{3,}')
+$$;
+
+create or replace function private.date_other(d public.date_plans) returns uuid
+language sql stable security definer set search_path = public as $$
+  select case when m.user_a = d.proposer then m.user_b else m.user_a end from public.matches m where m.id = d.match_id
+$$;
+
+create or replace function public.date_propose(p_match uuid, p jsonb) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare v_other uuid; v_at timestamptz; v_id uuid; v_name text;
+begin
+  select case when m.user_a = auth.uid() then m.user_b else m.user_a end into v_other
+    from public.matches m where m.id = p_match and auth.uid() in (m.user_a, m.user_b) and m.unmatched_at is null;
+  if v_other is null then raise exception 'match not found'; end if;
+  if public.is_blocked_between(auth.uid(), v_other) then raise exception 'match not found'; end if;
+  if coalesce((p ->> 'public_place')::boolean, false) is not true then raise exception 'first dates are at a public place'; end if;
+  begin v_at := (p ->> 'starts_at')::timestamptz; exception when others then raise exception 'check the date and time'; end;
+  if v_at is null or v_at < now() + interval '2 hours' then raise exception 'pick a time at least 2 hours from now'; end if;
+  if v_at > now() + interval '60 days' then raise exception 'pick a date in the next 60 days'; end if;
+  if not private.no_contact_text(concat_ws(' ', p ->> 'idea', p ->> 'place', p ->> 'note')) then raise exception 'no phone numbers, links or handles in invitations'; end if;
+  if (select count(*) from public.date_plans where match_id = p_match and status = 'proposed') >= 2 then raise exception 'two invitations are waiting already'; end if;
+  insert into public.date_plans (match_id, proposer, idea, place, starts_at, note)
+  values (p_match, auth.uid(), btrim(p ->> 'idea'), btrim(p ->> 'place'), v_at, nullif(btrim(coalesce(p ->> 'note', '')), ''))
+  returning id into v_id;
+  select first_name into v_name from public.profiles where id = auth.uid();
+  perform private.notify(v_other, 'date', v_name || ' asked you on a date', btrim(p ->> 'idea') || ' at ' || btrim(p ->> 'place') || '. Say yes or no.', '/date/' || p_match);
+  return v_id;
+end $$;
+
+create or replace function public.date_answer(p_date uuid, p_yes boolean) returns void
+language plpgsql security definer set search_path = public as $$
+declare d public.date_plans; v_name text;
+begin
+  select * into d from public.date_plans where id = p_date for update;
+  if d.id is null or private.date_other(d) is distinct from auth.uid() then raise exception 'invitation not found'; end if;
+  if d.status <> 'proposed' then raise exception 'already answered'; end if;
+  if d.starts_at < now() then raise exception 'this time has passed'; end if;
+  update public.date_plans set status = case when p_yes then 'accepted' else 'declined' end, responded_at = now() where id = p_date;
+  select first_name into v_name from public.profiles where id = auth.uid();
+  perform private.notify(d.proposer, 'date', case when p_yes then v_name || ' said yes!' else v_name || ' can''t make it' end,
+    case when p_yes then d.idea || ' at ' || d.place || '. Share your plan with someone you trust.' else 'No worries. Try another time or place.' end,
+    '/date/' || d.match_id);
+end $$;
+
+create or replace function public.date_cancel(p_date uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare d public.date_plans; v_other uuid;
+begin
+  select * into d from public.date_plans where id = p_date for update;
+  if d.id is null or auth.uid() not in (d.proposer, private.date_other(d)) then raise exception 'date not found'; end if;
+  if d.status not in ('proposed','accepted') then raise exception 'nothing to cancel'; end if;
+  update public.date_plans set status = 'cancelled' where id = p_date;
+  v_other := case when auth.uid() = d.proposer then private.date_other(d) else d.proposer end;
+  perform private.notify(v_other, 'date', 'Date cancelled', d.idea || ' won''t happen at that time.', '/date/' || d.match_id);
+end $$;
+
+-- "Are you okay?" from an hour before until 12 hours after the start. Not okay sends the member to SOS and tells the team.
+create or replace function public.date_checkin(p_date uuid, p_ok boolean) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare d public.date_plans;
+begin
+  select * into d from public.date_plans where id = p_date;
+  if d.id is null or auth.uid() not in (d.proposer, private.date_other(d)) or d.status <> 'accepted' then raise exception 'date not found'; end if;
+  if now() < d.starts_at - interval '1 hour' or now() > d.starts_at + interval '12 hours' then raise exception 'check-ins open an hour before the date'; end if;
+  insert into public.date_checkins (date_id, user_id, ok) values (p_date, auth.uid(), p_ok)
+  on conflict (date_id, user_id) do update set ok = excluded.ok, at = now();
+  if not p_ok then
+    perform private.audit('date_help', 'date', p_date::text, 'Member asked for help during a date', null, jsonb_build_object('user', auth.uid(), 'match', d.match_id));
+  end if;
+  return jsonb_build_object('ok', p_ok, 'sos', not p_ok);
+end $$;
+
+create or replace function public.date_reflect(p_date uuid, p_again text, p_note text default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare d public.date_plans; v_both boolean;
+begin
+  select * into d from public.date_plans where id = p_date;
+  if d.id is null or auth.uid() not in (d.proposer, private.date_other(d)) or d.status <> 'accepted' then raise exception 'date not found'; end if;
+  if now() < d.starts_at then raise exception 'after the date'; end if;
+  if p_again not in ('yes','maybe','no') then raise exception 'yes, maybe or no'; end if;
+  insert into public.date_reflections (date_id, user_id, again, note) values (p_date, auth.uid(), p_again, left(nullif(btrim(coalesce(p_note, '')), ''), 300))
+  on conflict (date_id, user_id) do update set again = excluded.again, note = excluded.note, at = now();
+  v_both := (select count(*) = 2 and bool_and(again = 'yes') from public.date_reflections where date_id = p_date);
+  if v_both and p_again = 'yes' then
+    perform private.notify(case when auth.uid() = d.proposer then private.date_other(d) else d.proposer end, 'date',
+      'You both want a second date', 'Plan the next one in Connect.', '/date/' || d.match_id);
+  end if;
+  return jsonb_build_object('both_again', v_both);
+end $$;
+
+-- Everything about dates in one match, for its two members. The other person's reflection is never shown,
+-- only "you both want to meet again" when both said yes.
+create or replace function public.match_dates(p_match uuid) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not exists (select 1 from public.matches m where m.id = p_match and auth.uid() in (m.user_a, m.user_b)) then raise exception 'match not found'; end if;
+  return coalesce((select jsonb_agg(jsonb_build_object(
+      'id', d.id, 'idea', d.idea, 'place', d.place, 'starts_at', d.starts_at, 'status', d.status, 'note', d.note,
+      'mine', d.proposer = auth.uid(),
+      'phase', case when d.status <> 'accepted' then d.status when now() < d.starts_at - interval '1 hour' then 'upcoming'
+                    when now() <= d.starts_at + interval '12 hours' then 'now' else 'past' end,
+      'my_checkin', (select ok from public.date_checkins c where c.date_id = d.id and c.user_id = auth.uid()),
+      'my_reflection', (select again from public.date_reflections r where r.date_id = d.id and r.user_id = auth.uid()),
+      'both_again', (select count(*) = 2 and bool_and(again = 'yes') from public.date_reflections r where r.date_id = d.id))
+    order by d.starts_at desc) from public.date_plans d where d.match_id = p_match), '[]');
+end $$;
+
+-- Cron, every 15 minutes: a reminder the day before (share your plan), and a check-in nudge 90 minutes after the start.
+create or replace function private.date_tick() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare d public.date_plans; n_rem int := 0; n_chk int := 0;
+begin
+  for d in select * from public.date_plans where status = 'accepted' and reminded_at is null and starts_at between now() and now() + interval '24 hours' loop
+    perform private.notify(d.proposer, 'date', 'Date tomorrow: ' || d.idea, 'Share your plan with someone you trust. Meet at ' || d.place || '.', '/date/' || d.match_id);
+    perform private.notify(private.date_other(d), 'date', 'Date tomorrow: ' || d.idea, 'Share your plan with someone you trust. Meet at ' || d.place || '.', '/date/' || d.match_id);
+    update public.date_plans set reminded_at = now() where id = d.id; n_rem := n_rem + 1;
+  end loop;
+  for d in select * from public.date_plans where status = 'accepted' and checkin_sent_at is null and starts_at < now() - interval '90 minutes' and starts_at > now() - interval '12 hours' loop
+    perform private.notify(d.proposer, 'date', 'All okay?', 'One tap to tell us you''re fine, or get help.', '/date/' || d.match_id);
+    perform private.notify(private.date_other(d), 'date', 'All okay?', 'One tap to tell us you''re fine, or get help.', '/date/' || d.match_id);
+    update public.date_plans set checkin_sent_at = now() where id = d.id; n_chk := n_chk + 1;
+  end loop;
+  return jsonb_build_object('reminders', n_rem, 'checkins', n_chk);
+end $$;
+create or replace function public.svc_date_tick() returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin perform private.require_service(); return private.date_tick(); end $$;
+
+do $$ begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('date-tick', '*/15 * * * *', 'select private.date_tick()');
+  end if;
+end $$;
+
+select private.lockdown();
+-- 35 Mutual Intent Check (Connect > Understand): four private questions about what each person wants.
+-- Nobody sees the other's answers until both have answered; either can change theirs, and the reveal updates.
+
+create table if not exists public.intent_answers (
+  match_id   uuid not null references public.matches(id) on delete cascade,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  answers    jsonb not null,
+  updated_at timestamptz not null default now(),
+  primary key (match_id, user_id)
+);
+alter table public.intent_answers enable row level security;
+revoke all on public.intent_answers from anon, authenticated;
+
+create or replace function private.intent_clean(p jsonb) returns jsonb
+language plpgsql immutable set search_path = public as $$
+declare o jsonb := '{}';
+begin
+  if p ->> 'looking_for' in ('marriage','serious','getting_to_know') then o := o || jsonb_build_object('looking_for', p ->> 'looking_for'); end if;
+  if p ->> 'timeline' in ('within_1y','1_2y','not_sure') then o := o || jsonb_build_object('timeline', p ->> 'timeline'); end if;
+  if p ->> 'family' in ('soon','in_a_few_months','when_serious') then o := o || jsonb_build_object('family', p ->> 'family'); end if;
+  if p ->> 'exclusive' in ('now','soon','not_yet') then o := o || jsonb_build_object('exclusive', p ->> 'exclusive'); end if;
+  if (select count(*) from jsonb_object_keys(o)) < 4 then raise exception 'answer all four'; end if;
+  return o;
+end $$;
+
+create or replace function public.intent_save(p_match uuid, p jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare v_other uuid; v_first boolean; v_name text;
+begin
+  select case when m.user_a = auth.uid() then m.user_b else m.user_a end into v_other
+    from public.matches m where m.id = p_match and auth.uid() in (m.user_a, m.user_b) and m.unmatched_at is null;
+  if v_other is null then raise exception 'match not found'; end if;
+  v_first := not exists (select 1 from public.intent_answers where match_id = p_match and user_id = auth.uid());
+  insert into public.intent_answers (match_id, user_id, answers) values (p_match, auth.uid(), private.intent_clean(p))
+  on conflict (match_id, user_id) do update set answers = excluded.answers, updated_at = now();
+  if v_first then
+    select first_name into v_name from public.profiles where id = auth.uid();
+    perform private.notify(v_other, 'intent',
+      case when exists (select 1 from public.intent_answers where match_id = p_match and user_id = v_other)
+           then v_name || ' answered too: see where you both stand' else v_name || ' answered the intent check' end,
+      'Four private questions. You see each other''s answers only when you''ve both answered.', '/intent/' || p_match);
+  end if;
+  return public.intent_view(p_match);
+end $$;
+
+create or replace function public.intent_view(p_match uuid) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare v_other uuid; mine jsonb; theirs jsonb;
+begin
+  select case when m.user_a = auth.uid() then m.user_b else m.user_a end into v_other
+    from public.matches m where m.id = p_match and auth.uid() in (m.user_a, m.user_b);
+  if v_other is null then raise exception 'match not found'; end if;
+  select answers into mine from public.intent_answers where match_id = p_match and user_id = auth.uid();
+  select answers into theirs from public.intent_answers where match_id = p_match and user_id = v_other;
+  return jsonb_build_object('mine', mine, 'they_answered', theirs is not null,
+    'theirs', case when mine is not null then theirs end,            -- revealed only once you've answered too
+    'other_name', (select first_name from public.profiles where id = v_other));
+end $$;
+
+select private.lockdown();
+-- 36 Be a Cupid pays in credits by default (M, Nov 2026): a verified sign-up pays credits at once (₹1 = 1 credit),
+-- a first purchase pays credits once the 30-day refund hold ends. Cash stays possible, but only after KYC is verified,
+-- and cash earnings keep the 30-day hold and the payout rules as before. Still one level only: never for friends of friends.
+
+alter table public.cupids add column if not exists reward_mode text not null default 'credits' check (reward_mode in ('credits','cash'));
+-- partners (creators, colleges, planners) agreed cash terms when they joined
+update public.cupids set reward_mode = 'cash' where kind = 'partner';
+
+create or replace function public.cupid_reward_mode(p_mode text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_mode not in ('credits','cash') then raise exception 'credits or cash'; end if;
+  if not exists (select 1 from public.cupids where user_id = auth.uid() and status = 'active') then raise exception 'not a cupid'; end if;
+  if p_mode = 'cash' and not exists (select 1 from private.cupid_kyc where cupid_id = auth.uid() and status = 'verified') then
+    raise exception 'cash needs verified KYC (PAN and UPI) first';
+  end if;
+  update public.cupids set reward_mode = p_mode where user_id = auth.uid();
+  perform private.audit('cupid_reward_mode', 'cupid', auth.uid()::text, null, null, jsonb_build_object('mode', p_mode));
+  return public.my_cupid();
+end $$;
+
+create or replace function private.cupid_on_verified(p_user uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare r public.cupid_referrals; c public.cupids; cfg jsonb := private.cupid_cfg(); v_amt int; v_status text := 'pending';
+        v_month int; v_day int;
+begin
+  select * into r from public.cupid_referrals where referred_user_id = p_user for update;
+  if not found or r.status <> 'joined' then return; end if;
+  select * into c from public.cupids where user_id = r.cupid_id;
+  if c.status <> 'active' then return; end if;
+  if private.linked_accounts(p_user, r.cupid_id) then            -- signals may arrive after sign-up
+    update public.cupid_referrals set status = 'blocked', blocked_reason = 'same device or face as the Cupid' where referred_user_id = p_user;
+    return;
+  end if;
+  update public.cupid_referrals set status = 'verified' where referred_user_id = p_user;
+  -- the friend's thank-you credits
+  if coalesce((cfg ->> 'friend_bonus_credits')::int, 0) > 0 then
+    perform private.add_credits(p_user, (cfg ->> 'friend_bonus_credits')::int, 'reward', 'Joined with a Cupid link',
+                                now() + interval '90 days', 'cupid:friend:' || p_user);
+  end if;
+  select count(*) into v_month from public.cupid_earnings where cupid_id = r.cupid_id and kind = 'signup'
+    and created_at >= private.ist_month_start();
+  if v_month >= coalesce((cfg ->> 'max_signup_earnings_per_month')::int, 100) then return; end if;  -- over cap: no money
+  select count(*) into v_day from public.cupid_referrals where cupid_id = r.cupid_id and attributed_at > now() - interval '1 day';
+  if v_day > coalesce((cfg ->> 'review_above_signups_per_day')::int, 25) then v_status := 'review'; end if;
+  v_amt := coalesce(c.signup_paise, (cfg ->> 'signup_paise')::int, 0);
+  if v_amt <= 0 then return; end if;
+  -- credits (the default): a verified sign-up pays credits at once; cash Cupids wait out the hold, as before
+  if c.reward_mode = 'credits' and v_status = 'pending' then
+    insert into public.cupid_earnings (cupid_id, referred_user_id, kind, amount_paise, status, hold_until, note)
+    values (r.cupid_id, p_user, 'signup', v_amt, 'paid', now(), 'Paid as credits') on conflict do nothing;
+    if found then
+      perform private.add_credits(r.cupid_id, ceil(v_amt / 100.0)::int, 'reward', 'Be a Cupid: a friend joined and verified',
+                                  now() + interval '180 days', 'cupid:earn:signup:' || p_user);
+    end if;
+    return;
+  end if;
+  insert into public.cupid_earnings (cupid_id, referred_user_id, kind, amount_paise, status, hold_until)
+  values (r.cupid_id, p_user, 'signup', v_amt, v_status,
+          now() + make_interval(days => coalesce((cfg ->> 'hold_days')::int, 30)))
+  on conflict do nothing;
+end $$;
+
+create or replace function private.cupid_release() returns int
+language plpgsql security definer set search_path = public as $$
+declare n int := 0; m int; cfg jsonb := private.cupid_cfg(); ce public.cupid_earnings;
+begin
+  update public.cupid_earnings e set status = 'reversed', note = 'Member removed or left before the hold ended'
+  from public.profiles p
+  where e.referred_user_id = p.id and e.status in ('pending','review') and p.status in ('banned','suspended','deleted');
+  update public.cupid_earnings e set status = 'reversed', note = 'Member left before the hold ended'
+  where e.status in ('pending','review') and e.referred_user_id is null and e.kind in ('signup','first_paid');
+  update public.cupid_earnings e set status = 'approved'
+  from public.profiles p
+  where e.referred_user_id = p.id and e.status = 'pending' and e.hold_until <= now() and p.status = 'active'
+    and (e.kind <> 'signup' or p.last_active_at >= e.created_at + make_interval(days => coalesce((cfg ->> 'min_active_days_after_verify')::int, 3)));
+  get diagnostics m = row_count; n := n + m;
+  -- credits Cupids: an earning whose hold ended (first purchase, or a reviewed sign-up) becomes credits, not withdrawable cash
+  for ce in select x.* from public.cupid_earnings x join public.cupids c on c.user_id = x.cupid_id
+           where x.status = 'approved' and x.payout_id is null and c.reward_mode = 'credits' and x.amount_paise > 0 for update of x loop
+    perform private.add_credits(ce.cupid_id, ceil(ce.amount_paise / 100.0)::int, 'reward',
+      case ce.kind when 'first_paid' then 'Be a Cupid: a friend made their first purchase' else 'Be a Cupid: reward' end,
+      now() + interval '180 days', 'cupid:earn:' || ce.id);
+    update public.cupid_earnings set status = 'paid', note = 'Paid as credits' where id = ce.id;
+  end loop;
+  return n;
+end $$;
+
+create or replace function public.my_cupid() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare v_user uuid := auth.uid(); c public.cupids; cfg jsonb := private.cupid_cfg();
+begin
+  select * into c from public.cupids where user_id = v_user;
+  if not found then
+    return jsonb_build_object('is_cupid', false, 'signup_paise', (cfg ->> 'signup_paise')::int,
+                              'first_paid_paise', (cfg ->> 'first_paid_paise')::int, 'enabled', coalesce((cfg ->> 'enabled')::boolean, false));
+  end if;
+  return jsonb_build_object(
+    'is_cupid', true, 'status', c.status,
+    'rates', jsonb_build_object('signup_paise', coalesce(c.signup_paise, (cfg ->> 'signup_paise')::int),
+                                'first_paid_paise', coalesce(c.first_paid_paise, (cfg ->> 'first_paid_paise')::int),
+                                'hold_days', coalesce((cfg ->> 'hold_days')::int, 30),
+                                'min_payout_paise', coalesce((cfg ->> 'min_payout_paise')::int, 50000)),
+    'links', coalesce((select jsonb_agg(jsonb_build_object('id', l.id, 'code', l.code, 'label', l.label, 'target', l.target_path,
+                         'url', 'https://likha.in/c/' || l.code, 'active', l.active,
+                         'clicks', (select count(*) from public.cupid_clicks k where k.link_id = l.id),
+                         'joined', (select count(*) from public.cupid_referrals r where r.link_id = l.id)) order by l.created_at)
+                       from public.cupid_links l where l.cupid_id = v_user), '[]'),
+    'people', jsonb_build_object(
+       'joined',   (select count(*) from public.cupid_referrals where cupid_id = v_user and status <> 'blocked'),
+       'verified', (select count(*) from public.cupid_referrals where cupid_id = v_user and status in ('verified','paid')),
+       'paid',     (select count(*) from public.cupid_referrals where cupid_id = v_user and status = 'paid')),
+    'recent', coalesce((select jsonb_agg(x order by x ->> 'at' desc) from (
+                select jsonb_build_object('initial', left(p.first_name, 1), 'status', r.status, 'at', r.attributed_at) x
+                from public.cupid_referrals r join public.profiles p on p.id = r.referred_user_id
+                where r.cupid_id = v_user order by r.attributed_at desc limit 10) s), '[]'),
+    'money', jsonb_build_object(
+       'on_hold_paise',   (select coalesce(sum(amount_paise),0) from public.cupid_earnings where cupid_id = v_user and status in ('pending','review')),
+       'withdrawable_paise', (select coalesce(sum(amount_paise),0) from public.cupid_earnings where cupid_id = v_user and status = 'approved' and payout_id is null),
+       'paid_paise',      (select coalesce(sum(net_paise),0) from public.cupid_payouts where cupid_id = v_user and status = 'paid'),
+       'tds_this_fy_paise', (select coalesce(sum(tds_paise),0) from public.cupid_payouts where cupid_id = v_user and fy = private.fy_of(now()) and status <> 'cancelled' and status <> 'failed')),
+    'kyc', (select status from private.cupid_kyc where cupid_id = v_user),
+    'reward_mode', c.reward_mode,
+    'credits_earned', (select coalesce(sum(amount_paise),0) / 100 from public.cupid_earnings where cupid_id = v_user and status = 'paid' and note = 'Paid as credits'),
+    'payouts', coalesce((select jsonb_agg(jsonb_build_object('id', id, 'gross', gross_paise, 'tds', tds_paise, 'net', net_paise,
+                          'status', status, 'requested_at', requested_at, 'paid_at', paid_at) order by requested_at desc)
+                        from public.cupid_payouts where cupid_id = v_user), '[]'));
+end $$;
+
+select private.lockdown();
+-- 37 "Why It Didn't Work" is back (M's decision, Nov 2026), with safeguards for the other person's details:
+-- the member confirms they're allowed to use them and only a first name is kept. The birth details are already deleted the
+-- moment the reading is ready or refunded (svc_reading_done / svc_reading_failed); the daily purge below is the backstop,
+-- so nothing about the other person stays longer than 30 days. Switch: feature flag why_not.
+
+update public.feature_flags set enabled = true, rollout_pct = 100, description = 'Why It Didn''t Work (first name only, confirmed by the member, details deleted after 30 days)'
+ where key = 'why_not';
+
+create or replace function public.start_reading(p_kind public.reading_kind_t, p_subject jsonb default null) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare v_subject jsonb; c public.cities; v_gender text;
+begin
+  if p_kind = 'who_suits_me' then
+    if not exists (select 1 from public.kundli_summary where user_id = auth.uid()) then raise exception 'kundli_not_ready'; end if;
+    return public.request_reading('who_suits_me', 'who_suits_me', null, null, null, 'suits:' || auth.uid() || ':' || now()::date);
+  elsif p_kind = 'why_not' then
+    if not public.flag_on('why_not', (select ci.slug from public.profiles p join public.cities ci on ci.id = p.city_id where p.id = auth.uid())) then
+      raise exception 'not available';
+    end if;
+    if p_subject ->> 'name' is null or length(p_subject ->> 'name') > 40 or (p_subject ->> 'birth_date') is null then raise exception 'name and date of birth needed'; end if;
+    -- safeguards for using someone else's details: the member confirms, only a first name is kept, details go after 30 days
+    if coalesce((p_subject ->> 'confirm')::boolean, false) is not true then raise exception 'please confirm first'; end if;
+    p_subject := p_subject || jsonb_build_object('name', left(split_part(btrim(p_subject ->> 'name'), ' ', 1), 20));
+    if (p_subject ->> 'birth_date')::date > current_date - interval '16 years' or (p_subject ->> 'birth_date')::date < date '1900-01-01' then raise exception 'check the date of birth'; end if;
+    select ci.* into c from public.profiles p join public.cities ci on ci.id = p.city_id where p.id = auth.uid();
+    select case gender when 'man' then 'woman' else 'man' end into v_gender from public.profiles where id = auth.uid();
+    v_subject := jsonb_build_object('name', p_subject ->> 'name', 'gender', v_gender, 'duration', p_subject ->> 'duration',
+      'time_known', (p_subject ->> 'birth_time') is not null,
+      'birth', jsonb_build_object('birth_date', p_subject ->> 'birth_date', 'birth_time', coalesce(p_subject ->> 'birth_time', '12:00'),
+                                  'lat', coalesce(c.lat, 26.9124), 'lng', coalesce(c.lng, 75.7873), 'tz_name', coalesce(c.timezone, 'Asia/Kolkata')));
+    return public.request_reading('why_not', 'why_not', null, null, v_subject, null);
+  end if;
+  raise exception 'not sold here';
+end $$;
+
+-- Daily backstop: wipe birth details still sitting on a why_not reading after 30 days (stuck or abandoned). Keeps the first name.
+create or replace function private.why_not_purge() returns int
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  update public.readings set subject = jsonb_build_object('name', subject ->> 'name', 'details_deleted_at', now())
+   where kind = 'why_not' and created_at < now() - interval '30 days' and subject ? 'birth';
+  get diagnostics n = row_count;
+  return n;
+end $$;
+create or replace function public.svc_why_not_purge() returns int
+language plpgsql security definer set search_path = public as $$
+begin perform private.require_service(); return private.why_not_purge(); end $$;
+
+do $$ begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('why-not-purge', '45 19 * * *', 'select private.why_not_purge()');
+  end if;
+end $$;
+
 select private.lockdown();
