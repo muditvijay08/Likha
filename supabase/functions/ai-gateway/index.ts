@@ -16,6 +16,7 @@ import {
   lengthCheck,
   companionCheck,
   companionParse,
+  companionTidy,
   type CompanionOpts,
 } from "../_shared/core.ts";
 import { admin, asUser, isInternal, json, rpc, preflight } from "../_shared/db.ts";
@@ -210,6 +211,7 @@ async function saathi(userId: string, client: any, character: "chandni" | "dhruv
       { check: (t) => companionCheck(companionParse(t, opts.memoryOn!).reply), timeoutMs: 15_000 });
     await saved;
     const parsed = companionParse(text, opts.memoryOn!);
+    parsed.reply = companionTidy(parsed.reply);
     const s = companionCheck(parsed.reply);
     const reply = s.ok ? parsed.reply : "Hmm, let me put that better. Tell me a bit more about what's on your mind?";
     await rpc("svc_saathi_save", { p_user: userId, p_char: character, p_role: "assistant", p_body: reply, p_flagged: !s.ok });

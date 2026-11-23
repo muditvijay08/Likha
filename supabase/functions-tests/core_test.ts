@@ -111,13 +111,27 @@ Deno.test("Daily Kick runs in the 15 minutes after the IST time set in Admin", (
 });
 
 // ---------------------------------------------------------------- companion (Nov 2026)
-import { companionCheck, companionParse, saathiSystem } from "../functions/_shared/core.ts";
+import { companionCheck, companionParse, companionTidy, saathiSystem } from "../functions/_shared/core.ts";
 
 Deno.test("companion: platonic by default, says it's virtual, no old 'lightly flirty' style", () => {
   const sys = saathiSystem("chandni", { first_name: "Priya" }, ["friendly", "hinglish"]);
   assert(sys.includes("Tone: platonic"));
   assert(sys.includes("virtual companion, not a person"));
   assert(!/lightly flirty/.test(sys));
+});
+
+Deno.test("companion voice: texts like a friend, says it's virtual only when sincerely asked, no lecture on 'miss you'", () => {
+  const sys = saathiSystem("chandni", { first_name: "Priya" }, [], { mode: "companion", romance: "off", language: "hinglish" });
+  assert(sys.includes("not an assistant") && sys.includes("Only if they sincerely ask"));
+  assert(sys.includes("Never lecture them") && sys.includes("i miss u"));
+  assert(sys.includes("under 35 words"));
+  assertEquals((sys.match(/say so if asked/g) ?? []).length, 0);                       // the old repeated disclaimer instruction is gone
+  assert(!sys.includes("You write for Likha"));                                         // the readings' formal house style isn't used for chat
+  assert(sys.includes("Never claim to be a human") && sys.includes("never say you love or miss them") && sys.includes("Never sexual"));
+});
+
+Deno.test("companion tidy: no em dashes or markdown in a text", () => {
+  assertEquals(companionTidy("Arre — sahi hai! **Chai** pe chalein?\n\n\n"), "Arre, sahi hai! Chai pe chalein?");
 });
 
 Deno.test("companion: modes, tone, language and romance reach the instructions", () => {
