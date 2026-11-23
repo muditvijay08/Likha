@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar, Chevron, price, useApp } from "@/components/app";
-import { api, type MatchRow, type SaathiState } from "@/lib/api";
+import { api, type DateItem, type MatchRow, type SaathiState } from "@/lib/api";
 
 const when = (iso: string) => {
   const d = new Date(iso), now = new Date(), days = Math.floor((now.getTime() - d.getTime()) / 864e5);
@@ -20,8 +20,10 @@ export function MatchesList({ compact = false }: { compact?: boolean }) {
   const path = usePathname();
   const [rows, setRows] = useState<MatchRow[] | null>(null);
   const [saathi, setSaathi] = useState<SaathiState | null>(null);
+  const [dates, setDates] = useState<DateItem[]>([]);
   useEffect(() => {
     api().matches().then(setRows).catch(() => setRows([]));
+    api().myDates().then(setDates).catch(() => {});
     api().saathi().then(setSaathi).catch(() => {});
   }, [path]);                                              // the split view refreshes the list when you open another chat
   const pad = compact ? "12px 10px" : "12px 0";
@@ -62,6 +64,19 @@ export function MatchesList({ compact = false }: { compact?: boolean }) {
         {SaathiRow}
         <Link href="/discover" className="btn">Back to Discover</Link>
       </> : <>
+        {dates.length > 0 && (
+          <section aria-label="Dates" className="stack" style={{ gap: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)", paddingBottom: 6 }}>Dates</span>
+            {dates.map((d) => (
+              <Link key={d.id} href={`/date/${d.match_id}`} className="list-row">
+                <span className="num">{new Date(d.starts_at).getDate()}<small>{new Date(d.starts_at).toLocaleDateString("en-IN", { month: "short" })}</small></span>
+                <span className="t"><strong>{d.waiting_for_me ? `${d.other_name} asked you out` : d.status === "proposed" ? `Waiting for ${d.other_name}` : `Date with ${d.other_name}`}</strong>
+                  <span>{d.idea} at {d.place} · {new Date(d.starts_at).toLocaleString("en-IN", { weekday: "short", hour: "numeric", minute: "2-digit" })}</span></span>
+                {d.waiting_for_me ? <span className="badge-soft" style={{ background: "var(--action)", color: "var(--ink)" }}>Answer</span> : <Chevron />}
+              </Link>
+            ))}
+          </section>
+        )}
         {fresh.length > 0 && (
           <div className="stack" style={{ gap: 10 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}>New matches</span>
@@ -82,7 +97,8 @@ export function MatchesList({ compact = false }: { compact?: boolean }) {
               <Link key={m.match_id} href={`/chat/${m.match_id}`} className="row" style={{ gap: 12, padding: pad, borderBottom: i < talks.length - 1 ? "1px solid #EBE6DF" : 0, color: "var(--ink)", textDecoration: "none", ...here(`/chat/${m.match_id}`) }}>
                 <Avatar name={m.first_name} photo={m.photo} size={52} />
                 <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span className="row" style={{ justifyContent: "space-between" }}><strong style={{ fontSize: 15 }}>{m.first_name}</strong><span style={{ fontSize: 12, color: "var(--muted)" }}>{when(m.last_at!)}</span></span>
+                  <span className="row" style={{ justifyContent: "space-between" }}><strong style={{ fontSize: 15 }}>{m.first_name}
+                    {dates.some((d) => d.match_id === m.match_id && d.waiting_for_me) && <span className="badge-soft" style={{ marginLeft: 6, background: "var(--action-soft)", color: "var(--ink)" }}>Date invite</span>}</strong><span style={{ fontSize: 12, color: "var(--muted)" }}>{when(m.last_at!)}</span></span>
                   {old && m.last_from_me ? <span style={{ fontSize: 13, color: "var(--link)", fontWeight: 600 }}>Say hi again before the stars move on</span> :
                     <span style={{ fontSize: 14, fontWeight: m.unread ? 700 : 500, color: m.unread ? "var(--ink)" : "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {m.last_from_me ? "You: " : ""}{m.last_kind === "voice" ? "Voice note" : m.last_body}</span>}

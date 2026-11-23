@@ -277,6 +277,9 @@ export interface CupidState { is_cupid: boolean; enabled?: boolean; signup_paise
 export type DatePhase = "proposed" | "declined" | "cancelled" | "upcoming" | "now" | "past";
 export interface DatePlan { id: string; idea: string; place: string; starts_at: string; status: "proposed" | "accepted" | "declined" | "cancelled";
   note: string | null; mine: boolean; phase: DatePhase; my_checkin: boolean | null; my_reflection: "yes" | "maybe" | "no" | null; both_again: boolean }
+/** Connect: upcoming dates and open invitations across all my matches. */
+export interface DateItem { id: string; match_id: string; other_name: string; idea: string; place: string; starts_at: string;
+  status: "proposed" | "accepted"; mine: boolean; waiting_for_me: boolean }
 export interface DateInvite { idea: string; place: string; starts_at: string; public_place: boolean; note?: string }
 // Connect > Understand: four private questions; theirs is revealed only once I've answered too.
 export interface IntentAnswers { looking_for: "marriage" | "serious" | "getting_to_know"; timeline: "within_1y" | "1_2y" | "not_sure";
@@ -464,6 +467,7 @@ export interface Api {
   cupidRewardMode(mode: "credits" | "cash"): Promise<void>;
   // Connect: dates and the intent check
   matchDates(matchId: string): Promise<DatePlan[]>;
+  myDates(): Promise<DateItem[]>;
   dateInvite(matchId: string, d: DateInvite): Promise<string>;
   dateAnswer(dateId: string, yes: boolean): Promise<void>;
   dateCancel(dateId: string): Promise<void>;

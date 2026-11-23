@@ -22,6 +22,7 @@ exception when others then raise notice 'PASS | % (blocked: %)', label, left(sql
 create or replace function pg_temp.did(m uuid) returns uuid language sql security definer as $f$ select id from public.date_plans where match_id = m order by created_at desc limit 1 $f$;
 create or replace function pg_temp.shift(d uuid, iv interval) returns void language sql security definer as $f$ update public.date_plans set starts_at = now() + iv where id = d $f$;
 create or replace function pg_temp.notes(u uuid, t text) returns bigint language sql security definer as $f$ select count(*) from public.notifications where user_id = u and type = t $f$;
+create or replace function pg_temp.urgent(about uuid) returns bigint language sql security definer as $f$ select count(*) from public.reports where reported_id = about and reason = 'unsafe_meeting' and priority = 'urgent' and details like 'Asked for help during a planned date%' $f$;
 create or replace function pg_temp.bal(u uuid) returns int language sql security definer as $f$ select private.balance_of(u)::int $f$;
 do $$ declare f regprocedure; begin
   for f in select p.oid::regprocedure from pg_proc p where p.pronamespace = pg_my_temp_schema() loop execute format('grant execute on function %s to public', f); end loop;
@@ -61,6 +62,9 @@ select pg_temp.act_as('f3000000-0000-0000-0000-000000000001');
 select pg_temp.check('check-in: I''m fine', $q$select not (public.date_checkin(pg_temp.did('f3a00000-0000-0000-0000-000000000001'), true) ->> 'sos')::boolean$q$);
 select pg_temp.act_as('f3000000-0000-0000-0000-000000000002');
 select pg_temp.check('check-in: I need help sends to SOS', $q$select (public.date_checkin(pg_temp.did('f3a00000-0000-0000-0000-000000000001'), false) ->> 'sos')::boolean$q$);
+select pg_temp.check('...and opens an urgent safety case for the team (part 39)', $q$select pg_temp.urgent('f3000000-0000-0000-0000-000000000001') = 1$q$);
+select pg_temp.check('pressing it again doesn''t fail', $q$select (public.date_checkin(pg_temp.did('f3a00000-0000-0000-0000-000000000001'), false) ->> 'sos')::boolean$q$);
+select pg_temp.check('my_dates lists the date in Connect for both', $q$select jsonb_array_length(public.my_dates()) = 1 and public.my_dates() -> 0 ->> 'other_name' = 'Priya'$q$);
 select pg_temp.step('Arjun: would meet again, private note', $q$select public.date_reflect(pg_temp.did('f3a00000-0000-0000-0000-000000000001'), 'yes', 'She laughed at my jokes')$q$);
 select pg_temp.act_as('f3000000-0000-0000-0000-000000000001');
 select pg_temp.check('Priya never sees his note or answer before she answers', $q$select (public.match_dates('f3a00000-0000-0000-0000-000000000001') -> 0 ->> 'both_again')::boolean = false
@@ -86,10 +90,21 @@ insert into public.cupid_referrals (referred_user_id, cupid_id) values ('f300000
 select pg_temp.check('a new Cupid gets credits, not cash, by default', $q$select reward_mode = 'credits' from public.cupids where user_id = 'f3000000-0000-0000-0000-000000000003'$q$);
 create temp table b0 as select pg_temp.bal('f3000000-0000-0000-0000-000000000003') b;
 select private.cupid_on_verified('f3000000-0000-0000-0000-000000000004');
-select pg_temp.check('friend verified: 20 credits at once, earning marked paid as credits', $q$select pg_temp.bal('f3000000-0000-0000-0000-000000000003') = (select b from b0) + 20
-  and exists (select 1 from public.cupid_earnings where cupid_id = 'f3000000-0000-0000-0000-000000000003' and status = 'paid' and note = 'Paid as credits')$q$);
+select pg_temp.check('friend verified: the 20 credits wait out the 30-day hold (part 39)', $q$select pg_temp.bal('f3000000-0000-0000-0000-000000000003') = (select b from b0)
+  and exists (select 1 from public.cupid_earnings where cupid_id = 'f3000000-0000-0000-0000-000000000003' and kind = 'signup' and status = 'pending' and hold_until > now() + interval '29 days')$q$);
 select private.cupid_on_verified('f3000000-0000-0000-0000-000000000004');
-select pg_temp.check('never twice', $q$select pg_temp.bal('f3000000-0000-0000-0000-000000000003') = (select b from b0) + 20$q$);
+select pg_temp.check('never twice', $q$select count(*) = 1 from public.cupid_earnings where cupid_id = 'f3000000-0000-0000-0000-000000000003' and kind = 'signup'$q$);
+-- a second friend is banned during the hold: nothing is paid
+insert into public.cupid_referrals (referred_user_id, cupid_id) values ('f3000000-0000-0000-0000-000000000002', 'f3000000-0000-0000-0000-000000000003');
+select private.cupid_on_verified('f3000000-0000-0000-0000-000000000002');
+update public.profiles set status = 'banned' where id = 'f3000000-0000-0000-0000-000000000002';
+-- the first friend stays active through the hold
+update public.cupid_earnings set created_at = now() - interval '31 days', hold_until = now() - interval '1 second' where cupid_id = 'f3000000-0000-0000-0000-000000000003' and kind = 'signup';
+update public.profiles set last_active_at = now() where id = 'f3000000-0000-0000-0000-000000000004';
+select private.cupid_release();
+update public.profiles set status = 'active' where id = 'f3000000-0000-0000-0000-000000000002';
+select pg_temp.check('after the hold: 20 credits for the friend who stayed', $q$select pg_temp.bal('f3000000-0000-0000-0000-000000000003') = (select b from b0) + 20$q$);
+select pg_temp.check('...and nothing for the one banned during the hold', $q$select status = 'reversed' from public.cupid_earnings where referred_user_id = 'f3000000-0000-0000-0000-000000000002'$q$);
 select pg_temp.check('no withdrawable cash builds up', $q$select coalesce(sum(amount_paise), 0) = 0 from public.cupid_earnings where cupid_id = 'f3000000-0000-0000-0000-000000000003' and status = 'approved'$q$);
 insert into public.cupid_earnings (cupid_id, referred_user_id, kind, amount_paise, status, hold_until) values ('f3000000-0000-0000-0000-000000000003', null, 'adjustment', 5000, 'approved', now());
 select private.cupid_release();

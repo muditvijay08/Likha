@@ -9,6 +9,7 @@ import type {
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
   DatePlan, DateInvite, IntentAnswers, IntentState, EventCard, EventCategory, EventDraft,
   ChatEvents,
+  DateItem,
 } from "./types";
 
 /** Errors the database raises on purpose, in member words. */
@@ -694,6 +695,7 @@ export class SupabaseApi implements Api {
   async requestPayout() { await this.rpc("request_cupid_payout", {}, "Withdraw"); }
   async cupidRewardMode(mode: "credits" | "cash") { await this.rpc("cupid_reward_mode", { p_mode: mode }, "Rewards"); }
   async matchDates(matchId: string) { return (await this.rpc<DatePlan[]>("match_dates", { p_match: matchId })) ?? []; }
+  async myDates() { return (await this.rpc<DateItem[]>("my_dates")) ?? []; }
   async dateInvite(matchId: string, d: DateInvite) { return this.rpc<string>("date_propose", { p_match: matchId, p: d }, "Invitation"); }
   async dateAnswer(dateId: string, yes: boolean) { await this.rpc("date_answer", { p_date: dateId, p_yes: yes }, "Answer"); }
   async dateCancel(dateId: string) { await this.rpc("date_cancel", { p_date: dateId }, "Cancel"); }

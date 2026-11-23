@@ -9,6 +9,12 @@ import { api, type Notice } from "@/lib/api";
 const TABS = [["all", "All"], ["likes", "Likes"], ["readings", "Readings"], ["account", "Account"]] as const;
 const DOT: Record<string, string> = { like: "var(--rose)", match: "var(--rose)", message: "var(--rose)", reading_ready: "#C2410C", crush_joined: "#C2410C", gift_opened: "#C2410C",
   payment: "var(--green)", tier: "var(--saffron)", checkin: "var(--red)" };
+// the newer kinds get a small picture instead of a dot
+const ICON: Record<string, React.ReactNode> = {
+  date: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--action)" strokeWidth="2" aria-label="Date"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M4 10h16M9 3v4M15 3v4M12 13.5c-1-1.2-3-.6-3 .9 0 1.4 3 3.1 3 3.1s3-1.7 3-3.1c0-1.5-2-2.1-3-.9z" /></svg>,
+  intent: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--action)" strokeWidth="2" aria-label="Intent check"><circle cx="12" cy="12" r="9" /><path d="M15.5 8.5l-2 5-5 2 2-5z" /></svg>,
+  event: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--action)" strokeWidth="2" aria-label="Event"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /><circle cx="12" cy="15" r="1.6" /></svg>,
+};
 
 export default function Inbox() {
   const { reload } = useApp();
@@ -22,7 +28,7 @@ export default function Inbox() {
   const Row = ({ n }: { n: Notice }) => {
     const inner = <>
       <span style={{ width: 36, height: 36, flex: "none", borderRadius: 12, background: "#FFF8EF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
-        {n.type === "tier" && n.data.discount ? `${n.data.discount}%` : <span style={{ width: 10, height: 10, borderRadius: 999, background: DOT[n.type] ?? "var(--muted)" }} />}</span>
+        {n.type === "tier" && n.data.discount ? `${n.data.discount}%` : ICON[n.type] ?? <span style={{ width: 10, height: 10, borderRadius: 999, background: DOT[n.type] ?? "var(--muted)" }} />}</span>
       <span className="stack" style={{ gap: 2, flex: 1, minWidth: 0 }}><strong style={{ fontSize: 14, fontWeight: n.read ? 600 : 800 }}>{n.title}</strong>
         <span style={{ fontSize: 12, color: "var(--muted)" }}>{n.body} · {ago(n.created_at) === "New" ? "just now" : `${ago(n.created_at)} ago`}</span></span>
       {!n.read && <span aria-label="Unread" style={{ width: 8, height: 8, borderRadius: 999, background: "var(--rose)", flex: "none" }} />}

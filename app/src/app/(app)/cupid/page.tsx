@@ -1,6 +1,6 @@
 "use client";
 // K1 Be a Cupid: share your own link; earn when the people you bring verify and when they first pay. Only for people you bring in yourself.
-// Rewards are credits by default (M, Nov 2026). Cash only after PAN and UPI are checked, paid after a 30-day hold.
+// Rewards are credits by default (M, Nov 2026), every one after a 30-day hold. Cash only after PAN and UPI are checked.
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BackButton, ErrorNote, useAction } from "@/components/ui";
@@ -8,7 +8,7 @@ import { rupees } from "@/components/app";
 import { api, type CupidState } from "@/lib/api";
 
 const TERMS = "I will only share my link with people I know or my own followers, say clearly it is my referral link, never promise anyone a match, and never create accounts myself. " +
-  "Rewards are given only for real people who verify. They come as credits unless I switch to cash, which needs my PAN and UPI checked and is paid after a 30-day hold. " +
+  "Rewards are given only for real people who verify, after a 30-day hold. They come as credits unless I switch to cash, which needs my PAN and UPI checked. " +
   "Likha may hold or cancel rewards that look fake. I only earn for people I bring in myself.";
 const cr = (paise: number) => Math.ceil(paise / 100);
 const STATUS: Record<string, string> = { joined: "Joined", verified: "Verified", paid: "First payment", blocked: "Not counted" };
@@ -29,7 +29,7 @@ export default function Cupid() {
         <span style={{ fontSize: 14 }}>{cr(c.signup_paise ?? 2000)} credits when someone you bring passes the selfie check, and {cr(c.first_paid_paise ?? 5000)} more when they first pay.</span>
       </div>
       <ul className="sub" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7, fontSize: 13 }}>
-        <li>You get your own likha.in/c/ link to share.</li><li>Selfie-check credits arrive right away. First-payment credits after a 30-day hold.</li>
+        <li>You get your own likha.in/c/ link to share.</li><li>Credits arrive after a 30-day hold, once the people you bring are still active. Anyone removed in that time doesn&apos;t count.</li>
         <li>Prefer cash? Switch once your PAN and UPI are checked: {rupees(c.signup_paise ?? 2000)} and {rupees(c.first_paid_paise ?? 5000)}, held 30 days, withdraw from ₹500. 2% TDS once you pass ₹20,000 in a financial year.</li>
         <li>You earn only for people you bring yourself. Nothing for people they bring.</li></ul>
       {!c.enabled ? <div className="note"><span>Be a Cupid isn&apos;t open right now.</span></div> : <>
@@ -57,7 +57,7 @@ export default function Cupid() {
         <Link href="/wallet" className="stack" style={{ gap: 4, padding: 18, borderRadius: 12, background: "var(--ink)", color: "#fff", textDecoration: "none" }}>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: "#FFB48F" }}>CREDITS EARNED</span>
           <strong className="serif" style={{ fontSize: 30 }}>{c.credits_earned ?? 0}</strong>
-          <span style={{ fontSize: 12, color: "#D8D2CB" }}>Added to your wallet · First-payment rewards after a 30-day hold ›</span>
+          <span style={{ fontSize: 12, color: "#D8D2CB" }}>{cr(m.on_hold_paise)} credits on hold (30 days) · Added to your wallet ›</span>
         </Link>
       )}
       <div className="card stack" style={{ gap: 8, borderRadius: 12 }} aria-label="How you get rewards">

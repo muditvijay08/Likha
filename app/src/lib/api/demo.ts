@@ -11,6 +11,7 @@ import type {
   MatchRow, MyChart, OnboardingState, Photo, Place, Prefs, Prices, ProfileFull, PublicSettings, Pulse, Live, Reading, Refresh, SelfieResult,
   DatePlan, DateInvite, IntentAnswers, IntentState, EventCard, EventCategory, EventDraft,
   ChatEvents,
+  DateItem,
 } from "./types";
 import { SAMPLE_CHART, SAMPLES, sampleProfile } from "./samples";
 import { dayPlan, range } from "../panchang";
@@ -1106,6 +1107,16 @@ export class DemoApi implements Api {
     const db = this.load(); this.matchOf(db, matchId);
     return (db.dates?.[matchId] ?? []).map(({ other_again, ...d }) => ({ ...d, phase: this.datePhase(d), both_again: d.my_reflection === "yes" && other_again === "yes" }))
       .sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+  }
+  async myDates(): Promise<DateItem[]> {
+    const db = this.load(), now = Date.now();
+    return Object.entries(db.dates ?? {}).flatMap(([mid, list]) => {
+      const m = (db.matches ?? []).find((x) => x.id === mid); if (!m) return [];
+      const name = sampleProfile(m.other)?.first_name ?? "";
+      return list.filter((d) => (d.status === "proposed" && new Date(d.starts_at).getTime() > now) || (d.status === "accepted" && new Date(d.starts_at).getTime() > now - 12 * 3600e3))
+        .map((d) => ({ id: d.id, match_id: mid, other_name: name, idea: d.idea, place: d.place, starts_at: d.starts_at, status: d.status as "proposed" | "accepted",
+          mine: d.mine, waiting_for_me: d.status === "proposed" && !d.mine }));
+    }).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   }
   async dateInvite(matchId: string, d: DateInvite) {
     await wait(150);

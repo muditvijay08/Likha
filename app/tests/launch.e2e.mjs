@@ -56,6 +56,8 @@ await shot("01-date");
 await page.getByRole("link", { name: "Share my plan with someone I trust" }).click();
 await page.waitForURL("**/share-date**");
 ok((await page.inputValue("#sd-place")) === "Tapri Central, C-Scheme", "Share my plan is pre-filled with the place");
+await page.goto(`${BASE}/matches`);
+ok(await seen(page.getByRole("region", { name: "Dates" }).getByText("Date with Sanya")) && await seen(page.getByText(/Chai and a walk at Tapri Central/)), "Connect lists the upcoming date");
 
 // the date itself: check-in opens an hour before
 const start = new Date(); start.setDate(start.getDate() + 1); start.setHours(17, 0, 0, 0);
