@@ -86,8 +86,11 @@ ok(await seen(page.getByText("Close", { exact: true })) && await seen(page.getBy
 await shot("03-intent");
 
 // V1–V3 Events
+await page.goto(`${BASE}/home`);
+ok(await seen(page.getByText("Happening in Jaipur")) && await seen(page.getByRole("link", { name: /Sunrise walk at Nahargarh/ })), "Home shows events in your city");
 await page.goto(`${BASE}/discover`);
-await page.getByRole("link", { name: "Events" }).click();
+ok(await seen(page.getByRole("link", { name: /events coming up in Jaipur/ })), "Discover shows how many events are coming up");
+await page.getByRole("link", { name: /events coming up in Jaipur/ }).click();
 await page.waitForURL("**/events");
 ok(await seen(page.getByText("Sunrise walk at Nahargarh")) && await seen(page.getByText(/Sample event/)), "Events: sample events, labelled");
 await btn("Music").click();

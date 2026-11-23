@@ -19,6 +19,7 @@ export default function Discover() {
   const [cards, setCards] = useState<Card[] | null>(null);
   const [filters, setFilters] = useState<Filters | null>(null);
   const [coach, setCoach] = useState(false);
+  const [eventCount, setEventCount] = useState(0);
   const { busy, error, run } = useAction();
 
   const load = useCallback(async () => {
@@ -26,6 +27,7 @@ export default function Discover() {
     setCards(c); setFilters(f);
   }, []);
   useEffect(() => { load().catch(() => setCards([])); setCoach(!seen()); }, [load]);
+  useEffect(() => { if (featureOn(features, "/events")) api().events().then((e) => setEventCount(e.length)).catch(() => {}); }, [features]);
 
   const card = cards?.[0];
   const next = async () => {
@@ -64,6 +66,12 @@ export default function Discover() {
       )}
 
       <main style={{ flex: 1, padding: "14px 20px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+        {eventCount > 0 && (
+          <Link href="/events" className="row" style={{ gap: 10, padding: "10px 14px", borderRadius: 12, background: "var(--ivory)", border: "1px solid var(--line)", color: "var(--ink)", textDecoration: "none", fontSize: 13 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></svg>
+            <span style={{ flex: 1 }}><strong>{eventCount} {eventCount === 1 ? "event" : "events"} coming up in {city}.</strong> Meet people in person</span>
+            <span aria-hidden="true">→</span></Link>
+        )}
         {card && <LiveStrip />}{/* never next to "you've seen everyone" */}
 
         {cards === null ? <div className="skel" style={{ height: 460 }} /> : card ? <>

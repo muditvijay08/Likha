@@ -3,10 +3,11 @@
 // Progressive disclosure: the day in the stars and today's best match live on the Kundli tab (/stars), people on Discover.
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Chevron, Coin, useApp } from "@/components/app";
+import { Chevron, Coin, featureOn, useApp } from "@/components/app";
 import { KIND_TITLE } from "@/components/couple";
 import { loadMySide } from "@/components/match-intel";
-import { api, type Announcement, type ConsentReq, type DueCheckin, type SaathiState } from "@/lib/api";
+import { api, type Announcement, type ConsentReq, type DueCheckin, type EventCard, type SaathiState } from "@/lib/api";
+import { catLabel } from "@/lib/events";
 
 const CHAR = { chandni: { name: "Chandni", line: "Warm, playful, remembers your day" }, dhruv: { name: "Dhruv", line: "Calm, witty, steady advice" } } as const;
 
@@ -16,7 +17,8 @@ function greeting(tz: string) {
 }
 
 export default function Home() {
-  const { home } = useApp();
+  const { home, features } = useApp();
+  const [events, setEvents] = useState<EventCard[] | null>(null);
   const [s, setS] = useState<SaathiState | null>(null);
   const [asks, setAsks] = useState<ConsentReq[]>([]);
   const [due, setDue] = useState<DueCheckin[]>([]);
@@ -26,6 +28,7 @@ export default function Home() {
     loadMySide().then((m) => { const l = m?.life ?? {}; setLifeLeft(["kids", "family_setup", "career_plan", "comm_style", "conflict_style", "weekend_style", "money_style"]
       .filter((k) => !(l as Record<string, unknown>)[k]).length + (l.life_values?.length ? 0 : 1)); }).catch(() => {});
     api().saathi().then(setS).catch(() => {});
+    api().events().then(setEvents).catch(() => setEvents([]));
     api().consentRequests().then(setAsks).catch(() => {});
     api().dueCheckins().then(setDue).catch(() => {});
     api().myAnnouncement().then((a) => { let seen = ""; try { seen = localStorage.getItem("likha-banner-closed") ?? ""; } catch {} if (a && a.id !== seen) setNotice(a); }).catch(() => {});
@@ -83,6 +86,21 @@ export default function Home() {
           <Link href="/saathi?mode=advisor" className="btn outline">Ask anything</Link>
         </div>
       </section>
+
+      {featureOn(features, "/events") && events && (
+        <section aria-label="Events" className="stack" style={{ gap: 0 }}>
+          <div className="sec-title row" style={{ justifyContent: "space-between" }}><strong>Happening in {home.city?.name ?? "your city"}</strong>
+            <Link href="/events" className="small" style={{ fontWeight: 700 }}>See all</Link></div>
+          {events.length === 0 ? (
+            <Link href="/events/new" className="list-row"><span className="num">+</span>
+              <span className="t"><strong>Nothing planned yet</strong><span>Post the first event in your city. Our team checks it first.</span></span><Chevron /></Link>
+          ) : events.slice(0, 3).map((e) => (
+            <Link key={e.id} href={`/events/${e.id}`} className="list-row">
+              <span className="num">{new Date(e.starts_at).getDate()}<small>{new Date(e.starts_at).toLocaleDateString("en-IN", { month: "short" })}</small></span>
+              <span className="t"><strong>{e.title}</strong><span>{catLabel(e.category)} · {e.venue_area} · {e.going} going{e.id.startsWith("e-sample") ? " · Sample event" : ""}</span></span><Chevron /></Link>
+          ))}
+        </section>
+      )}
 
       <section aria-label="More for you" className="stack" style={{ gap: 0 }}>
         <div className="sec-title"><strong>For you today</strong></div>
