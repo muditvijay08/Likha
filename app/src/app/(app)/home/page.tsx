@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Chevron, Coin, useApp } from "@/components/app";
 import { KIND_TITLE } from "@/components/couple";
+import { loadMySide } from "@/components/match-intel";
 import { api, type Announcement, type ConsentReq, type DueCheckin, type SaathiState } from "@/lib/api";
 
 const CHAR = { chandni: { name: "Chandni", line: "Warm, playful, remembers your day" }, dhruv: { name: "Dhruv", line: "Calm, witty, steady advice" } } as const;
@@ -20,7 +21,10 @@ export default function Home() {
   const [asks, setAsks] = useState<ConsentReq[]>([]);
   const [due, setDue] = useState<DueCheckin[]>([]);
   const [notice, setNotice] = useState<Announcement | null>(null);
+  const [lifeLeft, setLifeLeft] = useState(0);
   useEffect(() => {
+    loadMySide().then((m) => { const l = m?.life ?? {}; setLifeLeft(["kids", "family_setup", "career_plan", "comm_style", "conflict_style", "weekend_style", "money_style"]
+      .filter((k) => !(l as Record<string, unknown>)[k]).length + (l.life_values?.length ? 0 : 1)); }).catch(() => {});
     api().saathi().then(setS).catch(() => {});
     api().consentRequests().then(setAsks).catch(() => {});
     api().dueCheckins().then(setDue).catch(() => {});
@@ -86,6 +90,10 @@ export default function Home() {
           <Link href="/stars" className="list-row">
             <span className="num">{best.gunas ?? "–"}<small>/36</small></span>
             <span className="t"><strong>Today&apos;s best match: {best.first_name}</strong><span>Gunas first, then why. On your Kundli tab</span></span><Chevron /></Link>
+        )}
+        {lifeLeft > 0 && (
+          <Link href="/me/values" className="list-row"><span className="num">{lifeLeft}</span>
+            <span className="t"><strong>Life and values</strong><span>Quick questions so match reasons go beyond the kundli</span></span><Chevron /></Link>
         )}
         <Link href="/saathi" className="list-row"><span className="num">01</span>
           <span className="t"><strong>Relationship coach</strong><span>Practise a first message or a tricky talk</span></span><Chevron /></Link>

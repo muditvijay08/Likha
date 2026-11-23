@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 
 const GROUPS: [string, [string, string, string][]][] = [
   ["Your stars", [["/my-kundli", "My Kundli", "Chart, dasha and who suits you"], ["/matches", "Golden Hours", "Best times to talk"], ["/kick", "Daily Kick", "Your day, decoded"], ["/store", "Astro Store", "Readings"]]],
-  ["Meet people", [["/maasi", "Rishta Maasi", "3 hand-picked people every Sunday"], ["/travel", "Travel Mode", "Match in a city before you land"], ["/boost", "Boost", "Be seen first for an hour"], ["/saathi", "Saathi", "A virtual companion to talk to"]]],
+  ["Meet people", [["/me/values", "Life and values", "Sharpen your real-life match reasons"], ["/maasi", "Rishta Maasi", "3 hand-picked people every Sunday"], ["/travel", "Travel Mode", "Match in a city before you land"], ["/boost", "Boost", "Be seen first for an hour"], ["/saathi", "Saathi", "A virtual companion to talk to"]]],
   ["Together", [["/universe", "Our Universe", "Readings for the two of you"], ["/story", "Our Story", "Your timeline"], ["/couple", "Couple Mode", "For matched pairs"], ["/gift", "Gift a Reading", "For someone special"]]],
 ];
 const LINKS: [string, string, string?][] = [

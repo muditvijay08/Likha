@@ -8,6 +8,7 @@ import { CreditsPill, GOAL_LABEL, GUNA_INFO, Info, JODI_INFO, PhotoBlock, Sample
 import { Badge, MoonPortrait } from "@/components/kit";
 import { api, type Card, type Filters, type SaathiState } from "@/lib/api";
 import { LiveStrip } from "@/components/live";
+import { IntelLine } from "@/components/match-intel";
 
 const COACH = "likha-coach-jodi";
 const seen = () => { try { return localStorage.getItem(COACH) === "1"; } catch { return true; } };
@@ -99,6 +100,7 @@ export default function Discover() {
             <div className="flex flex-col gap-2.5 px-5 pb-5 pt-4">
               {card.moon_sign && <div className="font-sans text-sm text-ink">{card.moon_sign} Moon · {card.nakshatra} · {card.manglik ? "Manglik" : "Not Manglik"}<Info cls="tip-up" text="Manglik: a Mars placement some families check. We show it, never filter by it." /></div>}
               {card.summary && <p className="m-0 font-sans text-[15px] leading-relaxed text-muted">{card.summary}</p>}
+              <Link href={`/profile/${card.id}`} className="no-underline"><IntelLine card={card} /></Link>
               <div className="flex flex-wrap gap-1.5">
                 {card.goal && <Badge tone="gold" size="sm">{GOAL_LABEL[card.goal]}</Badge>}
                 {card.interests.slice(0, 3).map((x) => <Badge key={x} tone="line" size="sm">{x}</Badge>)}

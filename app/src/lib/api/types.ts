@@ -1,3 +1,4 @@
+import type { Life } from "../match-intel";
 // The one interface every screen uses. Two implementations: Supabase (real) and Demo (in the browser).
 export type Gender = "woman" | "man" | "other";
 export type MaritalStatus = "never_married" | "divorced" | "separated" | "widowed";
@@ -115,6 +116,8 @@ export interface Card {
   moon_sign: string | null; nakshatra: string | null; manglik: boolean | null;
   photos: string[];                                   // signed URLs, approved photos only
   prompt: { label: string; answer: string } | null; interests: string[]; liked_me: boolean;
+  /** what Match Intelligence compares: only answers the member shared on their profile */
+  life?: Partial<Life> | null;
   is_sample?: boolean;                                // demo mode only: a labelled sample profile, never a real person
 }
 export interface Dosha { present: boolean; cancelled: boolean; reason: string | null }
@@ -204,6 +207,8 @@ export interface MyProfile {
   diet: string | null; drinking: string | null; smoking: string | null; workout: string | null; kids: string | null; relocate: string | null;
   religion: string | null; show_religion: boolean; goal: Goal | null; bio: string | null; voice_intro_path: string | null;
   marital_status?: MaritalStatus | null; marriage_timeline?: MarriageTimeline | null;
+  family_setup?: string | null; career_plan?: string | null; comm_style?: string | null; conflict_style?: string | null;
+  weekend_style?: string | null; money_style?: string | null; life_values?: string[];
   status: string; selfie_status: string; selfie_auto?: boolean; profile_complete_pct: number; tier: Tier;
   incognito: boolean; i_message_first: boolean; hide_company: boolean; read_receipts: boolean; show_online: boolean; paused: boolean;
   language_pref: "en" | "hinglish" | "hi";
@@ -212,6 +217,7 @@ export interface MyProfile {
 }
 export type ProfilePatch = Partial<Pick<MyProfile, "first_name" | "height_cm" | "mother_tongue" | "languages" | "education" | "profession" | "company" | "college" |
   "hometown" | "diet" | "drinking" | "smoking" | "workout" | "kids" | "relocate" | "religion" | "show_religion" | "goal" | "bio" | "incognito" | "marital_status" | "marriage_timeline" |
+  "family_setup" | "career_plan" | "comm_style" | "conflict_style" | "weekend_style" | "money_style" | "life_values" |
   "i_message_first" | "hide_company" | "read_receipts" | "show_online" | "paused" | "language_pref">>;
 export interface NotifPrefs { kick_time: string; new_likes: boolean; matches: boolean; golden_hours: boolean; offers: boolean; quiet_start: string; quiet_end: string }
 export interface TrustedContact { id: string; name: string; phone: string; relation: string | null }

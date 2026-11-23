@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { ErrorNote, useAction } from "@/components/ui";
 import { DIET_LABEL, GOAL_LABEL, Info, PhotoBlock, SampleTag, TIER_LABEL, price, useApp } from "@/components/app";
 import { api, type ProfileFull } from "@/lib/api";
+import { WhyThisMatch } from "@/components/match-intel";
+import { LABELS } from "@/lib/match-intel";
 
 const round = { position: "absolute", top: 16, width: 44, height: 44, borderRadius: 999, background: "rgba(255,255,255,0.92)", color: "var(--ink)",
   display: "flex", alignItems: "center", justifyContent: "center", border: 0 } as const;
@@ -14,6 +16,16 @@ const MARITAL: Record<string, string> = { never_married: "Never married", divorc
 const TIMELINE: Record<string, string> = { within_1y: "Hoping to marry within a year", "1_2y": "Hoping to marry in 1–2 years", not_sure: "Will marry when it feels right" };
 const lifeLine = (p: ProfileFull) => [p.hometown && p.hometown !== p.city ? `From ${p.hometown}` : null, p.marital_status ? MARITAL[p.marital_status] : null,
   p.marriage_timeline ? TIMELINE[p.marriage_timeline] : null, p.relocate === "yes" ? "Open to relocating" : p.relocate === "maybe" ? "Maybe open to relocating" : null].filter(Boolean).join(" · ");
+
+// what they shared for Match Intelligence, in their words
+function lifeTags(p: ProfileFull): string[] {
+  const l = p.life ?? {};
+  const say = (k: string, v?: string | null, pre = "") => (v ? pre + (LABELS[k]?.[v] ?? v) : null);
+  return [say("family_setup", l.family_setup, "Sees "), say("career_plan", l.career_plan, "Work: "), say("comm_style", l.comm_style, "Prefers "),
+    say("conflict_style", l.conflict_style, "In a disagreement: "), say("weekend_style", l.weekend_style), l.money_style ? `Money: ${LABELS.money_style[l.money_style]}` : null,
+    l.life_values?.length ? `Values: ${l.life_values.map((v) => LABELS.life_values[v] ?? v).join(", ")}` : null, say("kids", l.kids)]
+    .filter(Boolean).map((x) => x!.charAt(0).toUpperCase() + x!.slice(1));
+}
 
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
@@ -111,6 +123,13 @@ export default function Profile() {
           </div>
         )}
         {p.interests.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{p.interests.map((x) => <span key={x} className="tag" style={{ fontWeight: 600 }}>{x}</span>)}</div>}
+        {lifeTags(p).length > 0 && (
+          <div className="stack" style={{ gap: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Life and values</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{lifeTags(p).map((x) => <span key={x} className="tag">{x}</span>)}</div>
+          </div>
+        )}
+        <WhyThisMatch card={p} chatHref={p.match_id ? `/chat/${p.match_id}` : null} />
         <Link href={`/report/${p.id}`} style={{ fontSize: 13, fontWeight: 600 }}>Full compatibility report · {price(prices, "full_report", 29)} credits</Link>
         {p.match_id && <Link href={`/family?match=${p.match_id}`} style={{ fontSize: 13, fontWeight: 600 }}>Show your family (asks {p.first_name} first)</Link>}
         <ErrorNote error={error} />

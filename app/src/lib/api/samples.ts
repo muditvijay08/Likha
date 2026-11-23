@@ -1,6 +1,7 @@
 // Sample profiles for demo mode only (design reviews and automated tests). Every card built from these is marked
 // is_sample and shown with a "Sample profile" label. They never exist in the real database.
 import type { Card, MaritalStatus, MarriageTimeline, ProfileFull } from "./types";
+import type { Life } from "../match-intel";
 
 import GEN from "./samples.generated.json";
 
@@ -23,6 +24,21 @@ const PEOPLE: Record<string, { marital: MaritalStatus; hometown: string | null; 
   "s-arjun": { marital: "never_married", hometown: "Jaipur", relocate: "yes", timeline: "within_1y", profession: "Architect", diet: "non_veg", likesYou: false, interests: ["Travel", "Photography", "Football"], prompt: ["My Sunday looks like…", "Photographing stepwells. Panna Meena ka Kund at 7 AM, no crowds."] },
 };
 
+// Sample answers to the life-and-values questions, varied on purpose (some left blank) so Match Intelligence shows every case.
+const LIFE: Record<string, Partial<Life>> = {
+  "s-ishita": { drinking: "never", smoking: "never", kids: "want", family_setup: "open", career_plan: "both_work", comm_style: "caller", conflict_style: "talk_now", weekend_style: "outdoors", money_style: "balanced", life_values: ["family", "ambition", "humour"], languages: ["Hindi", "English", "Mewari"], workout: "often" },
+  "s-riya": { drinking: "socially", smoking: "never", kids: "not_sure", family_setup: "nuclear", career_plan: "both_work", comm_style: "texter", weekend_style: "mix", life_values: ["independence", "growth"], languages: ["Hindi", "English"] },
+  "s-sanya": { drinking: "socially", smoking: "never", kids: "want", family_setup: "joint", career_plan: "open", comm_style: "in_person", conflict_style: "cool_off", weekend_style: "social", money_style: "saver", life_values: ["family", "kindness"], languages: ["Hindi", "English"], workout: "sometimes" },
+  "s-meera": { drinking: "never", smoking: "never", kids: "want", family_setup: "joint", career_plan: "both_work", conflict_style: "talk_now", money_style: "saver", life_values: ["stability", "family", "growth"], languages: ["Hindi", "English", "Marwari"], workout: "daily" },
+  "s-nidhi": { drinking: "never", smoking: "never", kids: "dont_want", family_setup: "nuclear", career_plan: "both_work", comm_style: "caller", weekend_style: "homebody", life_values: ["ambition", "tradition"], languages: ["Hindi", "English"] },
+  "s-tanvi": { drinking: "socially", smoking: "socially", kids: "not_sure", career_plan: "both_work", comm_style: "texter", weekend_style: "outdoors", money_style: "spender", life_values: ["adventure", "independence"], languages: ["English", "Marathi", "Hindi"] },
+  "s-aarav": { drinking: "socially", smoking: "never", kids: "want", family_setup: "joint", career_plan: "both_work", comm_style: "caller", conflict_style: "talk_now", weekend_style: "mix", money_style: "saver", life_values: ["family", "ambition"], languages: ["Hindi", "English"], workout: "often" },
+  "s-kabir": { drinking: "socially", smoking: "never", kids: "want", family_setup: "joint", career_plan: "open", comm_style: "in_person", weekend_style: "social", life_values: ["tradition", "family", "kindness"], languages: ["Hindi", "English", "Rajasthani"] },
+  "s-dev": { drinking: "regularly", smoking: "socially", kids: "not_sure", family_setup: "nuclear", comm_style: "texter", conflict_style: "cool_off", weekend_style: "outdoors", money_style: "spender", life_values: ["adventure", "humour"], languages: ["Hindi", "English"] },
+  "s-rohan": { drinking: "never", smoking: "never", kids: "have", family_setup: "open", career_plan: "both_work", comm_style: "caller", conflict_style: "talk_now", weekend_style: "homebody", money_style: "balanced", life_values: ["kindness", "growth"], languages: ["Hindi", "English"] },
+  "s-arjun": { drinking: "socially", smoking: "never", kids: "want", family_setup: "nuclear", career_plan: "both_work", comm_style: "caller", weekend_style: "outdoors", life_values: ["adventure", "ambition"], languages: ["Hindi", "English"], workout: "often" },
+};
+
 const fromGen = (g: Gen): Sample => {
   const p = PEOPLE[g.id];
   return {
@@ -30,6 +46,7 @@ const fromGen = (g: Gen): Sample => {
     goal: g.age > 26 ? "matchmaking" : "dating", tier: g.jodi_score > 88 ? "graha" : "none", city: "Jaipur", verified: true, diet: p.diet,
     gunas: g.gunas, jodi_score: g.jodi_score, summary: g.summary, moon_sign: g.moon_sign, nakshatra: g.nakshatra, manglik: g.manglik, photos: [],
     prompt: { label: p.prompt[0], answer: p.prompt[1] }, interests: p.interests, liked_me: !!p.likesYou, likesYou: p.likesYou,
+    life: { ...LIFE[g.id], hometown: p.hometown, relocate: p.relocate, marriage_timeline: g.age > 26 ? p.timeline : null },
     extra: { lagna: g.lagna, pada: g.pada, kootas: g.kootas, doshas: g.doshas as ProfileFull["doshas"], hometown: p.hometown,
              relocate: p.relocate, marital_status: p.marital, marriage_timeline: g.age > 26 ? p.timeline : null },
   };
@@ -44,8 +61,8 @@ export function sampleProfile(id: string): ProfileFull | null {
   if (!s) return null;
   const { gender: _g, likesYou: _l, extra, ...c } = s;
   return {
-    ...c, is_sample: true, height_cm: 165, education: "Post-graduate", company: null, languages: ["Hindi", "English"], drinking: "socially",
-    smoking: "never", kids: "want", religion: null, voice_url: null, lagna: null, pada: null, borderline: false,
+    ...c, is_sample: true, height_cm: 165, education: "Post-graduate", company: null, languages: c.life?.languages ?? ["Hindi", "English"], drinking: c.life?.drinking ?? null,
+    smoking: c.life?.smoking ?? null, kids: c.life?.kids ?? null, religion: null, voice_url: null, lagna: null, pada: null, borderline: false,
     prompts: c.prompt ? [c.prompt, { label: "A perfect Sunday", answer: "Kachori at Rawat, then a long walk at Jal Mahal." }] : [],
     kootas: null, doshas: null,
     i_liked: false, match_id: null, ...extra,
