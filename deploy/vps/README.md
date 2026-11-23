@@ -62,6 +62,18 @@ move up: raise it in a branch, test on a spare server, merge, then on this serve
 lists any new settings the release added. A new Postgres major version needs Supabase's own upgrade steps
 (`.supabase/utils/upgrade-pg17.sh` and its successors). `likha-update` warns when the server and the pin differ.
 
+## Moving from Vercel (no downtime)
+1. Install on the server with free `*.sslip.io` names first (Enter at the domain question) and check the app, admin and
+   kundli links the installer prints. Vercel keeps serving likha.in meanwhile.
+2. Lower the DNS TTL of likha.in and the admin domain to 5 minutes a day ahead.
+3. Edit `<your folder>/deploy/vps/.env` to the real domains, run `sudo likha-update`, then point the A records at the
+   server. Caddy (or certbot behind nginx) gets the certificates on the first visit.
+4. Supabase > Authentication > URL configuration: Site URL `https://likha.in`, redirect URLs for the site and admin domains.
+5. Supabase > Edge Functions > secrets: `LIKHA_SITE=https://likha.in`, `LIKHA_ADMIN_SITE=https://<admin domain>`.
+   Admin > Keys: `KUNDLI_URL=https://<kundli domain>`.
+6. Turn on automatic updates (below), then in Vercel > Project > Settings > Git disconnect the repository so pushes
+   deploy only to the server. Keep the Vercel project for a week as a fallback, then delete it.
+
 ## Updates
 - Automatic: answer `y` to the last question, add the printed secrets in GitHub, set the repository variable `VPS_ENABLED=true`.
   Every push to main then runs `.github/workflows/deploy-vps.yml`, which can only run `likha-update` on the server.
